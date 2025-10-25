@@ -38,6 +38,10 @@ async function freshInstall() {
 
     console.log(`Found ${sqlFiles.length} schema files`);
 
+    // Disable foreign key checks to allow any execution order
+    console.log('Disabling foreign key checks...');
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0;');
+
     // Execute each schema file
     for (const file of sqlFiles) {
       console.log(`Executing ${file}...`);
@@ -46,6 +50,10 @@ async function freshInstall() {
       await connection.query(sql);
       console.log(`✓ ${file} executed successfully`);
     }
+
+    // Re-enable foreign key checks
+    console.log('Re-enabling foreign key checks...');
+    await connection.query('SET FOREIGN_KEY_CHECKS = 1;');
 
     console.log('\n✓ Fresh installation completed successfully!');
   } catch (error) {
