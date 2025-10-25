@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
@@ -12,55 +12,56 @@ require('dotenv').config();
  */
 async function rollout() {
   const issueNumber = process.argv[2];
-  let connection;
+  const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 5432,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  });
+
+  let client;
 
   try {
     console.log('Starting rollout...');
 
-    // Create connection
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      multipleStatements: true,
-    });
-
+    client = await pool.connect();
     console.log('Connected to database');
 
     // Ensure migrations table exists
-    await connection.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS migrations (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        issue_number INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        issue_number INTEGER NOT NULL,
         description VARCHAR(255) NOT NULL,
         applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_issue (issue_number)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        CONSTRAINT unique_issue UNIQUE (issue_number)
+      );
     `);
 
     if (issueNumber) {
       // Apply specific migration
-      await applyMigration(connection, issueNumber, false);
+      await applyMigration(client, issueNumber, false);
     } else {
       // Apply all pending migrations
-      await applyAllPending(connection);
+      await applyAllPending(client);
     }
 
     console.log('\n✓ Rollout completed successfully!');
   } catch (error) {
     console.error('\n✗ Rollout failed:');
     console.error(error.message);
+    console.error(error.stack);
     process.exit(1);
   } finally {
-    if (connection) {
-      await connection.end();
+    if (client) {
+      client.release();
     }
+    await pool.end();
   }
 }
 
-async function applyMigration(connection, issueNumber, moveFiles) {
+async function applyMigration(client, issueNumber, moveFiles) {
   const migrationsDir = path.join(__dirname, '../migrations');
   const appliedDir = path.join(migrationsDir, 'applied');
   const rolloutFile = `#${issueNumber}_rollout.sql`;
@@ -69,12 +70,12 @@ async function applyMigration(connection, issueNumber, moveFiles) {
   const rollbackPath = path.join(migrationsDir, rollbackFile);
 
   // Check if migration already applied
-  const [rows] = await connection.query(
-    'SELECT * FROM migrations WHERE issue_number = ?',
+  const result = await client.query(
+    'SELECT * FROM migrations WHERE issue_number = $1',
     [issueNumber]
   );
 
-  if (rows.length > 0) {
+  if (result.rows.length > 0) {
     console.log(`Migration #${issueNumber} already applied, skipping`);
     return;
   }
@@ -91,7 +92,7 @@ async function applyMigration(connection, issueNumber, moveFiles) {
 
   // Read and execute rollout SQL
   const sql = await fs.readFile(rolloutPath, 'utf8');
-  await connection.query(sql);
+  await client.query(sql);
 
   // Extract description from first comment line if present
   const lines = sql.split('\n');
@@ -101,8 +102,8 @@ async function applyMigration(connection, issueNumber, moveFiles) {
     : `Migration #${issueNumber}`;
 
   // Record migration in database
-  await connection.query(
-    'INSERT INTO migrations (issue_number, description) VALUES (?, ?)',
+  await client.query(
+    'INSERT INTO migrations (issue_number, description) VALUES ($1, $2)',
     [issueNumber, description]
   );
 
@@ -117,7 +118,7 @@ async function applyMigration(connection, issueNumber, moveFiles) {
   }
 }
 
-async function applyAllPending(connection) {
+async function applyAllPending(client) {
   const migrationsDir = path.join(__dirname, '../migrations');
   
   // Get all migration files
@@ -139,7 +140,7 @@ async function applyAllPending(connection) {
 
   for (const file of rolloutFiles) {
     const issueNumber = file.match(/#(\d+)_/)[1];
-    await applyMigration(connection, issueNumber, true);
+    await applyMigration(client, issueNumber, true);
   }
 }
 

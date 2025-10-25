@@ -14,12 +14,13 @@ CREATE TABLE IF NOT EXISTS "questions" ("id" SERIAL,
   "server_id" VARCHAR(20) NOT NULL DEFAULT 'pre-v5',
   "message_id" VARCHAR(20) DEFAULT 'pre-v5',
   "is_deleted" SMALLINT NOT NULL DEFAULT 0,
-  "datetime_deleted" TIMESTAMP DEFAULT NULL PRIMARY KEY ("id")
+  "datetime_deleted" TIMESTAMP DEFAULT NULL,
+  PRIMARY KEY ("id")
 );
  
 COMMENT ON TABLE "questions" IS 'Stores all truth and dare questions submitted by users';
-COMMENT ON COLUMN "questions"."questions" IS 'Unique identifier for the question';
-COMMENT ON COLUMN "questions"."truth" IS 'The question TEXT';
+COMMENT ON COLUMN "questions"."id" IS 'Unique identifier for the question';
+COMMENT ON COLUMN "questions"."question" IS 'The question TEXT';
 COMMENT ON COLUMN "questions"."is_approved" IS 'Whether question has been approved by moderators';
 COMMENT ON COLUMN "questions"."datetime_approved" IS 'When the question was approved (set by trigger)';
 COMMENT ON COLUMN "questions"."is_banned" IS 'Whether question has been banned';

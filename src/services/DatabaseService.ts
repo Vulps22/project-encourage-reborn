@@ -1,11 +1,11 @@
-import mysql from 'mysql2/promise';
+import { Pool, PoolClient } from 'pg';
 
 /**
  * Database query result for SELECT operations
  */
 export interface QueryResult<T = any> {
   rows: T[];
-  fields: mysql.FieldPacket[];
+  rowCount: number | null;
 }
 
 /**
@@ -15,6 +15,7 @@ export interface MutationResult {
   affectedRows: number;
   insertId?: number;
   changedRows?: number;
+  rows?: any[];
 }
 
 /**
@@ -55,8 +56,8 @@ export type TransactionCallback<T> = (db: DatabaseService) => Promise<T>;
  * - Transaction support
  */
 export class DatabaseService {
-  private pool: mysql.Pool;
-  private transactionConnection?: mysql.PoolConnection;
+  private pool: Pool;
+  private transactionClient?: PoolClient;
 
   /**
    * Creates a new DatabaseService instance
@@ -64,17 +65,13 @@ export class DatabaseService {
    */
   constructor(config: DatabaseConfig) {
     try {
-      this.pool = mysql.createPool({
+      this.pool = new Pool({
         host: config.host,
-        port: config.port || 3306,
+        port: config.port || 5432,
         user: config.user,
         password: config.password,
         database: config.database,
-        connectionLimit: config.connectionLimit || 10,
-        waitForConnections: config.waitForConnections ?? true,
-        queueLimit: config.queueLimit || 0,
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 0,
+        max: config.connectionLimit || 10,
       });
     } catch (error) {
       throw new Error(`Failed to create database pool: ${this.getErrorMessage(error)}`);
@@ -101,25 +98,26 @@ export class DatabaseService {
       }
 
       const values: any[] = [];
+      let paramIndex = 1;
       const whereClause = Object.keys(conditions)
         .map((key) => {
           this.validateColumnName(key);
           values.push(conditions[key]);
-          return `\`${key}\` = ?`;
+          return `"${key}" = $${paramIndex++}`;
         })
         .join(' AND ');
 
-      let query = `SELECT * FROM \`${table}\` WHERE ${whereClause} LIMIT 1`;
+      let query = `SELECT * FROM "${table}" WHERE ${whereClause} LIMIT 1`;
 
       if (options?.offset !== undefined) {
-        query += ` OFFSET ?`;
+        query += ` OFFSET $${paramIndex}`;
         values.push(options.offset);
       }
 
-      const connection = this.transactionConnection || this.pool;
-      const [rows] = await connection.execute(query, values) as [any[], mysql.FieldPacket[]];
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(query, values);
 
-      return rows.length > 0 ? rows[0] as T : null;
+      return result.rows.length > 0 ? result.rows[0] as T : null;
     } catch (error) {
       throw new Error(`Failed to get record from ${table}: ${this.getErrorMessage(error)}`);
     }
@@ -140,8 +138,9 @@ export class DatabaseService {
     try {
       this.validateTableName(table);
 
-      let query = `SELECT * FROM \`${table}\``;
+      let query = `SELECT * FROM "${table}"`;
       const values: any[] = [];
+      let paramIndex = 1;
 
       // Add WHERE clause if conditions provided
       if (Object.keys(conditions).length > 0) {
@@ -149,7 +148,7 @@ export class DatabaseService {
           .map((key) => {
             this.validateColumnName(key);
             values.push(conditions[key]);
-            return `\`${key}\` = ?`;
+            return `"${key}" = $${paramIndex++}`;
           })
           .join(' AND ');
         query += ` WHERE ${whereClause}`;
@@ -157,17 +156,17 @@ export class DatabaseService {
 
       // Add LIMIT and OFFSET
       if (options?.limit !== undefined) {
-        query += ` LIMIT ?`;
+        query += ` LIMIT $${paramIndex++}`;
         values.push(options.limit);
       }
       if (options?.offset !== undefined) {
-        query += ` OFFSET ?`;
+        query += ` OFFSET $${paramIndex++}`;
         values.push(options.offset);
       }
 
-      const connection = this.transactionConnection || this.pool;
-      const [rows] = await connection.execute(query, values) as [any[], mysql.FieldPacket[]];
-      return rows as T[];
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(query, values);
+      return result.rows as T[];
     } catch (error) {
       throw new Error(`Failed to list records from ${table}: ${this.getErrorMessage(error)}`);
     }
@@ -183,8 +182,9 @@ export class DatabaseService {
     try {
       this.validateTableName(table);
 
-      let query = `SELECT COUNT(*) as count FROM \`${table}\``;
+      let query = `SELECT COUNT(*) as count FROM "${table}"`;
       const values: any[] = [];
+      let paramIndex = 1;
 
       // Add WHERE clause if conditions provided
       if (Object.keys(conditions).length > 0) {
@@ -192,15 +192,15 @@ export class DatabaseService {
           .map((key) => {
             this.validateColumnName(key);
             values.push(conditions[key]);
-            return `\`${key}\` = ?`;
+            return `"${key}" = $${paramIndex++}`;
           })
           .join(' AND ');
         query += ` WHERE ${whereClause}`;
       }
 
-      const connection = this.transactionConnection || this.pool;
-      const [rows] = await connection.execute(query, values) as [any[], mysql.FieldPacket[]];
-      return (rows[0] as any).count;
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(query, values);
+      return parseInt(result.rows[0].count);
     } catch (error) {
       throw new Error(`Failed to count records in ${table}: ${this.getErrorMessage(error)}`);
     }
@@ -224,16 +224,18 @@ export class DatabaseService {
       columns.forEach((col) => this.validateColumnName(col));
 
       const values = Object.values(data);
-      const placeholders = values.map(() => '?').join(', ');
-      const columnNames = columns.map((col) => `\`${col}\``).join(', ');
+      let paramIndex = 1;
+      const placeholders = values.map(() => `$${paramIndex++}`).join(', ');
+      const columnNames = columns.map((col) => `"${col}"`).join(', ');
 
-      const query = `INSERT INTO \`${table}\` (${columnNames}) VALUES (${placeholders})`;
-      const connection = this.transactionConnection || this.pool;
-      const [result] = await connection.execute(query, values) as [mysql.ResultSetHeader, mysql.FieldPacket[]];
+      const query = `INSERT INTO "${table}" (${columnNames}) VALUES (${placeholders}) RETURNING *`;
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(query, values);
 
       return {
-        affectedRows: result.affectedRows,
-        insertId: result.insertId,
+        affectedRows: result.rowCount || 0,
+        insertId: result.rows[0]?.id,
+        rows: result.rows,
       };
     } catch (error) {
       throw new Error(`Failed to insert record into ${table}: ${this.getErrorMessage(error)}`);
@@ -264,13 +266,14 @@ export class DatabaseService {
       }
 
       const values: any[] = [];
+      let paramIndex = 1;
 
       // Build SET clause
       const setClause = Object.keys(data)
         .map((key) => {
           this.validateColumnName(key);
           values.push(data[key]);
-          return `\`${key}\` = ?`;
+          return `"${key}" = $${paramIndex++}`;
         })
         .join(', ');
 
@@ -279,17 +282,17 @@ export class DatabaseService {
         .map((key) => {
           this.validateColumnName(key);
           values.push(conditions[key]);
-          return `\`${key}\` = ?`;
+          return `"${key}" = $${paramIndex++}`;
         })
         .join(' AND ');
 
-      const query = `UPDATE \`${table}\` SET ${setClause} WHERE ${whereClause}`;
-      const connection = this.transactionConnection || this.pool;
-      const [result] = await connection.execute(query, values) as [mysql.ResultSetHeader, mysql.FieldPacket[]];
+      const query = `UPDATE "${table}" SET ${setClause} WHERE ${whereClause}`;
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(query, values);
 
       return {
-        affectedRows: result.affectedRows,
-        changedRows: result.changedRows,
+        affectedRows: result.rowCount || 0,
+        changedRows: result.rowCount || 0,
       };
     } catch (error) {
       throw new Error(`Failed to update records in ${table}: ${this.getErrorMessage(error)}`);
@@ -311,22 +314,23 @@ export class DatabaseService {
       }
 
       const values: any[] = [];
+      let paramIndex = 1;
 
       // Build WHERE clause
       const whereClause = Object.keys(conditions)
         .map((key) => {
           this.validateColumnName(key);
           values.push(conditions[key]);
-          return `\`${key}\` = ?`;
+          return `"${key}" = $${paramIndex++}`;
         })
         .join(' AND ');
 
-      const query = `DELETE FROM \`${table}\` WHERE ${whereClause}`;
-      const connection = this.transactionConnection || this.pool;
-      const [result] = await connection.execute(query, values) as [mysql.ResultSetHeader, mysql.FieldPacket[]];
+      const query = `DELETE FROM "${table}" WHERE ${whereClause}`;
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(query, values);
 
       return {
-        affectedRows: result.affectedRows,
+        affectedRows: result.rowCount || 0,
       };
     } catch (error) {
       throw new Error(`Failed to delete records from ${table}: ${this.getErrorMessage(error)}`);
@@ -335,15 +339,15 @@ export class DatabaseService {
 
   /**
    * Execute a custom SELECT query with parameters
-   * @param sql SQL query string with ? placeholders
+   * @param sql SQL query string with $1, $2, etc. placeholders
    * @param params Query parameters
    * @returns Array of result rows
    */
   async query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
     try {
-      const connection = this.transactionConnection || this.pool;
-      const [rows] = await connection.execute(sql, params) as [any[], mysql.FieldPacket[]];
-      return rows as T[];
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(sql, params);
+      return result.rows as T[];
     } catch (error) {
       throw new Error(`Query execution failed: ${this.getErrorMessage(error)}`);
     }
@@ -351,18 +355,18 @@ export class DatabaseService {
 
   /**
    * Execute a custom mutation query (INSERT, UPDATE, DELETE) with parameters
-   * @param sql SQL query string with ? placeholders
+   * @param sql SQL query string with $1, $2, etc. placeholders
    * @param params Query parameters
    * @returns Mutation result
    */
   async execute(sql: string, params: any[] = []): Promise<MutationResult> {
     try {
-      const connection = this.transactionConnection || this.pool;
-      const [result] = await connection.execute(sql, params) as [mysql.ResultSetHeader, mysql.FieldPacket[]];
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(sql, params);
       return {
-        affectedRows: result.affectedRows,
-        insertId: result.insertId,
-        changedRows: result.changedRows,
+        affectedRows: result.rowCount || 0,
+        insertId: result.rows[0]?.id,
+        rows: result.rows,
       };
     } catch (error) {
       throw new Error(`Execute operation failed: ${this.getErrorMessage(error)}`);
@@ -375,24 +379,24 @@ export class DatabaseService {
    * @returns Result from the callback function
    */
   async transaction<T>(callback: TransactionCallback<T>): Promise<T> {
-    const connection = await this.pool.getConnection();
+    const client = await this.pool.connect();
     
     try {
-      await connection.beginTransaction();
+      await client.query('BEGIN');
       
-      // Create a new DatabaseService instance with transaction connection
+      // Create a new DatabaseService instance with transaction client
       const transactionalDb = Object.create(DatabaseService.prototype);
       transactionalDb.pool = this.pool;
-      transactionalDb.transactionConnection = connection;
+      transactionalDb.transactionClient = client;
       
       const result = await callback(transactionalDb);
-      await connection.commit();
+      await client.query('COMMIT');
       return result;
     } catch (error) {
-      await connection.rollback();
+      await client.query('ROLLBACK');
       throw new Error(`Transaction failed: ${this.getErrorMessage(error)}`);
     } finally {
-      connection.release();
+      client.release();
     }
   }
 
@@ -403,16 +407,16 @@ export class DatabaseService {
    * @throws Error if connection fails
    */
   async testConnection(): Promise<boolean> {
-    let connection;
+    let client;
     try {
-      connection = await this.pool.getConnection();
-      await connection.ping();
+      client = await this.pool.connect();
+      await client.query('SELECT 1');
       return true;
     } catch (error) {
       throw new Error(`Database connection test failed: ${this.getErrorMessage(error)}`);
     } finally {
-      if (connection) {
-        connection.release();
+      if (client) {
+        client.release();
       }
     }
   }

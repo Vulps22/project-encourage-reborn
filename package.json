@@ -27,6 +27,7 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^24.9.1",
+    "@types/pg": "^8.15.5",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.38.0",
@@ -41,7 +42,7 @@
   "dependencies": {
     "discord.js": "^14.24.0",
     "dotenv": "^17.2.3",
-    "mysql2": "^3.15.3",
+    "pg": "^8.16.3",
     "tslib": "^2.8.1"
   }
 }

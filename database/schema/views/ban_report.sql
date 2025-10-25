@@ -1,10 +1,10 @@
-CREATE OR REPLACE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `ban report` AS 
-select 
-  `q`.`creator` AS `creator`,
-  sum((case when ((`q`.`is_banned` = 1) and (`q`.`type` = 'truth')) then 1 else 0 end)) AS `bannedTruthsCount`,
-  sum((case when ((`q`.`is_banned` = 1) and (`q`.`type` = 'dare')) then 1 else 0 end)) AS `bannedDaresCount`,
-  sum((case when (`q`.`is_banned` = 1) then 1 else 0 end)) AS `totalBansCount` 
-from `questions` `q` 
-where (`q`.`is_banned` = 1) 
-group by `q`.`creator` 
-order by `totalBansCount` desc;
+CREATE OR REPLACE VIEW "ban_report" AS 
+SELECT 
+  "q"."creator" AS "creator",
+  SUM(CASE WHEN ("q"."is_banned" = TRUE AND "q"."type" = 'truth') THEN 1 ELSE 0 END) AS "bannedTruthsCount",
+  SUM(CASE WHEN ("q"."is_banned" = TRUE AND "q"."type" = 'dare') THEN 1 ELSE 0 END) AS "bannedDaresCount",
+  SUM(CASE WHEN "q"."is_banned" = TRUE THEN 1 ELSE 0 END) AS "totalBansCount"
+FROM "questions" "q"
+WHERE "q"."is_banned" = TRUE
+GROUP BY "q"."creator"
+ORDER BY "totalBansCount" DESC;

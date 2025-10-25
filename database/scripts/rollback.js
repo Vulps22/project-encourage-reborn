@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
@@ -13,7 +13,15 @@ require('dotenv').config();
  */
 async function rollback() {
   const issueNumber = process.argv[2];
-  let connection;
+  const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 5432,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  });
+
+  let client;
 
   if (!issueNumber) {
     console.error('Error: Issue number is required');
@@ -24,25 +32,16 @@ async function rollback() {
   try {
     console.log(`Starting rollback for migration #${issueNumber}...`);
 
-    // Create connection
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      multipleStatements: true,
-    });
-
+    client = await pool.connect();
     console.log('Connected to database');
 
     // Check if migration was applied
-    const [rows] = await connection.query(
-      'SELECT * FROM migrations WHERE issue_number = ?',
+    const result = await client.query(
+      'SELECT * FROM migrations WHERE issue_number = $1',
       [issueNumber]
     );
 
-    if (rows.length === 0) {
+    if (result.rows.length === 0) {
       throw new Error(`Migration #${issueNumber} has not been applied`);
     }
 
@@ -81,11 +80,11 @@ async function rollback() {
 
     // Read and execute rollback SQL
     const sql = await fs.readFile(rollbackPath, 'utf8');
-    await connection.query(sql);
+    await client.query(sql);
 
     // Remove migration record from database
-    await connection.query(
-      'DELETE FROM migrations WHERE issue_number = ?',
+    await client.query(
+      'DELETE FROM migrations WHERE issue_number = $1',
       [issueNumber]
     );
 
@@ -102,11 +101,13 @@ async function rollback() {
   } catch (error) {
     console.error('\n✗ Rollback failed:');
     console.error(error.message);
+    console.error(error.stack);
     process.exit(1);
   } finally {
-    if (connection) {
-      await connection.end();
+    if (client) {
+      client.release();
     }
+    await pool.end();
   }
 }
 
