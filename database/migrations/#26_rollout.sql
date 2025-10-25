@@ -4,6 +4,12 @@
 -- Issue: https://github.com/Vulps22/project-encourage-reborn/issues/26
 
 -- =====================================================
+-- RECREATE VIEWS THAT DEPEND ON MODIFIED COLUMNS
+-- =====================================================
+-- Include the ban_report view to ensure it uses the new column types
+\i ../schemas/moderation/views/ban_report.sql
+
+-- =====================================================
 -- PHASE 1: DROP REDUNDANT TABLES
 -- =====================================================
 -- These tables are no longer used by the bot
@@ -18,97 +24,6 @@ DROP TABLE IF EXISTS user_truths;
 -- =====================================================
 -- PostgreSQL requires columns to exist before renaming them
 
--- questions table
-ALTER TABLE core.questions
-  RENAME COLUMN "isApproved" TO is_approved;
-ALTER TABLE core.questions
-  RENAME COLUMN "approvedBy" TO approved_by;
-ALTER TABLE core.questions
-  RENAME COLUMN "isBanned" TO is_banned;
-ALTER TABLE core.questions
-  RENAME COLUMN "banReason" TO ban_reason;
-ALTER TABLE core.questions
-  RENAME COLUMN "bannedBy" TO banned_by;
-ALTER TABLE core.questions
-  RENAME COLUMN "serverId" TO server_id;
-ALTER TABLE core.questions
-  RENAME COLUMN "messageId" TO message_id;
-ALTER TABLE core.questions
-  RENAME COLUMN "isDeleted" TO is_deleted;
-
--- users table
-ALTER TABLE core.users
-  RENAME COLUMN "globalLevel" TO global_level;
-ALTER TABLE core.users
-  RENAME COLUMN "globalLevelXp" TO global_level_xp;
-ALTER TABLE core.users
-  RENAME COLUMN "rulesAccepted" TO rules_accepted;
-ALTER TABLE core.users
-  RENAME COLUMN "isBanned" TO is_banned;
-ALTER TABLE core.users
-  RENAME COLUMN "banReason" TO ban_reason;
-ALTER TABLE core.users
-  RENAME COLUMN "voteCount" TO vote_count;
-ALTER TABLE core.users
-  RENAME COLUMN "deleteDate" TO delete_date;
-
--- servers table
-ALTER TABLE core.servers
-  RENAME COLUMN "hasAccepted" TO has_accepted;
-ALTER TABLE core.servers
-  RENAME COLUMN "isBanned" TO is_banned;
-ALTER TABLE core.servers
-  RENAME COLUMN "banReason" TO ban_reason;
-ALTER TABLE core.servers
-  RENAME COLUMN "isDeleted" TO is_deleted;
-
--- user_questions table
-ALTER TABLE core.user_questions
-  RENAME COLUMN "messageId" TO message_id;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "userId" TO user_id;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "questionId" TO question_id;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "serverId" TO server_id;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "channelId" TO channel_id;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "imageUrl" TO image_url;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "doneCount" TO done_count;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "failedCount" TO failed_count;
-ALTER TABLE core.user_questions
-  RENAME COLUMN "finalResult" TO final_result;
-
--- given_questions table
-ALTER TABLE core.given_questions
-  RENAME COLUMN "senderId" TO sender_id;
-ALTER TABLE core.given_questions
-  RENAME COLUMN "targetId" TO target_id;
-ALTER TABLE core.given_questions
-  RENAME COLUMN "serverId" TO server_id;
-ALTER TABLE core.given_questions
-  RENAME COLUMN "messageId" TO message_id;
-ALTER TABLE core.given_questions
-  RENAME COLUMN "doneCount" TO done_count;
-ALTER TABLE core.given_questions
-  RENAME COLUMN "failCount" TO fail_count;
-ALTER TABLE core.given_questions
-  RENAME COLUMN "xpType" TO xp_type;
-
--- reports table
-ALTER TABLE moderation.reports
-  RENAME COLUMN "moderatorId" TO moderator_id;
-ALTER TABLE moderation.reports
-  RENAME COLUMN "banReason" TO ban_reason;
-ALTER TABLE moderation.reports
-  RENAME COLUMN "senderId" TO sender_id;
-ALTER TABLE moderation.reports
-  RENAME COLUMN "offenderId" TO offender_id;
-ALTER TABLE moderation.reports
-  RENAME COLUMN "serverId" TO server_id;
 
 -- entitlements table
 ALTER TABLE premium.entitlements
@@ -117,6 +32,8 @@ ALTER TABLE premium.entitlements
   RENAME COLUMN "userId" TO user_id;
 ALTER TABLE premium.entitlements
   RENAME COLUMN "guildId" TO guild_id;
+ALTER TABLE premium.entitlements
+  RENAME COLUMN "isConsumable" TO is_consumable;
 
 -- adverts table
 ALTER TABLE premium.adverts
@@ -138,61 +55,42 @@ ALTER TABLE system.config
 -- PHASE 3: CONVERT DISCORD IDS TO BIGINT
 -- =====================================================
 -- Convert all VARCHAR(20) Discord IDs to BIGINT for better performance
+-- Simplified: No data exists, so no need for CASE statements
 
 -- users table
 ALTER TABLE core.users
   ALTER COLUMN id TYPE BIGINT USING (id::BIGINT),
-  ALTER COLUMN ban_message_id TYPE BIGINT USING (
-    CASE WHEN ban_message_id IS NULL THEN NULL ELSE ban_message_id::BIGINT END
-  );
+  ALTER COLUMN ban_message_id TYPE BIGINT USING (ban_message_id::BIGINT);
 
 -- servers table
 ALTER TABLE core.servers
   ALTER COLUMN id TYPE BIGINT USING (id::BIGINT),
   ALTER COLUMN owner TYPE BIGINT USING (owner::BIGINT),
-  ALTER COLUMN level_up_channel TYPE BIGINT USING (
-    CASE WHEN level_up_channel = 'UNSET' THEN NULL ELSE level_up_channel::BIGINT END
-  ),
-  ALTER COLUMN announcement_channel TYPE BIGINT USING (
-    CASE WHEN announcement_channel = 'UNSET' THEN NULL ELSE announcement_channel::BIGINT END
-  ),
-  ALTER COLUMN message_id TYPE BIGINT USING (
-    CASE WHEN message_id IS NULL THEN NULL ELSE message_id::BIGINT END
-  );
+  ALTER COLUMN level_up_channel TYPE BIGINT USING (level_up_channel::BIGINT),
+  ALTER COLUMN announcement_channel TYPE BIGINT USING (announcement_channel::BIGINT),
+  ALTER COLUMN message_id TYPE BIGINT USING (message_id::BIGINT);
 
 -- questions table
 ALTER TABLE core.questions
   ALTER COLUMN creator TYPE BIGINT USING (creator::BIGINT),
-  ALTER COLUMN approved_by TYPE BIGINT USING (
-    CASE WHEN approved_by = 'pre-v5-6' THEN NULL ELSE approved_by::BIGINT END
-  ),
-  ALTER COLUMN banned_by TYPE BIGINT USING (
-    CASE WHEN banned_by IS NULL THEN NULL ELSE banned_by::BIGINT END
-  ),
-  ALTER COLUMN server_id TYPE BIGINT USING (
-    CASE WHEN server_id = 'pre-v5' THEN NULL ELSE server_id::BIGINT END
-  ),
-  ALTER COLUMN message_id TYPE BIGINT USING (
-    CASE WHEN message_id = 'pre-v5' OR message_id IS NULL THEN NULL ELSE message_id::BIGINT END
-  );
+  ALTER COLUMN approved_by TYPE BIGINT USING (approved_by::BIGINT),
+  ALTER COLUMN banned_by TYPE BIGINT USING (banned_by::BIGINT),
+  ALTER COLUMN server_id TYPE BIGINT USING (server_id::BIGINT),
+  ALTER COLUMN message_id TYPE BIGINT USING (message_id::BIGINT);
 
 -- user_questions table
 ALTER TABLE core.user_questions
   ALTER COLUMN message_id TYPE BIGINT USING (message_id::BIGINT),
   ALTER COLUMN user_id TYPE BIGINT USING (user_id::BIGINT),
   ALTER COLUMN server_id TYPE BIGINT USING (server_id::BIGINT),
-  ALTER COLUMN channel_id TYPE BIGINT USING (
-    CASE WHEN channel_id = 'PRE_5_7_0' THEN NULL ELSE channel_id::BIGINT END
-  );
+  ALTER COLUMN channel_id TYPE BIGINT USING (channel_id::BIGINT);
 
 -- given_questions table
 ALTER TABLE core.given_questions
   ALTER COLUMN sender_id TYPE BIGINT USING (sender_id::BIGINT),
   ALTER COLUMN target_id TYPE BIGINT USING (target_id::BIGINT),
   ALTER COLUMN server_id TYPE BIGINT USING (server_id::BIGINT),
-  ALTER COLUMN message_id TYPE BIGINT USING (
-    CASE WHEN message_id IS NULL THEN NULL ELSE message_id::BIGINT END
-  );
+  ALTER COLUMN message_id TYPE BIGINT USING (message_id::BIGINT);
 
 -- server_users table
 ALTER TABLE core.server_users
@@ -211,9 +109,7 @@ ALTER TABLE core.user_vote
 
 -- reports table
 ALTER TABLE moderation.reports
-  ALTER COLUMN moderator_id TYPE BIGINT USING (
-    CASE WHEN moderator_id IS NULL THEN NULL ELSE moderator_id::BIGINT END
-  ),
+  ALTER COLUMN moderator_id TYPE BIGINT USING (moderator_id::BIGINT),
   ALTER COLUMN sender_id TYPE BIGINT USING (sender_id::BIGINT),
   ALTER COLUMN offender_id TYPE BIGINT USING (offender_id::BIGINT),
   ALTER COLUMN server_id TYPE BIGINT USING (server_id::BIGINT);
@@ -223,9 +119,7 @@ ALTER TABLE premium.entitlements
   ALTER COLUMN id TYPE BIGINT USING (id::BIGINT),
   ALTER COLUMN sku_id TYPE BIGINT USING (sku_id::BIGINT),
   ALTER COLUMN user_id TYPE BIGINT USING (user_id::BIGINT),
-  ALTER COLUMN guild_id TYPE BIGINT USING (
-    CASE WHEN guild_id IS NULL THEN NULL ELSE guild_id::BIGINT END
-  );
+  ALTER COLUMN guild_id TYPE BIGINT USING (guild_id::BIGINT);
 
 -- purchasables table
 ALTER TABLE premium.purchasables
@@ -239,34 +133,18 @@ ALTER TABLE premium.adverts
 
 -- config table
 ALTER TABLE system.config
-  ALTER COLUMN dares_log TYPE BIGINT USING (
-    CASE WHEN dares_log IS NULL THEN NULL ELSE dares_log::BIGINT END
-  ),
-  ALTER COLUMN truths_log TYPE BIGINT USING (
-    CASE WHEN truths_log IS NULL THEN NULL ELSE truths_log::BIGINT END
-  ),
-  ALTER COLUMN servers_log TYPE BIGINT USING (
-    CASE WHEN servers_log IS NULL THEN NULL ELSE servers_log::BIGINT END
-  ),
-  ALTER COLUMN reports_log TYPE BIGINT USING (
-    CASE WHEN reports_log IS NULL THEN NULL ELSE reports_log::BIGINT END
-  ),
-  ALTER COLUMN banned_users_log TYPE BIGINT USING (
-    CASE WHEN banned_users_log IS NULL THEN NULL ELSE banned_users_log::BIGINT END
-  ),
-  ALTER COLUMN errors_log TYPE BIGINT USING (
-    CASE WHEN errors_log IS NULL THEN NULL ELSE errors_log::BIGINT END
-  ),
+  ALTER COLUMN dares_log TYPE BIGINT USING (dares_log::BIGINT),
+  ALTER COLUMN truths_log TYPE BIGINT USING (truths_log::BIGINT),
+  ALTER COLUMN servers_log TYPE BIGINT USING (servers_log::BIGINT),
+  ALTER COLUMN reports_log TYPE BIGINT USING (reports_log::BIGINT),
+  ALTER COLUMN banned_users_log TYPE BIGINT USING (banned_users_log::BIGINT),
+  ALTER COLUMN errors_log TYPE BIGINT USING (errors_log::BIGINT),
   ALTER COLUMN advert_channel TYPE BIGINT USING (advert_channel::BIGINT),
   ALTER COLUMN client TYPE BIGINT USING (client::BIGINT),
   ALTER COLUMN guild_id TYPE BIGINT USING (guild_id::BIGINT),
   ALTER COLUMN logs TYPE BIGINT USING (logs::BIGINT),
-  ALTER COLUMN announcement_channel_id TYPE BIGINT USING (
-    CASE WHEN announcement_channel_id IS NULL THEN NULL ELSE announcement_channel_id::BIGINT END
-  ),
-  ALTER COLUMN update_channel_id TYPE BIGINT USING (
-    CASE WHEN update_channel_id IS NULL THEN NULL ELSE update_channel_id::BIGINT END
-  );
+  ALTER COLUMN announcement_channel_id TYPE BIGINT USING (announcement_channel_id::BIGINT),
+  ALTER COLUMN update_channel_id TYPE BIGINT USING (update_channel_id::BIGINT);
 
 -- =====================================================
 -- PHASE 4: STANDARDIZE BOOLEAN FIELDS
