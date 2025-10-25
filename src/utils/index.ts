@@ -1,2 +1,2 @@
 // Barrel file for utilities
-export {};
+export { Logger } from './Logger';
