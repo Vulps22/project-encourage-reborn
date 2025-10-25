@@ -1,0 +1,47 @@
+{
+  "name": "truth-or-dare-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot for playing Truth or Dare with voting, XP systems, and user-submitted questions",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "db:fresh-install": "node database/scripts/fresh-install.js",
+    "db:rollout": "node database/scripts/rollout.js",
+    "db:rollback": "node database/scripts/rollback.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "truth-or-dare",
+    "game"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.24.0",
+    "dotenv": "^17.2.3",
+    "mysql2": "^3.15.3",
+    "tslib": "^2.8.1"
+  }
+}
