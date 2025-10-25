@@ -547,6 +547,47 @@ describe('DatabaseService', () => {
     });
   });
 
+  describe('testConnection', () => {
+    it('should successfully test connection', async () => {
+      mockConnection.ping = jest.fn().mockResolvedValue(undefined);
+
+      const result = await dbService.testConnection();
+
+      expect(result).toBe(true);
+      expect(mockPool.getConnection).toHaveBeenCalled();
+      expect(mockConnection.ping).toHaveBeenCalled();
+      expect(mockConnection.release).toHaveBeenCalled();
+    });
+
+    it('should throw error if connection fails', async () => {
+      mockPool.getConnection.mockRejectedValue(new Error('Connection failed'));
+
+      await expect(dbService.testConnection()).rejects.toThrow(
+        'Database connection test failed: Connection failed'
+      );
+    });
+
+    it('should throw error if ping fails', async () => {
+      mockConnection.ping = jest.fn().mockRejectedValue(new Error('Ping failed'));
+
+      await expect(dbService.testConnection()).rejects.toThrow(
+        'Database connection test failed: Ping failed'
+      );
+    });
+
+    it('should release connection even if test fails', async () => {
+      mockConnection.ping = jest.fn().mockRejectedValue(new Error('Ping failed'));
+
+      try {
+        await dbService.testConnection();
+      } catch {
+        // Expected error
+      }
+
+      expect(mockConnection.release).toHaveBeenCalled();
+    });
+  });
+
   describe('close', () => {
     it('should close the pool', async () => {
       await dbService.close();

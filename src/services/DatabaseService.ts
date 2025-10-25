@@ -397,6 +397,27 @@ export class DatabaseService {
   }
 
   /**
+   * Test database connection
+   * Attempts to get a connection from the pool to verify connectivity
+   * @returns true if connection successful
+   * @throws Error if connection fails
+   */
+  async testConnection(): Promise<boolean> {
+    let connection;
+    try {
+      connection = await this.pool.getConnection();
+      await connection.ping();
+      return true;
+    } catch (error) {
+      throw new Error(`Database connection test failed: ${this.getErrorMessage(error)}`);
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  }
+
+  /**
    * Close the connection pool
    * Call this when shutting down the application
    */
