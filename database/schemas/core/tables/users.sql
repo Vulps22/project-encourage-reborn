@@ -1,5 +1,5 @@
 
-CREATE TABLE IF NOT EXISTS "users" ("id" VARCHAR(20) NOT NULL,
+CREATE TABLE IF NOT EXISTS "users" ("id" BIGINT NOT NULL,
   "username" TEXT,
   "global_level" INTEGER NOT NULL DEFAULT 0,
   "global_level_xp" INTEGER NOT NULL DEFAULT 0,
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS "users" ("id" VARCHAR(20) NOT NULL,
   "is_banned" BOOLEAN NOT NULL DEFAULT FALSE,
   "ban_reason" TEXT,
   "vote_count" INTEGER NOT NULL DEFAULT 0,
-  "ban_message_id" VARCHAR(20) DEFAULT NULL,
+  "ban_message_id" BIGINT DEFAULT NULL,
   "delete_date" TIMESTAMP DEFAULT NULL,
   "created_datetime" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("id")
@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS "users" ("id" VARCHAR(20) NOT NULL,
  
 CREATE UNIQUE INDEX IF NOT EXISTS "id_UNIQUE" ON "users"("id");
 CREATE INDEX IF NOT EXISTS "id_idx" ON "users"("id");
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS "idx_level_xp" ON "users"("global_level", "global_level_xp");
+CREATE INDEX IF NOT EXISTS "idx_banned" ON "users"("is_banned");
 
 COMMENT ON TABLE "users" IS 'Stores Discord user data and global progression';
 COMMENT ON COLUMN "users"."username" IS 'Discord username';

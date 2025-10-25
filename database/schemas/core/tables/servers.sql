@@ -1,7 +1,7 @@
 
-CREATE TABLE IF NOT EXISTS "servers" ("id" VARCHAR(20) NOT NULL,
+CREATE TABLE IF NOT EXISTS "servers" ("id" BIGINT NOT NULL,
   "name" TEXT NOT NULL,
-  "owner" VARCHAR(20) NOT NULL,
+  "owner" BIGINT NOT NULL,
   "has_accepted" BOOLEAN NOT NULL DEFAULT FALSE,
   "is_banned" BOOLEAN NOT NULL DEFAULT FALSE,
   "ban_reason" TEXT,
@@ -12,18 +12,23 @@ CREATE TABLE IF NOT EXISTS "servers" ("id" VARCHAR(20) NOT NULL,
   "truth_success_xp" INTEGER DEFAULT '40',
   "truth_fail_xp" INTEGER DEFAULT '40',
   "message_xp" INTEGER NOT NULL DEFAULT 0,
-  "level_up_channel" VARCHAR(20) DEFAULT 'UNSET',
-  "announcement_channel" VARCHAR(20) DEFAULT 'UNSET',
-  "is_entitled" SMALLINT NOT NULL DEFAULT 0,
+  "level_up_channel" BIGINT DEFAULT NULL,
+  "announcement_channel" BIGINT DEFAULT NULL,
+  "is_entitled" BOOLEAN NOT NULL DEFAULT FALSE,
   "entitlement_end_date" TIMESTAMP DEFAULT NULL,
-  "message_id" VARCHAR(20) DEFAULT NULL,
-  "is_deleted" SMALLINT NOT NULL DEFAULT 0,
+  "message_id" BIGINT DEFAULT NULL,
+  "is_deleted" BOOLEAN NOT NULL DEFAULT FALSE,
   "datetime_deleted" TIMESTAMP DEFAULT NULL,
   PRIMARY KEY ("id")
 );
  
 CREATE UNIQUE INDEX IF NOT EXISTS "id" ON "servers"("id");
 CREATE INDEX IF NOT EXISTS "id_idx" ON "servers"("id");
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS "idx_owner" ON "servers"("owner");
+CREATE INDEX IF NOT EXISTS "idx_entitled" ON "servers"("is_entitled");
+CREATE INDEX IF NOT EXISTS "idx_deleted" ON "servers"("is_deleted");
 
 COMMENT ON TABLE "servers" IS 'Stores Discord server configuration and settings';
 COMMENT ON COLUMN "servers"."name" IS 'Discord server name';
