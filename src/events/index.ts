@@ -1,2 +1,2 @@
 // Barrel file for events
-export {};
+export { default as interactionCreate } from './interactionCreate';

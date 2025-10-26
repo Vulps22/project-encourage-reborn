@@ -1,8 +1,9 @@
 
-CREATE TABLE IF NOT EXISTS "questions" ("id" SERIAL,
+CREATE TABLE IF NOT EXISTS "questions" (
+  "id" SERIAL,
   "type" VARCHAR(10) NOT NULL,
   "question" TEXT NOT NULL,
-  "creator" BIGINT NOT NULL,
+  "user_id" BIGINT NOT NULL,
   "is_approved" BOOLEAN NOT NULL DEFAULT FALSE,
   "approved_by" BIGINT DEFAULT NULL,
   "datetime_approved" TIMESTAMP DEFAULT NULL,
