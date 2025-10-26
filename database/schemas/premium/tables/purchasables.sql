@@ -12,10 +12,10 @@ EXCEPTION
 END $$;
 
 CREATE TABLE IF NOT EXISTS "purchasables" ("id" SERIAL,
-  "application_id" VARCHAR(20) NOT NULL,
+  "application_id" BIGINT NOT NULL,
   "environment" purchasable_environment NOT NULL,
   "name" VARCHAR(50) NOT NULL,
-  "sku_id" VARCHAR(20) NOT NULL,
+  "sku_id" BIGINT NOT NULL,
   "type" purchasable_type NOT NULL,
   "created_at" TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("id")

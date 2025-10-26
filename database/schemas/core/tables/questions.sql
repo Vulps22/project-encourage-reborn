@@ -2,21 +2,27 @@
 CREATE TABLE IF NOT EXISTS "questions" ("id" SERIAL,
   "type" VARCHAR(10) NOT NULL,
   "question" TEXT NOT NULL,
-  "creator" VARCHAR(20) NOT NULL,
-  "is_approved" SMALLINT NOT NULL DEFAULT 0,
-  "approved_by" VARCHAR(20) NOT NULL DEFAULT 'pre-v5-6',
+  "creator" BIGINT NOT NULL,
+  "is_approved" BOOLEAN NOT NULL DEFAULT FALSE,
+  "approved_by" BIGINT DEFAULT NULL,
   "datetime_approved" TIMESTAMP DEFAULT NULL,
-  "is_banned" SMALLINT NOT NULL DEFAULT 0,
+  "is_banned" BOOLEAN NOT NULL DEFAULT FALSE,
   "ban_reason" TEXT,
-  "banned_by" VARCHAR(20) DEFAULT NULL,
+  "banned_by" BIGINT DEFAULT NULL,
   "datetime_banned" TIMESTAMP DEFAULT NULL,
   "created" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "server_id" VARCHAR(20) NOT NULL DEFAULT 'pre-v5',
-  "message_id" VARCHAR(20) DEFAULT 'pre-v5',
-  "is_deleted" SMALLINT NOT NULL DEFAULT 0,
+  "server_id" BIGINT DEFAULT NULL,
+  "message_id" BIGINT DEFAULT NULL,
+  "is_deleted" BOOLEAN NOT NULL DEFAULT FALSE,
   "datetime_deleted" TIMESTAMP DEFAULT NULL,
   PRIMARY KEY ("id")
 );
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS "idx_type_approved" ON "questions"("type", "is_approved", "is_banned");
+CREATE INDEX IF NOT EXISTS "idx_server" ON "questions"("server_id");
+CREATE INDEX IF NOT EXISTS "idx_creator" ON "questions"("creator");
+CREATE INDEX IF NOT EXISTS "idx_created" ON "questions"("created");
  
 COMMENT ON TABLE "questions" IS 'Stores all truth and dare questions submitted by users';
 COMMENT ON COLUMN "questions"."id" IS 'Unique identifier for the question';

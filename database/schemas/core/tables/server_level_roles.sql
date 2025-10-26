@@ -1,7 +1,8 @@
 
-CREATE TABLE IF NOT EXISTS "server_level_roles" ("server_id" VARCHAR(20) NOT NULL,
-  "role_id" VARCHAR(20) NOT NULL,
-  "level" INTEGER NOT NULL DEFAULT 0,
+CREATE TABLE IF NOT EXISTS "server_level_roles" ("server_id" BIGINT NOT NULL,
+  "role_id" BIGINT NOT NULL,
+  "level" INTEGER NOT NULL,
+  PRIMARY KEY ("server_id", "role_id"),
   CONSTRAINT "fk_server_level_roles_server_id" FOREIGN KEY ("server_id") REFERENCES "servers" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 );
  

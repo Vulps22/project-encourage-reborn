@@ -1,6 +1,6 @@
 
-CREATE TABLE IF NOT EXISTS "user_vote" ("message_id" VARCHAR(20) NOT NULL,
-  "user_id" VARCHAR(20) NOT NULL,
+CREATE TABLE IF NOT EXISTS "user_vote" ("message_id" BIGINT NOT NULL,
+  "user_id" BIGINT NOT NULL,
   PRIMARY KEY ("message_id")
 );
  

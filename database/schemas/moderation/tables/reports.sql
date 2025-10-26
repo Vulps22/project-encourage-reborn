@@ -9,11 +9,11 @@ CREATE TABLE IF NOT EXISTS "reports" ("id" SERIAL,
   "type" TEXT NOT NULL,
   "reason" TEXT NOT NULL,
   "status" report_status NOT NULL DEFAULT 'pending',
-  "moderator_id" VARCHAR(20) DEFAULT NULL,
+  "moderator_id" BIGINT DEFAULT NULL,
   "ban_reason" TEXT,
-  "sender_id" VARCHAR(20) NOT NULL,
-  "offender_id" VARCHAR(20) NOT NULL,
-  "server_id" VARCHAR(20) NOT NULL,
+  "sender_id" BIGINT NOT NULL,
+  "offender_id" BIGINT NOT NULL,
+  "server_id" BIGINT NOT NULL,
   "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("id")
@@ -33,6 +33,12 @@ CREATE TRIGGER trg_reports_updated_at
 BEFORE UPDATE ON "reports"
 FOR EACH ROW
 EXECUTE FUNCTION update_reports_updated_at();
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS "idx_status" ON "reports"("status");
+CREATE INDEX IF NOT EXISTS "idx_offender" ON "reports"("offender_id");
+CREATE INDEX IF NOT EXISTS "idx_server" ON "reports"("server_id");
+CREATE INDEX IF NOT EXISTS "idx_created" ON "reports"("created_at");
  
 COMMENT ON TABLE "reports" IS 'Stores user reports for inappropriate questions or behavior';
 COMMENT ON COLUMN "reports"."id" IS 'Unique identifier for the report';

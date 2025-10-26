@@ -1,20 +1,28 @@
 
-CREATE TABLE IF NOT EXISTS "user_questions" ("message_id" VARCHAR(20) NOT NULL,
-  "user_id" VARCHAR(20) NOT NULL,
+CREATE TABLE IF NOT EXISTS "user_questions" ("message_id" BIGINT NOT NULL,
+  "user_id" BIGINT NOT NULL,
   "question_id" INTEGER NOT NULL,
-  "server_id" VARCHAR(20) NOT NULL,
-  "channel_id" VARCHAR(20) NOT NULL DEFAULT 'PRE_5_7_0',
+  "server_id" BIGINT NOT NULL,
+  "channel_id" BIGINT DEFAULT NULL,
   "username" TEXT NOT NULL,
   "image_url" TEXT,
   "done_count" INTEGER NOT NULL DEFAULT 0,
   "failed_count" INTEGER NOT NULL DEFAULT 0,
-  "skipped" SMALLINT NOT NULL DEFAULT 0,
+  "skipped" BOOLEAN NOT NULL DEFAULT FALSE,
   "type" VARCHAR(10) NOT NULL,
   "final_result" VARCHAR(10) DEFAULT NULL,
   "finalised_datetime" TIMESTAMP DEFAULT NULL,
   "datetime_created" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("message_id")
 );
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS "idx_user" ON "user_questions"("user_id");
+CREATE INDEX IF NOT EXISTS "idx_server" ON "user_questions"("server_id");
+CREATE INDEX IF NOT EXISTS "idx_question" ON "user_questions"("question_id");
+CREATE INDEX IF NOT EXISTS "idx_created" ON "user_questions"("datetime_created");
+CREATE INDEX IF NOT EXISTS "idx_type" ON "user_questions"("type");
+CREATE INDEX IF NOT EXISTS "idx_final_result" ON "user_questions"("final_result");
  
 COMMENT ON TABLE "user_questions" IS 'Tracks user responses to questions with voting and completion status';
 COMMENT ON COLUMN "user_questions"."question_id" IS 'ID reference to questions table';
