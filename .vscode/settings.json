@@ -1,6 +1,8 @@
 {
     "files.exclude": {
         "**/.git": false,
-        "**/.vscode": true
+        "**/.vscode": true,
+        "**/.env": true,
+        "**/.env.*": true
     }
 }
