@@ -1,2 +1,2 @@
 // Barrel file for types
-export {};
+export { EventHandler } from './EventHandler';
