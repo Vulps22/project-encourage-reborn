@@ -30,7 +30,7 @@ export abstract class BotRepliableInteraction extends BotInteraction {
     return this._interaction.deferReply(options);
   }
 
-  async sendReply(content: string, options: InteractionReplyOptions = {}): Promise<void> {
+  async sendReply(content: string | null, options: InteractionReplyOptions = {}): Promise<void> {
     const replyOptions: InteractionReplyOptions = { ...options };
     if (content && content.length > 0) {
       replyOptions.content = content;
