@@ -29,6 +29,13 @@ const create = new Command('create', 'Submit a custom truth or dare question')
 
     const savedQuestion = await questionService.createQuestion(type as QuestionType, question, interaction.user.id, interaction.guildId);
 
+    if(typeof savedQuestion === 'string') {
+      await interaction.editReply({
+        content: `❌ ${savedQuestion}`,
+      });
+      return;
+    }
+
     const response = confirmNewQuestionEmbed(savedQuestion);
 
     // For now, just acknowledge
