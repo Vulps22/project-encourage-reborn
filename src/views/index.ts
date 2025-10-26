@@ -1,2 +1,2 @@
 // Barrel file for views
-export {};
+export {confirmNewQuestionEmbed} from './question_views/confirmNewQuestionEmbed';

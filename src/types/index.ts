@@ -1,2 +1,4 @@
 // Barrel file for types
-export {};
+export { CommandHandler } from './CommandHandler';
+export { EventHandler } from './EventHandler';
+export { QuestionType } from './QuestionType';

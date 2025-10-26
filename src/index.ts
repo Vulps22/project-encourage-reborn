@@ -2,9 +2,13 @@ import { ShardingManager } from 'discord.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { DatabaseService } from './services/DatabaseService';
+import { Logger } from './utils/Logger';
 
 // Load environment variables
 dotenv.config();
+
+// Initialize Logger with sensitive values from .env
+Logger.initialize();
 
 const token = process.env.DISCORD_TOKEN;
 
@@ -28,7 +32,7 @@ if (!dbHost || !dbUser || !dbPassword || !dbName) {
  * Test database connection before starting shards
  */
 async function testDatabaseConnection(): Promise<void> {
-    console.log('Testing database connection...');
+    Logger.debug('Testing database connection...');
     
     const db = new DatabaseService({
         host: dbHost!,
@@ -40,7 +44,7 @@ async function testDatabaseConnection(): Promise<void> {
 
     try {
         await db.testConnection();
-        console.log('✓ Database connection successful');
+        Logger.debug('✓ Database connection successful');
         await db.close();
     } catch (error) {
         console.error('✗ Database connection failed:', error instanceof Error ? error.message : String(error));
@@ -56,7 +60,7 @@ async function startBot(): Promise<void> {
     // Test database connection first
     await testDatabaseConnection();
 
-    console.log('Starting bot...');
+    Logger.debug('Starting bot...');
 
     // Create sharding manager
     const manager = new ShardingManager(path.join(__dirname, 'bot.js'), {
@@ -65,7 +69,7 @@ async function startBot(): Promise<void> {
     });
 
     manager.on('shardCreate', (shard) => {
-        console.log(`Launched shard ${shard.id}`);
+        Logger.debug(`Launched shard ${shard.id}`);
     });
 
     // Spawn shards

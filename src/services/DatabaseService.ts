@@ -80,17 +80,20 @@ export class DatabaseService {
 
   /**
    * Get a single record matching conditions
+   * @param schema Schema name
    * @param table Table name
    * @param conditions WHERE conditions as key-value pairs
    * @param options Query options (offset for pagination)
    * @returns Single record or null if not found
    */
   async get<T = any>(
+    schema: string,
     table: string,
     conditions: Record<string, any>,
     options?: QueryOptions
   ): Promise<T | null> {
     try {
+      this.validateTableName(schema);
       this.validateTableName(table);
 
       if (Object.keys(conditions).length === 0) {
@@ -107,7 +110,7 @@ export class DatabaseService {
         })
         .join(' AND ');
 
-      let query = `SELECT * FROM "${table}" WHERE ${whereClause} LIMIT 1`;
+      let query = `SELECT * FROM "${schema}"."${table}" WHERE ${whereClause} LIMIT 1`;
 
       if (options?.offset !== undefined) {
         query += ` OFFSET $${paramIndex}`;
@@ -119,26 +122,29 @@ export class DatabaseService {
 
       return result.rows.length > 0 ? result.rows[0] as T : null;
     } catch (error) {
-      throw new Error(`Failed to get record from ${table}: ${this.getErrorMessage(error)}`);
+      throw new Error(`Failed to get record from ${schema}.${table}: ${this.getErrorMessage(error)}`);
     }
   }
 
   /**
    * List records with optional filtering
+   * @param schema Schema name
    * @param table Table name
    * @param conditions WHERE conditions as key-value pairs
    * @param options Query options (limit, offset)
    * @returns Array of records
    */
   async list<T = any>(
+    schema: string,
     table: string,
     conditions: Record<string, any> = {},
     options?: QueryOptions
   ): Promise<T[]> {
     try {
+      this.validateTableName(schema);
       this.validateTableName(table);
 
-      let query = `SELECT * FROM "${table}"`;
+      let query = `SELECT * FROM "${schema}"."${table}"`;
       const values: any[] = [];
       let paramIndex = 1;
 
@@ -168,21 +174,23 @@ export class DatabaseService {
       const result = await client.query(query, values);
       return result.rows as T[];
     } catch (error) {
-      throw new Error(`Failed to list records from ${table}: ${this.getErrorMessage(error)}`);
+      throw new Error(`Failed to list records from ${schema}.${table}: ${this.getErrorMessage(error)}`);
     }
   }
 
   /**
    * Count records with optional filtering
+   * @param schema Schema name
    * @param table Table name
    * @param conditions WHERE conditions as key-value pairs
    * @returns Number of matching records
    */
-  async count(table: string, conditions: Record<string, any> = {}): Promise<number> {
+  async count(schema: string, table: string, conditions: Record<string, any> = {}): Promise<number> {
     try {
+      this.validateTableName(schema);
       this.validateTableName(table);
 
-      let query = `SELECT COUNT(*) as count FROM "${table}"`;
+      let query = `SELECT COUNT(*) as count FROM "${schema}"."${table}"`;
       const values: any[] = [];
       let paramIndex = 1;
 
@@ -202,18 +210,20 @@ export class DatabaseService {
       const result = await client.query(query, values);
       return parseInt(result.rows[0].count);
     } catch (error) {
-      throw new Error(`Failed to count records in ${table}: ${this.getErrorMessage(error)}`);
+      throw new Error(`Failed to count records in ${schema}.${table}: ${this.getErrorMessage(error)}`);
     }
   }
 
   /**
    * Insert a new record
+   * @param schema Schema name
    * @param table Table name
    * @param data Record data as key-value pairs
    * @returns Mutation result with insertId
    */
-  async insert(table: string, data: Record<string, any>): Promise<MutationResult> {
+  async insert(schema: string, table: string, data: Record<string, any>): Promise<MutationResult> {
     try {
+      this.validateTableName(schema);
       this.validateTableName(table);
 
       if (Object.keys(data).length === 0) {
@@ -228,7 +238,7 @@ export class DatabaseService {
       const placeholders = values.map(() => `$${paramIndex++}`).join(', ');
       const columnNames = columns.map((col) => `"${col}"`).join(', ');
 
-      const query = `INSERT INTO "${table}" (${columnNames}) VALUES (${placeholders}) RETURNING *`;
+      const query = `INSERT INTO "${schema}"."${table}" (${columnNames}) VALUES (${placeholders}) RETURNING *`;
       const client = this.transactionClient || this.pool;
       const result = await client.query(query, values);
 
@@ -238,23 +248,26 @@ export class DatabaseService {
         rows: result.rows,
       };
     } catch (error) {
-      throw new Error(`Failed to insert record into ${table}: ${this.getErrorMessage(error)}`);
+      throw new Error(`Failed to insert record into ${schema}.${table}: ${this.getErrorMessage(error)}`);
     }
   }
 
   /**
    * Update existing records
+   * @param schema Schema name
    * @param table Table name
    * @param data Updated data as key-value pairs
    * @param conditions WHERE conditions as key-value pairs
    * @returns Mutation result with affectedRows and changedRows
    */
   async update(
+    schema: string,
     table: string,
     data: Record<string, any>,
     conditions: Record<string, any>
   ): Promise<MutationResult> {
     try {
+      this.validateTableName(schema);
       this.validateTableName(table);
 
       if (Object.keys(data).length === 0) {
@@ -286,7 +299,7 @@ export class DatabaseService {
         })
         .join(' AND ');
 
-      const query = `UPDATE "${table}" SET ${setClause} WHERE ${whereClause}`;
+      const query = `UPDATE "${schema}"."${table}" SET ${setClause} WHERE ${whereClause}`;
       const client = this.transactionClient || this.pool;
       const result = await client.query(query, values);
 
@@ -295,18 +308,20 @@ export class DatabaseService {
         changedRows: result.rowCount || 0,
       };
     } catch (error) {
-      throw new Error(`Failed to update records in ${table}: ${this.getErrorMessage(error)}`);
+      throw new Error(`Failed to update records in ${schema}.${table}: ${this.getErrorMessage(error)}`);
     }
   }
 
   /**
    * Delete records
+   * @param schema Schema name
    * @param table Table name
    * @param conditions WHERE conditions as key-value pairs
    * @returns Mutation result with affectedRows
    */
-  async delete(table: string, conditions: Record<string, any>): Promise<MutationResult> {
+  async delete(schema: string, table: string, conditions: Record<string, any>): Promise<MutationResult> {
     try {
+      this.validateTableName(schema);
       this.validateTableName(table);
 
       if (Object.keys(conditions).length === 0) {
@@ -325,7 +340,7 @@ export class DatabaseService {
         })
         .join(' AND ');
 
-      const query = `DELETE FROM "${table}" WHERE ${whereClause}`;
+      const query = `DELETE FROM "${schema}"."${table}" WHERE ${whereClause}`;
       const client = this.transactionClient || this.pool;
       const result = await client.query(query, values);
 
@@ -333,7 +348,7 @@ export class DatabaseService {
         affectedRows: result.rowCount || 0,
       };
     } catch (error) {
-      throw new Error(`Failed to delete records from ${table}: ${this.getErrorMessage(error)}`);
+      throw new Error(`Failed to delete records from ${schema}.${table}: ${this.getErrorMessage(error)}`);
     }
   }
 
