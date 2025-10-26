@@ -7,6 +7,40 @@ import { BaseInteraction, TextChannel } from 'discord.js';
  * by editing messages as status changes occur.
  */
 export class Logger {
+  private static sensitiveValues: Set<string> = new Set();
+
+  /**
+   * Initialize the logger by caching all sensitive values from environment variables
+   * Call this once at bot startup
+   */
+  static initialize(): void {
+    // Cache all non-empty env values as sensitive
+    for (const value of Object.values(process.env)) {
+      if (value && value.length > 0) {
+        this.sensitiveValues.add(value);
+      }
+    }
+  }
+
+  /**
+   * Sanitize a message by replacing all sensitive values with 'xxxxxxxxxxxx'
+   * @param message The message to sanitize
+   * @returns The sanitized message safe for streaming
+   */
+  private static sanitize(message: string): string {
+    let sanitized = message;
+    
+    // Replace each sensitive value with xxxxxxxxxxxx
+    for (const sensitive of this.sensitiveValues) {
+      // Escape special regex characters in the sensitive value
+      const escaped = sensitive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'gi');
+      sanitized = sanitized.replace(regex, 'xxxxxxxxxxxx');
+    }
+    
+    return sanitized;
+  }
+
   /**
    * Log that an interaction was received
    * @param interaction Discord interaction object
@@ -72,6 +106,9 @@ export class Logger {
         return;
       }
 
+      // Sanitize the message before sending
+      const sanitized = this.sanitize(message);
+
       // Find and update message via the correct shard
       await global.client.shard!.broadcastEval(
         async (c, { channelId, msgId, newMsg }) => {
@@ -85,7 +122,7 @@ export class Logger {
           }
           return false;
         },
-        { context: { channelId: logChannelId, msgId: executionId, newMsg: message } }
+        { context: { channelId: logChannelId, msgId: executionId, newMsg: sanitized } }
       );
     } catch (error) {
       console.error('Failed to update execution log:', error);
@@ -93,7 +130,7 @@ export class Logger {
   }
 
   /**
-   * Send a log message to the log channel
+   * Send a log message to the log channel (STREAMER SAFE - auto-redacts sensitive data)
    * @param message Message to log
    */
   static async log(message: string): Promise<void> {
@@ -102,6 +139,9 @@ export class Logger {
       if (!logChannelId) {
         return;
       }
+
+      // Sanitize the message before sending
+      const sanitized = this.sanitize(message);
 
       // Send message via the correct shard
       await global.client.shard!.broadcastEval(
@@ -113,10 +153,30 @@ export class Logger {
           }
           return false;
         },
-        { context: { channelId: logChannelId, msg: message } }
+        { context: { channelId: logChannelId, msg: sanitized } }
       );
     } catch (error) {
       console.error('Failed to send log message:', error);
     }
+  }
+
+  /**
+   * Debug logging to console (STREAMER SAFE - auto-redacts sensitive data)
+   * Replaces console.log with automatic sanitization of sensitive values
+   * @param message Message to log to console
+   */
+  static debug(message: string): void {
+    const sanitized = this.sanitize(message);
+    console.log(sanitized);
+  }
+
+  /**
+   * Error logging to both console and discord
+   * @param message the message to display
+   * @throws Error with "Not Implemented Yet"
+   */
+  static error(message: string): void {
+    console.error(this.sanitize(message));
+    throw new Error("Not Implemented Yet");
   }
 }
