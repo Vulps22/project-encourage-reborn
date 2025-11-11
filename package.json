@@ -12,7 +12,7 @@
     "coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "db:fresh-install": "node database/scripts/fresh-install.js",
+    "db:install": "node database/scripts/fresh-install.js",
     "db:rollout": "node database/scripts/rollout.js",
     "db:rollback": "node database/scripts/rollback.js"
   },

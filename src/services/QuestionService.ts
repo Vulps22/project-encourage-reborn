@@ -6,13 +6,13 @@ import { Question } from '../interface';
 export class QuestionService {
   constructor(private db: DatabaseService) {}
 
-  async createQuestion(type: QuestionType, question: string, userId: Snowflake, serverId: Snowflake): Promise<Question> {
+  async createQuestion(type: QuestionType, question: string, userId: Snowflake, serverId: Snowflake): Promise<Question | string> {
     if (question.length < 5) {
-      throw new Error('Question must be at least 5 characters long');
+      return 'Question must be at least 5 characters long';
     }
 
     if (question.length > 500) {
-      throw new Error('Question must be 500 characters or less');
+      return 'Question must be 500 characters or less';
     }
 
     const result = await this.db.insert('core', 'questions', {

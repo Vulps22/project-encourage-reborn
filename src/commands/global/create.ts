@@ -17,7 +17,7 @@ const create = new Command('create', 'Submit a custom truth or dare question')
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
     await interaction.deferReply({ ephemeral: true });
 
-    if(!interaction.guildId) {
+    if (!interaction.guildId) {
       await interaction.editReply({
         content: '❌ This command can only be used in a server.',
       });
@@ -28,6 +28,13 @@ const create = new Command('create', 'Submit a custom truth or dare question')
     const question = interaction.options.getString('question', true);
 
     const savedQuestion = await questionService.createQuestion(type as QuestionType, question, interaction.user.id, interaction.guildId);
+
+    if (typeof savedQuestion === 'string') {
+      await interaction.editReply({
+        content: `❌ ${savedQuestion}`,
+      });
+      return;
+    }
 
     const response = confirmNewQuestionEmbed(savedQuestion);
 
