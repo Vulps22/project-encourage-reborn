@@ -6,7 +6,7 @@ import { Question } from '../interface';
 export class QuestionService {
   constructor(private db: DatabaseService) {}
 
-  async createQuestion(type: QuestionType, question: string, userId: Snowflake, serverId: Snowflake): Promise<Question |string> {
+  async createQuestion(type: QuestionType, question: string, userId: Snowflake, serverId: Snowflake): Promise<Question | string> {
     if (question.length < 5) {
       return 'Question must be at least 5 characters long';
     }
