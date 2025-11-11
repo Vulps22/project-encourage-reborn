@@ -1,3 +1,4 @@
+// Copilot: this file exists in root for easy access to confirm logger is outputting sensitive data in a redacted manner safe for streaming on twitch
 import dotenv from 'dotenv';
 import { Logger } from './utils/Logger';
 
