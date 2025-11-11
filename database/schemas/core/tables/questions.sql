@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS "questions" (
 -- Performance indexes
 CREATE INDEX IF NOT EXISTS "idx_type_approved" ON "questions"("type", "is_approved", "is_banned");
 CREATE INDEX IF NOT EXISTS "idx_server" ON "questions"("server_id");
-CREATE INDEX IF NOT EXISTS "idx_creator" ON "questions"("creator");
+CREATE INDEX IF NOT EXISTS "idx_user_id" ON "questions"("user_id");
 CREATE INDEX IF NOT EXISTS "idx_created" ON "questions"("created");
  
 COMMENT ON TABLE "questions" IS 'Stores all truth and dare questions submitted by users';
