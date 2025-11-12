@@ -3,6 +3,7 @@ import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { Command, Logger } from './utils';
 import { EventHandler } from './types';
+import { Config } from './config';
 
 // Initialize Discord client for this shard
 const client = new Client({
@@ -13,6 +14,9 @@ const client = new Client({
 
 // Set global client
 global.client = client;
+
+// Initialize global config
+global.config = Config;
 
 // Initialize commands collection
 global.commands = new Collection<string, Command>();
