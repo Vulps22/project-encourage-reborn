@@ -13,15 +13,15 @@ async function newQuestionView(question: Question): Promise<UniversalMessage> {
     const client = global.client;
     
     //get the user's username. do not use cache
-    //const user = await client.users.fetch(question.user_id);
-    //const username = user ? user.username : "Unknown User";
+    const user = await client.users.fetch(question.user_id);
+    const username = user ? user.username : "Unknown User";
 
     //get the server's name. do not use cache
     const guild = await client.guilds.fetch(question.server_id);
 
     const authorInfo = new TextDisplayBuilder()
-    .setContent(`**Submitted by:**\n<@${question.user_id}> | ${question.user_id})`);
-    //.setContent(`**Submitted by:** ${username} (User ID: ${question.user_id})`);
+    //.setContent(`**Submitted by:**\n<@${question.user_id}> | ${question.user_id})`);
+    .setContent(`**Submitted by:** ${username} (User ID: ${question.user_id})`);
 
     const serverInfo = new TextDisplayBuilder()
     .setContent(`**Server Name:**\n${guild.name} | ${question.server_id}`);

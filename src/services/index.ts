@@ -25,4 +25,4 @@ export const db = new DatabaseService({
 
 // Create service instances with dependency injection
 export const questionService = new QuestionService(db);
-export const moderationService = new ModerationService(db);
+export const moderationService = new ModerationService();
