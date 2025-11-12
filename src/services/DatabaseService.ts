@@ -252,65 +252,59 @@ export class DatabaseService {
     }
   }
 
-  /**
-   * Update existing records
-   * @param schema Schema name
-   * @param table Table name
-   * @param data Updated data as key-value pairs
-   * @param conditions WHERE conditions as key-value pairs
-   * @returns Mutation result with affectedRows and changedRows
-   */
   async update(
-    schema: string,
-    table: string,
-    data: Record<string, any>,
-    conditions: Record<string, any>
-  ): Promise<MutationResult> {
-    try {
-      this.validateTableName(schema);
-      this.validateTableName(table);
+  schema: string,
+  table: string,
+  data: Record<string, any>,
+  conditions: Record<string, any>
+): Promise<MutationResult> {
+  let query = '';  // Declare here
+  let values: any[] = [];  // Declare here
+  
+  try {
+    this.validateTableName(schema);
+    this.validateTableName(table);
 
-      if (Object.keys(data).length === 0) {
-        throw new Error('Update data cannot be empty');
-      }
-
-      if (Object.keys(conditions).length === 0) {
-        throw new Error('Update conditions cannot be empty - this prevents accidental full table updates');
-      }
-
-      const values: any[] = [];
-      let paramIndex = 1;
-
-      // Build SET clause
-      const setClause = Object.keys(data)
-        .map((key) => {
-          this.validateColumnName(key);
-          values.push(data[key]);
-          return `"${key}" = $${paramIndex++}`;
-        })
-        .join(', ');
-
-      // Build WHERE clause
-      const whereClause = Object.keys(conditions)
-        .map((key) => {
-          this.validateColumnName(key);
-          values.push(conditions[key]);
-          return `"${key}" = $${paramIndex++}`;
-        })
-        .join(' AND ');
-
-      const query = `UPDATE "${schema}"."${table}" SET ${setClause} WHERE ${whereClause}`;
-      const client = this.transactionClient || this.pool;
-      const result = await client.query(query, values);
-
-      return {
-        affectedRows: result.rowCount || 0,
-        changedRows: result.rowCount || 0,
-      };
-    } catch (error) {
-      throw new Error(`Failed to update records in ${schema}.${table}: ${this.getErrorMessage(error)}`);
+    if (Object.keys(data).length === 0) {
+      throw new Error('Update data cannot be empty');
     }
+
+    if (Object.keys(conditions).length === 0) {
+      throw new Error('Update conditions cannot be empty - this prevents accidental full table updates');
+    }
+
+    let paramIndex = 1;
+
+    // Build SET clause
+    const setClause = Object.keys(data)
+      .map((key) => {
+        this.validateColumnName(key);
+        values.push(data[key]);
+        return `"${key}" = $${paramIndex++}`;
+      })
+      .join(', ');
+
+    // Build WHERE clause
+    const whereClause = Object.keys(conditions)
+      .map((key) => {
+        this.validateColumnName(key);
+        values.push(conditions[key]);
+        return `"${key}" = $${paramIndex++}`;
+      })
+      .join(' AND ');
+
+    query = `UPDATE "${schema}"."${table}" SET ${setClause} WHERE ${whereClause}`;
+    const client = this.transactionClient || this.pool;
+    const result = await client.query(query, values);
+
+    return {
+      affectedRows: result.rowCount || 0,
+      changedRows: result.rowCount || 0,
+    };
+  } catch (error) {
+    throw new Error(`Failed to update records in ${schema}.${table}: ${this.getErrorMessage(error)}\nQuery: ${query}\nValues: ${JSON.stringify(values)}`);
   }
+}
 
   /**
    * Delete records

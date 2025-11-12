@@ -619,4 +619,63 @@ describe('DatabaseService', () => {
       ).resolves.not.toThrow();
     });
   });
+
+  describe('enhanced error reporting', () => {
+    it('should include basic error message for get method', async () => {
+      const dbError = new Error('relation "users" does not exist');
+      mockPool.query.mockRejectedValue(dbError);
+
+      await expect(dbService.get('core', 'users', { id: 123 }))
+        .rejects.toThrow('Failed to get record from core.users: relation "users" does not exist');
+    });
+
+    it('should include query and values in error for update method', async () => {
+      const dbError = new Error('column "invalid_column" does not exist');
+      mockPool.query.mockRejectedValue(dbError);
+
+      await expect(dbService.update('core', 'users', { name: 'John' }, { id: 123 }))
+        .rejects.toThrow(/Failed to update records in core\.users: column "invalid_column" does not exist\nQuery: UPDATE "core"\."users" SET "name" = \$1 WHERE "id" = \$2\nValues: \["John",123\]/);
+    });
+
+    it('should include basic error message for insert method', async () => {
+      const dbError = new Error('duplicate key value violates unique constraint');  
+      mockPool.query.mockRejectedValue(dbError);
+
+      await expect(dbService.insert('core', 'users', { name: 'John', email: 'john@example.com' }))
+        .rejects.toThrow('Failed to insert record into core.users: duplicate key value violates unique constraint');
+    });
+
+    it('should include basic error message for delete method', async () => {
+      const dbError = new Error('permission denied for table users');
+      mockPool.query.mockRejectedValue(dbError);
+
+      await expect(dbService.delete('core', 'users', { id: 123 }))
+        .rejects.toThrow('Failed to delete records from core.users: permission denied for table users');
+    });
+
+    it('should include basic error message for raw query method', async () => {
+      const dbError = new Error('syntax error at or near "SELCT"');
+      mockPool.query.mockRejectedValue(dbError);
+
+      await expect(dbService.query('SELCT * FROM users WHERE id = $1', [123]))
+        .rejects.toThrow('Query execution failed: syntax error at or near "SELCT"');
+    });
+
+    it('should handle errors without values array', async () => {
+      const dbError = new Error('connection terminated');
+      mockPool.query.mockRejectedValue(dbError);
+
+      await expect(dbService.query('SELECT 1'))
+        .rejects.toThrow('Query execution failed: connection terminated');
+    });
+
+    it('should handle JSON.stringify error with BigInt values', async () => {
+      const dbError = new Error('type mismatch');
+      mockPool.query.mockRejectedValue(dbError);
+
+      // BigInt cannot be serialized by JSON.stringify, so this should throw a different error
+      await expect(dbService.update('core', 'test', { name: 'test string', active: true }, { id: BigInt('123456789012345678') }))
+        .rejects.toThrow('Do not know how to serialize a BigInt');
+    });
+  });
 });

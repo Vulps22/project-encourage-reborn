@@ -230,6 +230,6 @@ static async logQuestion(question: Question, channelId: Snowflake): Promise<void
    */
   static error(message: string): void {
     console.error(this.sanitize(message));
-    throw new Error("Not Implemented Yet");
+    //throw new Error("Not Implemented Yet");
   }
 }

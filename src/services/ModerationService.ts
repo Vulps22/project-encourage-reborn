@@ -1,12 +1,11 @@
-//import { DatabaseService } from './DatabaseService';
+import { DatabaseService } from './DatabaseService';
 import { Question } from '../interface';
 import { Logger } from '../utils';
-import { NotImplementedYet } from '../errors';
 import { QuestionType } from '../types';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class ModerationService {
-    //constructor(private db: DatabaseService) {}
+    constructor(private db: DatabaseService) {}
 
     /**
      * Send a question to the approval queue for moderation
@@ -39,8 +38,32 @@ export class ModerationService {
      * @param questionId - ID of the question to approve
      * @param moderatorId - ID of the moderator approving
      */
-    async approveQuestion(_questionId: string, _moderatorId: string): Promise<void> {
-        throw new NotImplementedYet();
+    async approveQuestion(questionId: string, moderatorId: string): Promise<void> {
+        Logger.debug(`Approving question ${questionId} by moderator ${moderatorId}`);
+        
+        try {
+            // Update the question in the database
+            const result = await this.db.update(
+                'core',
+                'questions',
+                {
+                    is_approved: true,
+                    approved_by: BigInt(moderatorId),
+                    datetime_approved: new Date()
+                },
+                { id: parseInt(questionId) }
+            );
+
+            if (result.affectedRows === 0) {
+                throw new Error(`Question with ID ${questionId} not found`);
+            }
+
+            Logger.debug(`Question ${questionId} approved successfully`);
+            
+        } catch (error) {
+            Logger.debug(`Failed to approve question ${questionId}: ${error}`);
+            throw error;
+        }
     }
 
     /**
@@ -49,8 +72,33 @@ export class ModerationService {
      * @param moderatorId - ID of the moderator banning
      * @param reason - Reason for banning
      */
-    async banQuestion(_questionId: string, _moderatorId: string, _reason: string): Promise<void> {
-        throw new NotImplementedYet();
+    async banQuestion(questionId: string, moderatorId: string, reason: string): Promise<void> {
+        Logger.debug(`Banning question ${questionId} by moderator ${moderatorId} with reason: ${reason}`);
+        
+        try {
+            // Update the question in the database
+            const result = await this.db.update(
+                'core',
+                'questions',
+                {
+                    is_banned: true,
+                    banned_by: moderatorId,
+                    ban_reason: reason,
+                    datetime_banned: new Date()
+                },
+                { id: parseInt(questionId) }
+            );
+
+            if (result.affectedRows === 0) {
+                throw new Error(`Question with ID ${questionId} not found`);
+            }
+
+            Logger.debug(`Question ${questionId} banned successfully`);
+            
+        } catch (error) {
+            Logger.debug(`Failed to ban question ${questionId}: ${error}`);
+            throw error;
+        }
     }
 
 }

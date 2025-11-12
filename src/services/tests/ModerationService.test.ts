@@ -1,4 +1,5 @@
 import { ModerationService } from '../ModerationService';
+import { DatabaseService, MutationResult } from '../DatabaseService';
 import { Question } from '../../interface';
 import { QuestionType } from '../../types';
 import { Logger } from '../../utils';
@@ -23,6 +24,7 @@ jest.mock('../../utils/Logger', () => ({
 
 describe('ModerationService', () => {
     let moderationService: ModerationService;
+    let mockDb: jest.Mocked<DatabaseService>;
     let originalGlobal: any;
 
     const mockQuestion: Question = {
@@ -63,7 +65,22 @@ describe('ModerationService', () => {
         // Set up global mocks
         (global as any).config = mockConfig;
 
-        moderationService = new ModerationService();
+        // Create mock database service
+        mockDb = {
+            update: jest.fn(),
+            get: jest.fn(),
+            list: jest.fn(),
+            count: jest.fn(),
+            insert: jest.fn(),
+            delete: jest.fn(),
+            query: jest.fn(),
+            execute: jest.fn(),
+            transaction: jest.fn(),
+            testConnection: jest.fn(),
+            close: jest.fn()
+        } as any;
+
+        moderationService = new ModerationService(mockDb);
     });
 
     describe('sendToApprovalQueue', () => {
@@ -95,16 +112,93 @@ describe('ModerationService', () => {
     });
 
     describe('approveQuestion', () => {
-        it('should throw not implemented error', async () => {
-            await expect(moderationService.approveQuestion('1', '123456789'))
-                .rejects.toThrow('This feature is not yet implemented');
+        it('should successfully approve a question', async () => {
+            const mockResult: MutationResult = {
+                affectedRows: 1,
+                changedRows: 1
+            };
+            mockDb.update.mockResolvedValue(mockResult);
+
+            await moderationService.approveQuestion('1', '123456789012345678');
+
+            expect(mockDb.update).toHaveBeenCalledWith(
+                'core',
+                'questions',
+                {
+                    is_approved: true,
+                    approved_by: BigInt('123456789012345678'),
+                    datetime_approved: expect.any(Date)
+                },
+                { id: 1 }
+            );
+            expect(Logger.debug).toHaveBeenCalledWith('Approving question 1 by moderator 123456789012345678');
+            expect(Logger.debug).toHaveBeenCalledWith('Question 1 approved successfully');
+        });
+
+        it('should throw error if question not found', async () => {
+            const mockResult: MutationResult = {
+                affectedRows: 0,
+                changedRows: 0
+            };
+            mockDb.update.mockResolvedValue(mockResult);
+
+            await expect(moderationService.approveQuestion('999', '123456789012345678'))
+                .rejects.toThrow('Question with ID 999 not found');
+        });
+
+        it('should handle database errors', async () => {
+            mockDb.update.mockRejectedValue(new Error('Database connection failed'));
+
+            await expect(moderationService.approveQuestion('1', '123456789012345678'))
+                .rejects.toThrow('Database connection failed');
+
+            expect(Logger.debug).toHaveBeenCalledWith('Failed to approve question 1: Error: Database connection failed');
         });
     });
 
     describe('banQuestion', () => {
-        it('should throw not implemented error', async () => {
-            await expect(moderationService.banQuestion('1', '123456789', 'Test reason'))
-                .rejects.toThrow('This feature is not yet implemented');
+        it('should successfully ban a question', async () => {
+            const mockResult: MutationResult = {
+                affectedRows: 1,
+                changedRows: 1
+            };
+            mockDb.update.mockResolvedValue(mockResult);
+
+            await moderationService.banQuestion('1', '123456789012345678', 'Inappropriate content');
+
+            expect(mockDb.update).toHaveBeenCalledWith(
+                'core',
+                'questions',
+                {
+                    is_banned: true,
+                    banned_by: '123456789012345678',
+                    ban_reason: 'Inappropriate content',
+                    datetime_banned: expect.any(Date)
+                },
+                { id: 1 }
+            );
+            expect(Logger.debug).toHaveBeenCalledWith('Banning question 1 by moderator 123456789012345678 with reason: Inappropriate content');
+            expect(Logger.debug).toHaveBeenCalledWith('Question 1 banned successfully');
+        });
+
+        it('should throw error if question not found', async () => {
+            const mockResult: MutationResult = {
+                affectedRows: 0,
+                changedRows: 0
+            };
+            mockDb.update.mockResolvedValue(mockResult);
+
+            await expect(moderationService.banQuestion('999', '123456789012345678', 'Test reason'))
+                .rejects.toThrow('Question with ID 999 not found');
+        });
+
+        it('should handle database errors', async () => {
+            mockDb.update.mockRejectedValue(new Error('Database connection failed'));
+
+            await expect(moderationService.banQuestion('1', '123456789012345678', 'Test reason'))
+                .rejects.toThrow('Database connection failed');
+
+            expect(Logger.debug).toHaveBeenCalledWith('Failed to ban question 1: Error: Database connection failed');
         });
     });
 });

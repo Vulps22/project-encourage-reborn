@@ -3,12 +3,12 @@ CREATE OR REPLACE FUNCTION "trg_set_question_review_timestamps_func"()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Set approval timestamp
-  IF NEW.is_approved = 1 AND OLD.is_approved = 0 THEN
+  IF NEW.is_approved = true AND OLD.is_approved = false THEN
     NEW.datetime_approved := CURRENT_TIMESTAMP;
   END IF;
 
   -- Set ban timestamp
-  IF NEW.is_banned = 1 AND OLD.is_banned = 0 THEN
+  IF NEW.is_banned = true AND OLD.is_banned = false THEN
     NEW.datetime_banned := CURRENT_TIMESTAMP;
   END IF;
   

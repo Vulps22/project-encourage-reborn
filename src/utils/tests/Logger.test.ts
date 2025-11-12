@@ -190,4 +190,48 @@ describe('Logger', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('error', () => {
+    it('should log error messages to console', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      Logger.error('Test error message');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Test error message');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle different error messages', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      Logger.error('Database connection failed');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Database connection failed');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should sanitize error messages', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      Logger.error('Button not found for Custom ID: unknown_handler');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Button not found for Custom ID: unknown_handler');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle long error messages', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const longMessage = 'A'.repeat(2001); // Over 2000 characters
+
+      Logger.error(longMessage);
+
+      // Logger.error just calls sanitize which doesn't truncate, so full message should be logged
+      expect(consoleSpy).toHaveBeenCalledWith(longMessage);
+
+      consoleSpy.mockRestore();
+    });
+  });
 });
