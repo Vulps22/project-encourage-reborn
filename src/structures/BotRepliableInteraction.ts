@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, ButtonInteraction, StringSelectMenuInteraction, InteractionEditReplyOptions, InteractionReplyOptions, MessageFlags } from 'discord.js';
 import { BotInteraction } from './BotInteraction';
+import { UniversalMessage } from '../types/UniversalMessage';
 
 /**
  * BotRepliableInteraction - Abstract base class for interactions that can be replied to
@@ -18,6 +19,7 @@ export abstract class BotRepliableInteraction extends BotInteraction {
   get replied() { return this._interaction.replied; }
 
   // --- REPLIABLE METHODS ---
+  // Keep these typed specifically as Discord.js expects
   reply(options: InteractionReplyOptions) {
     return this._interaction.reply(options);
   }
@@ -30,8 +32,9 @@ export abstract class BotRepliableInteraction extends BotInteraction {
     return this._interaction.deferReply(options);
   }
 
-  async sendReply(content: string | null, options: InteractionReplyOptions = {}): Promise<void> {
-    const replyOptions: InteractionReplyOptions = { ...options };
+  // Helper methods can accept UniversalMessage and handle the conversion
+  async sendReply(content: string | null, options: UniversalMessage = {}): Promise<void> {
+    const replyOptions = { ...options };
     if (content && content.length > 0) {
       replyOptions.content = content;
     }
@@ -39,14 +42,14 @@ export abstract class BotRepliableInteraction extends BotInteraction {
     if (this.deferred || this.replied) {
       await this.editReply(replyOptions as InteractionEditReplyOptions);
     } else {
-      await this.reply(replyOptions);
+      await this.reply(replyOptions as InteractionReplyOptions);
     }
   }
 
-  async ephemeralReply(content: string, options: InteractionReplyOptions = {}): Promise<void> {
+  async ephemeralReply(content: string, options: UniversalMessage = {}): Promise<void> {
     const existingFlags = Number(options.flags) || 0;
     const combinedFlags = existingFlags | MessageFlags.Ephemeral;
-    const finalOptions: InteractionReplyOptions = { ...options, flags: combinedFlags };
+    const finalOptions = { ...options, flags: combinedFlags };
 
     return this.sendReply(content, finalOptions);
   }
