@@ -1,7 +1,7 @@
 import { Interaction } from 'discord.js';
 import { EventHandler } from '../types';
 import { Logger } from '../utils';
-import { CommandInteractionEvent } from './interactionEvents';
+import { CommandInteractionEvent, ButtonInteractionEvent } from './interactionEvents';
 
 /**
  * InteractionCreate event handler
@@ -17,6 +17,12 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
         new CommandInteractionEvent().execute(interaction, executionId);
         return;
     }
+
+    if(interaction.isButton()) {
+        new ButtonInteractionEvent().execute(interaction, executionId);
+        return;
+    }
+
   },
 };
 
