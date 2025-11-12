@@ -9,6 +9,9 @@ jest.mock('../../../services', () => ({
   questionService: {
     createQuestion: jest.fn(),
   },
+  moderationService: {
+    sendToApprovalQueue: jest.fn(),
+  },
 }));
 
 jest.mock('../../../views', () => ({

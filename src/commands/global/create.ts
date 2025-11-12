@@ -1,7 +1,7 @@
-import { questionService } from '../../services';
+import { questionService, moderationService } from '../../services';
 import { BotCommandInteraction } from '../../structures';
 import { QuestionType } from '../../types/QuestionType';
-import { Command } from '../../utils';
+import { Command, Logger } from '../../utils';
 import { confirmNewQuestionEmbed } from '../../views';
 
 const create = new Command('create', 'Submit a custom truth or dare question')
@@ -35,6 +35,8 @@ const create = new Command('create', 'Submit a custom truth or dare question')
       });
       return;
     }
+    Logger.debug(`User ${interaction.user.id} submitted new question ID ${savedQuestion.id} for moderation`);
+    await moderationService.sendToApprovalQueue(savedQuestion);
 
     const response = confirmNewQuestionEmbed(savedQuestion);
 
