@@ -28,7 +28,20 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
             return;
         }
 
-        command.execute(botInteraction)
+        try {
+            await Logger.updateExecution(executionId, 'Executing');
+            await command.execute(botInteraction);
+            await Logger.updateExecution(executionId, 'Success');
+        } catch (error) {
+            console.error('Command execution error:', error);
+            await Logger.updateExecution(executionId, `Failed: ${error}`);
+            
+            // Try to send error message to user if interaction hasn't been responded to
+            if (!interaction.replied && !interaction.deferred) {
+                await botInteraction.sendReply('❌ An error occurred while processing your command.');
+            }
+        }
+
         return;
 
     }
