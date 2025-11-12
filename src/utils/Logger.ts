@@ -1,4 +1,7 @@
-import { BaseInteraction, TextChannel } from 'discord.js';
+import { BaseInteraction, MessageCreateOptions, Snowflake, TextChannel } from 'discord.js';
+import { UniversalMessage } from '../types';
+import { Question } from '../interface';
+
 
 /**
  * Logger - Static utility for logging bot execution to Discord
@@ -48,7 +51,7 @@ export class Logger {
    */
   static async logInteractionReceived(interaction: BaseInteraction): Promise<string> {
     try {
-      const logChannelId = process.env.LOG_CHANNEL_ID;
+      const logChannelId = global.config.LOG_CHANNEL_ID;
       if (!logChannelId) {
         return '';
       }
@@ -101,7 +104,7 @@ export class Logger {
         return;
       }
 
-      const logChannelId = process.env.LOG_CHANNEL_ID;
+      const logChannelId = global.config.LOG_CHANNEL_ID;
       if (!logChannelId) {
         return;
       }
@@ -134,31 +137,81 @@ export class Logger {
    * @param message Message to log
    */
   static async log(message: string): Promise<void> {
+    const logChannelId = global.config.LOG_CHANNEL_ID;
+    if (!logChannelId) {
+      return;
+    }
+    
+    await this.logTo(logChannelId, message);
+  }
+
+  /**
+   * Send a message to any channel in the official guild (STREAMER SAFE - auto-redacts sensitive data)
+   * @param channelId The channel ID to send to
+   * @param message The message content to send
+   */
+  static async logTo(channelId: string, message: string | UniversalMessage): Promise<void> {
     try {
-      const logChannelId = process.env.LOG_CHANNEL_ID;
-      if (!logChannelId) {
+      if (!channelId) {
         return;
       }
 
-      // Sanitize the message before sending
-      const sanitized = this.sanitize(message);
+      // Sanitize string messages, pass MessagePayload as-is
+      const messageData = typeof message === 'string' ? this.sanitize(message) : message;
 
       // Send message via the correct shard
       await global.client.shard!.broadcastEval(
         async (c, context) => {
           const ch = await c.channels.fetch(context.channelId).catch(() => null);
           if (ch && ch.isTextBased()) {
-            await (ch as TextChannel).send(context.msg);
+            await (ch as TextChannel).send(context.msg as any);
             return true;
           }
           return false;
         },
-        { context: { channelId: logChannelId, msg: sanitized } }
+        { context: { channelId: channelId, msg: messageData } }
       );
     } catch (error) {
-      console.error('Failed to send log message:', error);
+      console.error(`Failed to send message to channel ${channelId}:`, error);
     }
   }
+
+  // Inside Logger
+static async logQuestion(question: Question, channelId: Snowflake): Promise<void> {
+  
+  await global.client.shard!.broadcastEval(
+    async (c, context) => {
+      const ch = c.channels.cache.get(context.channelId);
+      if (ch?.isTextBased()) {
+        // Import view function using absolute path1`
+        const path = await import('path');
+        const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
+        const { newQuestionView } = await import(viewPath);
+
+        // Reconstruct dates from serialized strings
+        const questionData = {
+          ...context.question,
+          datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
+          datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
+          datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
+          created: new Date(context.question.created)
+        };
+        
+        const view = await newQuestionView(questionData);
+        await (ch as TextChannel).send(view as MessageCreateOptions);
+        return true;
+      }
+      return false;
+    },
+    { 
+      context: { 
+        channelId: channelId, 
+        question: question
+      } 
+    }
+  );
+}
+
 
   /**
    * Debug logging to console (STREAMER SAFE - auto-redacts sensitive data)

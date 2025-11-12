@@ -3,13 +3,8 @@ import { Logger } from '../Logger';
 
 describe('Logger', () => {
   let mockInteraction: any;
-  let originalEnv: NodeJS.ProcessEnv;
-  let originalClient: Client;
 
   beforeEach(() => {
-    originalEnv = process.env;
-    originalClient = global.client;
-
     mockInteraction = {
       user: {
         username: 'testuser',
@@ -21,19 +16,29 @@ describe('Logger', () => {
       },
     } as unknown as BaseInteraction;
 
-    process.env = { ...originalEnv, LOG_CHANNEL_ID: 'log-channel-123' };
+    // Mock the global config
+    (global as any).config = {
+      LOG_CHANNEL_ID: 'log-channel-123'
+    };
+
+    // Mock global client with shard
+    (global as any).client = {
+      shard: {
+        broadcastEval: jest.fn(),
+      },
+    } as unknown as Client;
 
     jest.clearAllMocks();
   });
 
   afterEach(() => {
-    process.env = originalEnv;
-    global.client = originalClient;
+    // Reset mocks
+    jest.resetAllMocks();
   });
 
   describe('logInteractionReceived', () => {
     it('should log interaction in sharded mode', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn()
             .mockResolvedValueOnce([{ found: true, shardId: 0 }])
@@ -43,13 +48,13 @@ describe('Logger', () => {
 
       const executionId = await Logger.logInteractionReceived(mockInteraction);
 
-      expect(global.client.shard?.broadcastEval).toHaveBeenCalledTimes(2);
+      expect((global as any).client.shard?.broadcastEval).toHaveBeenCalledTimes(2);
       expect(executionId).toBe('msg-456');
     });
 
     it('should return empty string if LOG_CHANNEL_ID not set', async () => {
-      delete process.env.LOG_CHANNEL_ID;
-      global.client = {
+      (global as any).config.LOG_CHANNEL_ID = '';
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn(),
         },
@@ -61,7 +66,7 @@ describe('Logger', () => {
     });
 
     it('should return empty string if channel not found in sharded mode', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn().mockResolvedValue([{ found: false, shardId: 0 }]),
         },
@@ -73,7 +78,7 @@ describe('Logger', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn().mockRejectedValue(new Error('Network error')),
         },
@@ -92,7 +97,7 @@ describe('Logger', () => {
 
   describe('updateExecution', () => {
     it('should update execution in sharded mode', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn().mockResolvedValue([true]),
         },
@@ -100,11 +105,11 @@ describe('Logger', () => {
 
       await Logger.updateExecution('msg-123', 'Updated message');
 
-      expect(global.client.shard?.broadcastEval).toHaveBeenCalled();
+      expect((global as any).client.shard?.broadcastEval).toHaveBeenCalled();
     });
 
     it('should do nothing if executionId is empty', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn(),
         },
@@ -114,8 +119,8 @@ describe('Logger', () => {
     });
 
     it('should do nothing if LOG_CHANNEL_ID not set', async () => {
-      delete process.env.LOG_CHANNEL_ID;
-      global.client = {
+      (global as any).config.LOG_CHANNEL_ID = '';
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn(),
         },
@@ -123,11 +128,11 @@ describe('Logger', () => {
 
       await Logger.updateExecution('msg-123', 'Updated message');
 
-      expect(global.client.shard?.broadcastEval).not.toHaveBeenCalled();
+      expect((global as any).client.shard?.broadcastEval).not.toHaveBeenCalled();
     });
 
     it('should handle errors gracefully', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn().mockRejectedValue(new Error('Network error')),
         },
@@ -145,7 +150,7 @@ describe('Logger', () => {
 
   describe('log', () => {
     it('should send message in sharded mode', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn().mockResolvedValue([true]),
         },
@@ -153,12 +158,12 @@ describe('Logger', () => {
 
       await Logger.log('Test log message');
 
-      expect(global.client.shard?.broadcastEval).toHaveBeenCalled();
+      expect((global as any).client.shard?.broadcastEval).toHaveBeenCalled();
     });
 
     it('should do nothing if LOG_CHANNEL_ID not set', async () => {
-      delete process.env.LOG_CHANNEL_ID;
-      global.client = {
+      (global as any).config.LOG_CHANNEL_ID = '';
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn(),
         },
@@ -166,11 +171,11 @@ describe('Logger', () => {
 
       await Logger.log('Test log message');
 
-      expect(global.client.shard?.broadcastEval).not.toHaveBeenCalled();
+      expect((global as any).client.shard?.broadcastEval).not.toHaveBeenCalled();
     });
 
     it('should handle errors gracefully', async () => {
-      global.client = {
+      (global as any).client = {
         shard: {
           broadcastEval: jest.fn().mockRejectedValue(new Error('Network error')),
         },
@@ -180,7 +185,7 @@ describe('Logger', () => {
 
       await Logger.log('Test log message');
 
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to send log message:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to send message to channel log-channel-123:', expect.any(Error));
 
       consoleSpy.mockRestore();
     });
