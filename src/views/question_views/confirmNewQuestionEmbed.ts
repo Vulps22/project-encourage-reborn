@@ -1,9 +1,10 @@
 /** A ComponentV2 Embed for New Question Submission Confirmation */
 
-import { ContainerBuilder, InteractionReplyOptions, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
+import { ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 import { Question } from "../../interface";
+import { UniversalMessage } from "../../types";
 
-function confirmNewQuestionEmbed(question: Question): InteractionReplyOptions {
+function confirmNewQuestionEmbed(question: Question): UniversalMessage {
 
     const title = new TextDisplayBuilder()
     .setContent(`✅ New ${question.type.charAt(0).toUpperCase() + question.type.slice(1)} Submitted!`);
@@ -21,7 +22,7 @@ function confirmNewQuestionEmbed(question: Question): InteractionReplyOptions {
     .addSeparatorComponents(new SeparatorBuilder())
     .addTextDisplayComponents(footer);
 
-    const message: InteractionReplyOptions = {
+    const message: UniversalMessage = {
         flags: MessageFlags.IsComponentsV2,
         components: [container],
     }
