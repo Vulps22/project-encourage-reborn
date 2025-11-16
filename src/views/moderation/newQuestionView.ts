@@ -4,6 +4,7 @@ import { UniversalMessage } from "../../types";
 
 async function newQuestionView(question: Question): Promise<UniversalMessage> {
 
+
     const title = new TextDisplayBuilder()
     .setContent(`🆕 **New ${question.type.charAt(0).toUpperCase() + question.type.slice(1)}!**`);
 
@@ -32,20 +33,24 @@ async function newQuestionView(question: Question): Promise<UniversalMessage> {
     const approveButton = new ButtonBuilder()
         .setCustomId(`moderation_approveQuestion_id:${question.id}`)
         .setLabel('Approve')
-        .setStyle(ButtonStyle.Success);
+        .setStyle(ButtonStyle.Success)
+        .setDisabled(question.is_approved);
     
     const banButton = new ButtonBuilder()
         .setCustomId(`moderation_banQuestion_id:${question.id}`)
         .setLabel('Ban')
-        .setStyle(ButtonStyle.Danger);
+        .setStyle(ButtonStyle.Danger)
+        .setDisabled(question.is_banned);
+
     
-    const banUserButton = new ButtonBuilder()
-        .setCustomId(`moderation_banUser_id:${question.user_id}`)
-        .setLabel('Ban User')
-        .setStyle(ButtonStyle.Secondary);
+    const showUserButton = new ButtonBuilder()
+        .setCustomId(`moderation_showUser_id:${question.user_id}`)
+        .setLabel('Show User')//TODO: create a view detailing the user's stats, server count, banned/approved numbers, xp etc with ban/unban buttons
+        .setStyle(ButtonStyle.Secondary)
+
 
     const actionRow = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(approveButton, banButton, banUserButton);
+        .addComponents(approveButton, banButton, showUserButton);
 
     const container = new ContainerBuilder()
     .addTextDisplayComponents(title)
