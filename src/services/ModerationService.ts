@@ -2,6 +2,7 @@ import { DatabaseService } from './DatabaseService';
 import { Question } from '../interface';
 import { Logger } from '../utils';
 import { QuestionType } from '../types';
+import { Message, Snowflake } from 'discord.js';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class ModerationService {
@@ -11,7 +12,7 @@ export class ModerationService {
      * Send a question to the approval queue for moderation
      * @param question - The question to send for approval
      */
-    async sendToApprovalQueue(question: Question): Promise<void> {
+    async sendToApprovalQueue(question: Question): Promise<Snowflake> {
         Logger.debug(`Sending question ${question.id} to approval queue`);
         try {
             // Determine which channel to send to based on question type
@@ -23,9 +24,11 @@ export class ModerationService {
                 throw new Error(`No log channel configured for ${question.type} questions`);
             }
 
-            await Logger.logQuestion(question, channelId);
+            const message: Message | null = await Logger.logQuestion(question, channelId);
+            if (!message) throw new Error("Failed to log question message for approval");
             // For now, just log that it would be sent
             Logger.debug(`Question ${question.id} would be sent to approval queue in channel ${channelId}`);
+            return message.id;
 
         } catch (error) {
             Logger.debug(`Failed to send question ${question.id} to approval queue: ${error}`);

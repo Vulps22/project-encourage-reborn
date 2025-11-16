@@ -6,6 +6,11 @@ import { Question } from '../interface';
 export class QuestionService {
   constructor(private db: DatabaseService) {}
 
+
+  async getQuestionById(id: number): Promise<Question | null> {
+    return await this.db.get<Question>('core', 'questions', { id: BigInt(id) });
+  }
+
   async createQuestion(type: QuestionType, question: string, userId: Snowflake, serverId: Snowflake): Promise<Question | string> {
     if (question.length < 5) {
       return 'Question must be at least 5 characters long';
@@ -33,5 +38,9 @@ export class QuestionService {
     }
 
     return result.rows[0] as Question;
+  }
+
+  async updateQuestion(id: number, data: Question): Promise<void> {
+    await this.db.update('core', 'questions', data, { id: BigInt(id) });
   }
 }
