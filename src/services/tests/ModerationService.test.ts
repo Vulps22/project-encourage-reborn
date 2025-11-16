@@ -18,7 +18,7 @@ jest.mock('../../utils/Logger', () => ({
         log: jest.fn(),
         debug: jest.fn(),
         logTo: jest.fn(),
-        logQuestion: jest.fn()
+        logQuestion: jest.fn().mockResolvedValue({ id: 'msg-123' }) // Return mock message object
     }
 }));
 
@@ -65,6 +65,9 @@ describe('ModerationService', () => {
         // Set up global mocks
         (global as any).config = mockConfig;
 
+        // Reset Logger.logQuestion mock to return proper message object
+        (Logger.logQuestion as jest.Mock).mockResolvedValue({ id: 'msg-123' });
+
         // Create mock database service
         mockDb = {
             update: jest.fn(),
@@ -85,19 +88,21 @@ describe('ModerationService', () => {
 
     describe('sendToApprovalQueue', () => {
         it('should send truth question to truths log channel', async () => {
-            await moderationService.sendToApprovalQueue(mockQuestion);
+            const result = await moderationService.sendToApprovalQueue(mockQuestion);
 
             expect(Logger.logQuestion).toHaveBeenCalledWith(mockQuestion, '123456789');
             expect(Logger.debug).toHaveBeenCalledWith('Sending question 1 to approval queue');
             expect(Logger.debug).toHaveBeenCalledWith('Question 1 would be sent to approval queue in channel 123456789');
+            expect(result).toBe('msg-123'); // Should return the message ID
         });
 
         it('should send dare question to dares log channel', async () => {
             const dareQuestion = { ...mockQuestion, type: 'dare' as QuestionType };
             
-            await moderationService.sendToApprovalQueue(dareQuestion);
+            const result = await moderationService.sendToApprovalQueue(dareQuestion);
 
             expect(Logger.logQuestion).toHaveBeenCalledWith(dareQuestion, '987654321');
+            expect(result).toBe('msg-123'); // Should return the message ID
         });
 
         it('should throw error if no channel configured', async () => {

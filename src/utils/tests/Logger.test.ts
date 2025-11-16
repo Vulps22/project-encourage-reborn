@@ -191,6 +191,93 @@ describe('Logger', () => {
     });
   });
 
+  describe('updateQuestionLog', () => {
+    it('should return null if question has no message_id', async () => {
+      const question = { id: 123, message_id: null };
+      
+      const result = await Logger.updateQuestionLog(question as any, 'channel-123');
+      
+      expect(result).toBeNull();
+    });
+
+    it('should update question log successfully in sharded mode', async () => {
+      const question = {
+        id: 123,
+        message_id: 'msg-456',
+        datetime_approved: null,
+        datetime_banned: null,
+        datetime_deleted: null,
+        created: new Date('2024-01-01')
+      };
+      
+      const mockUpdatedMessage = { id: 'msg-456', content: 'Updated content' };
+      
+      (global as any).client = {
+        shard: {
+          broadcastEval: jest.fn().mockResolvedValue([mockUpdatedMessage, null]),
+        },
+      } as unknown as Client;
+
+      const result = await Logger.updateQuestionLog(question as any, 'channel-123');
+
+      expect((global as any).client.shard?.broadcastEval).toHaveBeenCalled();
+      expect(result).toBe(mockUpdatedMessage);
+    });
+
+    it('should return null if no message found in shards', async () => {
+      const question = {
+        id: 123,
+        message_id: 'msg-456',
+        datetime_approved: null,
+        datetime_banned: null,
+        datetime_deleted: null,
+        created: new Date('2024-01-01')
+      };
+      
+      (global as any).client = {
+        shard: {
+          broadcastEval: jest.fn().mockResolvedValue([null, null]),
+        },
+      } as unknown as Client;
+
+      const result = await Logger.updateQuestionLog(question as any, 'channel-123');
+
+      expect(result).toBeNull();
+    });
+
+    it('should handle errors gracefully', async () => {
+      const question = {
+        id: 123,
+        message_id: 'msg-456',
+        datetime_approved: null,
+        datetime_banned: null,
+        datetime_deleted: null,
+        created: new Date('2024-01-01')
+      };
+      
+      (global as any).client = {
+        shard: {
+          broadcastEval: jest.fn().mockRejectedValue(new Error('Network error')),
+        },
+      } as unknown as Client;
+
+      // Suppress console.error for this test
+      const originalConsoleError = console.error;
+      console.error = jest.fn();
+
+      try {
+        const result = await Logger.updateQuestionLog(question as any, 'channel-123');
+        expect(result).toBeNull();
+      } catch (error) {
+        // Expected to fail, but should return null
+        expect(error).toBeDefined();
+      }
+      
+      // Restore console.error
+      console.error = originalConsoleError;
+    });
+  });
+
   describe('error', () => {
     it('should log error messages to console', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();

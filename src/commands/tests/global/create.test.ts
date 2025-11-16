@@ -8,6 +8,7 @@ import { QuestionType } from '../../../types';
 jest.mock('../../../services', () => ({
   questionService: {
     createQuestion: jest.fn(),
+    updateQuestion: jest.fn(),
   },
   moderationService: {
     sendToApprovalQueue: jest.fn(),
