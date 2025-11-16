@@ -1,10 +1,10 @@
 import banQuestionButton from '../../moderation/banQuestion';
-import { BotButtonInteraction } from '../../../structures';
-import { moderationService, questionService } from '../../../services';
-import { Logger } from '../../../utils';
-import { TargetType } from '../../../types';
-import { NullChannelError } from '../../../errors/NullChannelError';
-import { QuestionNotFoundError } from '../../../errors/QuestionNotFoundError';
+import { BotButtonInteraction } from '../../../../structures';
+import { moderationService, questionService } from '../../../../services';
+import { Logger } from '../../../../utils';
+import { TargetType } from '../../../../types';
+import { NullChannelError } from '../../../../errors/NullChannelError';
+import { QuestionNotFoundError } from '../../../../errors/QuestionNotFoundError';
 
 // Mock the services and Logger
 jest.mock('../../../services', () => ({
