@@ -215,7 +215,7 @@ static async logQuestion(question: Question, channelId: Snowflake): Promise<Mess
   return results.find(result => result !== null) as Message || null;
 }
 
-static async updateQuestionLog(question: Question, channelId: Snowflake): Promise<Message | null> {
+static async updateQuestionLog(question: Question, channelId: Snowflake, reasons: {}[] | null = null): Promise<Message | null> {
   this.debug(`Updating question log for question ID ${question.id} in channel ${channelId}`);
   if (!question.message_id) {
     return null;
@@ -246,7 +246,7 @@ static async updateQuestionLog(question: Question, channelId: Snowflake): Promis
             created: new Date(context.question.created)
           };
           
-          const view = await newQuestionView(questionData);
+          const view = await newQuestionView(questionData, context.reasons);
           console.log('Generated view:', view);
           const updatedMessage = await existingMessage.edit(view as any);
           console.log('Updated message:', updatedMessage.toJSON());
@@ -262,7 +262,8 @@ static async updateQuestionLog(question: Question, channelId: Snowflake): Promis
       context: { 
         channelId: channelId, 
         question: question,
-        messageId: question.message_id
+        messageId: question.message_id,
+        reasons: reasons
       } 
     }
   );
