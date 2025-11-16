@@ -1,8 +1,9 @@
 import { DatabaseService } from './DatabaseService';
 import { Question } from '../interface';
 import { Logger } from '../utils';
-import { QuestionType } from '../types';
+import { QuestionType, TargetType } from '../types';
 import { Message, Snowflake } from 'discord.js';
+import { banReasons } from '../config';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class ModerationService {
@@ -103,5 +104,15 @@ export class ModerationService {
             throw error;
         }
     }
+
+    /**
+     * Get ban reasons for a specific target type
+     * @param type - The type of target (User, Server, Question)
+     * @returns Array of ban reason options
+     */
+    getBanReasons(type: TargetType): {}[]{
+        return banReasons[type];
+    }
+
 
 }
