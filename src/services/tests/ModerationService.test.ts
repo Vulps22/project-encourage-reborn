@@ -1,7 +1,7 @@
 import { ModerationService } from '../ModerationService';
 import { DatabaseService, MutationResult } from '../DatabaseService';
 import { Question } from '../../interface';
-import { QuestionType } from '../../types';
+import { QuestionType, TargetType } from '../../types';
 import { Logger } from '../../utils';
 
 // Mock the global objects
@@ -204,6 +204,44 @@ describe('ModerationService', () => {
                 .rejects.toThrow('Database connection failed');
 
             expect(Logger.debug).toHaveBeenCalledWith('Failed to ban question 1: Error: Database connection failed');
+        });
+    });
+
+    describe('getBanReasons', () => {
+        it('should return question ban reasons', () => {
+            const result = moderationService.getBanReasons(TargetType.Question);
+
+            expect(result).toBeDefined();
+            expect(Array.isArray(result)).toBe(true);
+            expect(result.length).toBeGreaterThan(0);
+            expect(result[0]).toHaveProperty('label');
+            expect(result[0]).toHaveProperty('value');
+        });
+
+        it('should return user ban reasons', () => {
+            const result = moderationService.getBanReasons(TargetType.User);
+
+            expect(result).toBeDefined();
+            expect(Array.isArray(result)).toBe(true);
+            expect(result.length).toBeGreaterThan(0);
+        });
+
+        it('should return server ban reasons', () => {
+            const result = moderationService.getBanReasons(TargetType.Server);
+
+            expect(result).toBeDefined();
+            expect(Array.isArray(result)).toBe(true);
+            expect(result.length).toBeGreaterThan(0);
+        });
+
+        it('should return different reasons for different target types', () => {
+            const questionReasons = moderationService.getBanReasons(TargetType.Question);
+            const userReasons = moderationService.getBanReasons(TargetType.User);
+            const serverReasons = moderationService.getBanReasons(TargetType.Server);
+
+            expect(questionReasons).not.toEqual(userReasons);
+            expect(questionReasons).not.toEqual(serverReasons);
+            expect(userReasons).not.toEqual(serverReasons);
         });
     });
 });

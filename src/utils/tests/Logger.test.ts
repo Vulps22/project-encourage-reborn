@@ -224,6 +224,45 @@ describe('Logger', () => {
       expect(result).toBe(mockUpdatedMessage);
     });
 
+    it('should update question log with ban reasons successfully', async () => {
+      const question = {
+        id: 123,
+        message_id: 'msg-456',
+        datetime_approved: null,
+        datetime_banned: null,
+        datetime_deleted: null,
+        created: new Date('2024-01-01')
+      };
+
+      const banReasons = [
+        { label: '1 - Test Reason', value: 'test_reason' },
+        { label: '2 - Another Reason', value: 'another_reason' }
+      ];
+      
+      const mockUpdatedMessage = { id: 'msg-456', content: 'Updated content with reasons' };
+      
+      (global as any).client = {
+        shard: {
+          broadcastEval: jest.fn().mockResolvedValue([mockUpdatedMessage, null]),
+        },
+      } as unknown as Client;
+
+      const result = await Logger.updateQuestionLog(question as any, 'channel-123', banReasons);
+
+      expect((global as any).client.shard?.broadcastEval).toHaveBeenCalled();
+      // Verify the broadcast eval was called with the reasons parameter
+      const broadcastCall = (global as any).client.shard.broadcastEval.mock.calls[0];
+      expect(broadcastCall[1]).toEqual({
+        context: {
+          channelId: 'channel-123',
+          question: question,
+          messageId: 'msg-456',
+          reasons: banReasons
+        }
+      });
+      expect(result).toBe(mockUpdatedMessage);
+    });
+
     it('should return null if no message found in shards', async () => {
       const question = {
         id: 123,

@@ -22,7 +22,7 @@ const approveQuestionButton: ButtonHandler = {
         }
 
         if(!reason) {
-            showBanReasons(Number(questionId), interaction.channel.id);
+            await showBanReasons(Number(questionId), interaction.channel.id);
         }
 
     }
@@ -38,7 +38,7 @@ async function showBanReasons(questionId: number, channelId: Snowflake) {
 
     const reasons = await moderationService.getBanReasons(TargetType.Question);
 
-    Logger.updateQuestionLog(question, channelId, reasons)
+    await Logger.updateQuestionLog(question, channelId, reasons);
 
 }
 
