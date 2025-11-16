@@ -35,8 +35,13 @@ const create = new Command('create', 'Submit a custom truth or dare question')
       });
       return;
     }
+
     Logger.debug(`User ${interaction.user.id} submitted new question ID ${savedQuestion.id} for moderation`);
-    await moderationService.sendToApprovalQueue(savedQuestion);
+    const messageId = await moderationService.sendToApprovalQueue(savedQuestion);
+
+    savedQuestion.message_id = messageId;
+
+    await questionService.updateQuestion(savedQuestion.id, savedQuestion)
 
     const response = confirmNewQuestionEmbed(savedQuestion);
 
