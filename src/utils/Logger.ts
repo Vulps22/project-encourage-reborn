@@ -1,4 +1,4 @@
-import { BaseInteraction, MessageCreateOptions, Snowflake, TextChannel } from 'discord.js';
+import { BaseInteraction, Message, MessageCreateOptions, Snowflake, TextChannel } from 'discord.js';
 import { UniversalMessage } from '../types';
 import { Question } from '../interface';
 
@@ -177,9 +177,9 @@ export class Logger {
   }
 
   // Inside Logger
-static async logQuestion(question: Question, channelId: Snowflake): Promise<void> {
+static async logQuestion(question: Question, channelId: Snowflake): Promise<Message | null> {
   
-  await global.client.shard!.broadcastEval(
+  const results = await global.client.shard!.broadcastEval(
     async (c, context) => {
       const ch = c.channels.cache.get(context.channelId);
       if (ch?.isTextBased()) {
@@ -198,10 +198,10 @@ static async logQuestion(question: Question, channelId: Snowflake): Promise<void
         };
         
         const view = await newQuestionView(questionData);
-        await (ch as TextChannel).send(view as MessageCreateOptions);
-        return true;
+        const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
+        return sentMessage;
       }
-      return false;
+      return null;
     },
     { 
       context: { 
@@ -210,8 +210,66 @@ static async logQuestion(question: Question, channelId: Snowflake): Promise<void
       } 
     }
   );
+  
+  // Return the first non-null message from the shards
+  return results.find(result => result !== null) as Message || null;
 }
 
+static async updateQuestionLog(question: Question, channelId: Snowflake): Promise<Message | null> {
+  this.debug(`Updating question log for question ID ${question.id} in channel ${channelId}`);
+  if (!question.message_id) {
+    return null;
+  }
+
+  const results = await global.client.shard!.broadcastEval(
+    async (c, context) => {
+      const ch = c.channels.cache.get(context.channelId);
+      if (ch?.isTextBased()) {
+        try {
+          // Fetch the existing message
+          const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
+          if (!existingMessage) {
+            return null;
+          }
+
+          // Import view function using absolute path
+          const path = await import('path');
+          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
+          const { newQuestionView } = await import(viewPath);
+
+          // Reconstruct dates from serialized strings
+          const questionData = {
+            ...context.question,
+            datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
+            datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
+            datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
+            created: new Date(context.question.created)
+          };
+          
+          const view = await newQuestionView(questionData);
+          console.log('Generated view:', view);
+          const updatedMessage = await existingMessage.edit(view as any);
+          console.log('Updated message:', updatedMessage.toJSON());
+          return updatedMessage;
+        } catch (error) {
+          console.error('Failed to update question log:', error);
+          return null;
+        }
+      }
+      return null;
+    },
+    { 
+      context: { 
+        channelId: channelId, 
+        question: question,
+        messageId: question.message_id
+      } 
+    }
+  );
+  
+  // Return the first non-null message from the shards
+  return results.find(result => result !== null) as Message || null;
+}
 
   /**
    * Debug logging to console (STREAMER SAFE - auto-redacts sensitive data)
