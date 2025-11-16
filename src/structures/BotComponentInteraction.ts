@@ -16,6 +16,7 @@ export abstract class BotComponentInteraction extends BotRepliableInteraction {
 
   // --- COMPONENT-SPECIFIC PROPERTIES ---
   get customId() { return this._interaction.customId; }
+  get message() { return this._interaction.message; }
 
   // --- COMPONENT-SPECIFIC METHODS ---
   update(options: string | InteractionUpdateOptions) {
