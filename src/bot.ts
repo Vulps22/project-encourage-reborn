@@ -23,7 +23,7 @@ global.commands = new Collection<string, Command>();
 global.buttons = new Collection<string, ButtonHandler>();
 
 // Load commands from global folder
-const globalCommandsPath = join(__dirname, 'handlers', 'commands', 'global');
+const globalCommandsPath = join(__dirname, '_handlers', 'commands', 'global');
 const globalCommandFiles = readdirSync(globalCommandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of globalCommandFiles) {
@@ -34,7 +34,7 @@ for (const file of globalCommandFiles) {
 }
 
 // Load commands from mod folder (if exists)
-const modCommandsPath = join(__dirname, 'handlers', 'commands', 'mod');
+const modCommandsPath = join(__dirname, '_handlers', 'commands', 'mod');
 if (existsSync(modCommandsPath)) {
     const modCommandFiles = readdirSync(modCommandsPath).filter(file => file.endsWith('.js'));
     
@@ -105,7 +105,7 @@ const registerCommands = async (): Promise<void> => {
 };
 
 // Load buttons from button folder (including nested folders)
-const buttonsPath = join(__dirname, 'handlers', 'buttons');
+const buttonsPath = join(__dirname, '_handlers', 'buttons');
 console.log(`Looking for buttons in: ${buttonsPath}`);
 console.log(`__dirname is: ${__dirname}`);
 if (existsSync(buttonsPath)) {
