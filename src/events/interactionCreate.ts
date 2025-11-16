@@ -1,7 +1,7 @@
 import { Interaction } from 'discord.js';
 import { EventHandler } from '../types';
 import { Logger } from '../utils';
-import { CommandInteractionEvent, ButtonInteractionEvent } from './interactionEvents';
+import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 
 /**
  * InteractionCreate event handler
@@ -13,16 +13,20 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
   execute: async (interaction: Interaction): Promise<void> => {
     const executionId = await Logger.logInteractionReceived(interaction);
 
-    if(interaction.isChatInputCommand()) {
-        new CommandInteractionEvent().execute(interaction, executionId);
-        return;
+    if (interaction.isChatInputCommand()) {
+      new CommandInteractionEvent().execute(interaction, executionId);
+      return;
     }
 
-    if(interaction.isButton()) {
-        new ButtonInteractionEvent().execute(interaction, executionId);
-        return;
+    if (interaction.isButton()) {
+      new ButtonInteractionEvent().execute(interaction, executionId);
+      return;
     }
 
+    if (interaction.isStringSelectMenu()) {
+      new StringSelectInteractionEvent().execute(interaction, executionId);
+      return;
+    }
   },
 };
 
