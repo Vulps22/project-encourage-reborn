@@ -132,6 +132,7 @@ describe('ModerationService', () => {
                 {
                     is_approved: true,
                     approved_by: BigInt('123456789012345678'),
+                    is_banned: false,
                     datetime_approved: expect.any(Date)
                 },
                 { id: 1 }
