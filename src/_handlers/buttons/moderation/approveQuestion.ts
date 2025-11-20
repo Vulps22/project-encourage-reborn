@@ -1,7 +1,8 @@
-import { ButtonHandler, Logger } from "../../../utils";
+import { Handler, Logger } from "../../../utils";
 import { moderationService, questionService } from "../../../services";
+import { BotButtonInteraction } from "../../../structures";
 
-const approveQuestionButton: ButtonHandler = {
+const approveQuestionButton: Handler<BotButtonInteraction> = {
     name: "approveQuestion",
     async execute(interaction) {
         const questionId = interaction.params.get("id");
