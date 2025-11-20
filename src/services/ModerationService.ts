@@ -53,6 +53,7 @@ export class ModerationService {
                 {
                     is_approved: true,
                     approved_by: BigInt(moderatorId),
+                    is_banned: false,
                     datetime_approved: new Date()
                 },
                 { id: parseInt(questionId) }
@@ -85,6 +86,7 @@ export class ModerationService {
                 'core',
                 'questions',
                 {
+                    is_approved: false,
                     is_banned: true,
                     banned_by: moderatorId,
                     ban_reason: reason,
