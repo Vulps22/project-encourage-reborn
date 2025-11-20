@@ -1,11 +1,18 @@
 import { StringSelectMenuInteraction } from "discord.js";
 import { InteractionEvent } from "./InteractionEvent";
+import { BotSelectMenuInteraction } from "../../structures";
+import { Handler, Logger } from "../../utils";
 
 class StringSelectInteractionEvent implements InteractionEvent<StringSelectMenuInteraction> {
 
     async execute(interaction: StringSelectMenuInteraction, executionId: string) {
-        console.log("Executing SelectInteraction");
-        console.log(executionId, interaction.customId, interaction.values);
+        const botSelectInteraction = new BotSelectMenuInteraction(interaction, executionId);
+        const selectHandler: Handler<BotSelectMenuInteraction> | undefined = global.selects.get(botSelectInteraction.baseId);
+        if (!selectHandler) {
+            Logger.error(`SelectMenu not found for Custom ID: ${botSelectInteraction.baseId}`);
+            return;
+        }
+        await selectHandler.execute(botSelectInteraction);
     }
 }
 
