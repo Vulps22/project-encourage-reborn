@@ -89,12 +89,16 @@ describe('banReasonSelected select menu handler', () => {
     });
 
     it('should handle missing selected reason', async () => {
-        mockSelectInteraction.values = [];
+        // Create a new mock with empty values
+        const mockInteractionEmptyValues = {
+            ...mockSelectInteraction,
+            values: []
+        };
 
-        await banReasonSelected.execute(mockSelectInteraction);
+        await banReasonSelected.execute(mockInteractionEmptyValues as any);
 
         expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ No reason selected');
+        expect(mockInteractionEmptyValues.ephemeralReply).toHaveBeenCalledWith('❌ No reason selected');
     });
 
     it('should handle moderation service errors', async () => {
@@ -149,13 +153,17 @@ describe('banReasonSelected select menu handler', () => {
 
     it('should handle different question IDs and reasons', async () => {
         const mockQuestion = { id: 999, message_id: 'msg-999' };
-        mockSelectInteraction.params.get = jest.fn().mockReturnValue('999');
-        mockSelectInteraction.values = ['Custom reason'];
+        // Create new mock with different values
+        const mockInteractionCustom = {
+            ...mockSelectInteraction,
+            values: ['Custom reason']
+        };
+        mockInteractionCustom.params.get = jest.fn().mockReturnValue('999');
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
         mockLogger.updateQuestionLog.mockResolvedValue({} as any);
 
-        await banReasonSelected.execute(mockSelectInteraction);
+        await banReasonSelected.execute(mockInteractionCustom as any);
 
         expect(mockModerationService.banQuestion).toHaveBeenCalledWith('999', '123456789012345678', 'Custom reason');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(999);
@@ -179,12 +187,16 @@ describe('banReasonSelected select menu handler', () => {
     });
 
     it('should use first value from values array', async () => {
-        mockSelectInteraction.values = ['First reason', 'Second reason'];
+        // Create new mock with multiple values
+        const mockInteractionMultiValues = {
+            ...mockSelectInteraction,
+            values: ['First reason', 'Second reason']
+        };
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue({ id: 123 } as any);
         mockLogger.updateQuestionLog.mockResolvedValue({} as any);
 
-        await banReasonSelected.execute(mockSelectInteraction);
+        await banReasonSelected.execute(mockInteractionMultiValues as any);
 
         expect(mockModerationService.banQuestion).toHaveBeenCalledWith('123', '123456789012345678', 'First reason');
     });

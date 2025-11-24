@@ -177,6 +177,7 @@ describe('ModerationService', () => {
                 'questions',
                 {
                     is_banned: true,
+                    is_approved: false,
                     banned_by: '123456789012345678',
                     ban_reason: 'Inappropriate content',
                     datetime_banned: expect.any(Date)

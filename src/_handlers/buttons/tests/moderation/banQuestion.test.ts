@@ -7,7 +7,7 @@ import { NullChannelError } from '../../../../errors/NullChannelError';
 import { QuestionNotFoundError } from '../../../../errors/QuestionNotFoundError';
 
 // Mock the services and Logger
-jest.mock('../../../services', () => ({
+jest.mock('../../../../services', () => ({
     moderationService: {
         getBanReasons: jest.fn()
     },
@@ -16,7 +16,7 @@ jest.mock('../../../services', () => ({
     }
 }));
 
-jest.mock('../../../utils', () => ({
+jest.mock('../../../../utils', () => ({
     Logger: {
         updateQuestionLog: jest.fn()
     }

@@ -5,7 +5,7 @@ import create from '../../global/create';
 import { QuestionType } from '../../../../types';
 
 // Mock dependencies
-jest.mock('../../../services', () => ({
+jest.mock('../../../../services', () => ({
   questionService: {
     createQuestion: jest.fn(),
     updateQuestion: jest.fn(),
@@ -15,7 +15,7 @@ jest.mock('../../../services', () => ({
   },
 }));
 
-jest.mock('../../../views', () => ({
+jest.mock('../../../../views', () => ({
   confirmNewQuestionEmbed: jest.fn(),
 }));
 

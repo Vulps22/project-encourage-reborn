@@ -4,7 +4,7 @@ import { moderationService, questionService } from '../../../../services';
 import { Logger } from '../../../../utils';
 
 // Mock the services and Logger
-jest.mock('../../../services', () => ({
+jest.mock('../../../../services', () => ({
     moderationService: {
         approveQuestion: jest.fn()
     },
@@ -13,7 +13,7 @@ jest.mock('../../../services', () => ({
     }
 }));
 
-jest.mock('../../../utils', () => ({
+jest.mock('../../../../utils', () => ({
     Logger: {
         updateQuestionLog: jest.fn(),
         error: jest.fn()
