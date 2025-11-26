@@ -16,6 +16,9 @@ describe('QuestionService', () => {
     // Create mock DatabaseService
     mockDb = {
       insert: jest.fn(),
+      get: jest.fn(),
+      update: jest.fn(),
+      count: jest.fn(),
     } as any;
 
     questionService = new QuestionService(mockDb);
@@ -246,6 +249,84 @@ describe('QuestionService', () => {
           is_banned: false,
         })
       );
+    });
+  });
+
+  describe('getQuestionById', () => {
+    it('should return question when found', async () => {
+      const mockQuestion = {
+        id: 123,
+        type: 'truth',
+        question: 'Test question?',
+        user_id: '123456789012345678',
+        server_id: '987654321098765432',
+        is_approved: false,
+        is_banned: false,
+      };
+
+      mockDb.get.mockResolvedValue(mockQuestion);
+
+      const result = await questionService.getQuestionById(123);
+
+      expect(mockDb.get).toHaveBeenCalledWith('core', 'questions', { id: BigInt(123) });
+      expect(result).toEqual(mockQuestion);
+    });
+
+    it('should return null when question not found', async () => {
+      mockDb.get.mockResolvedValue(null);
+
+      const result = await questionService.getQuestionById(999);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getUserQuestionCount', () => {
+    it('should return count of user questions', async () => {
+      mockDb.count.mockResolvedValue(5);
+
+      const result = await questionService.getUserQuestionCount('123456789012345678');
+
+      expect(mockDb.count).toHaveBeenCalledWith('core', 'questions', { 
+        user_id: BigInt('123456789012345678') 
+      });
+      expect(result).toBe(5);
+    });
+
+    it('should return 0 when user has no questions', async () => {
+      mockDb.count.mockResolvedValue(0);
+
+      const result = await questionService.getUserQuestionCount('123456789012345678');
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('getUserApprovedQuestionCount', () => {
+    it('should return count of approved questions', async () => {
+      mockDb.count.mockResolvedValue(3);
+
+      const result = await questionService.getUserApprovedQuestionCount('123456789012345678');
+
+      expect(mockDb.count).toHaveBeenCalledWith('core', 'questions', { 
+        user_id: BigInt('123456789012345678'),
+        is_approved: true 
+      });
+      expect(result).toBe(3);
+    });
+  });
+
+  describe('getUserBannedQuestionCount', () => {
+    it('should return count of banned questions', async () => {
+      mockDb.count.mockResolvedValue(2);
+
+      const result = await questionService.getUserBannedQuestionCount('123456789012345678');
+
+      expect(mockDb.count).toHaveBeenCalledWith('core', 'questions', { 
+        user_id: BigInt('123456789012345678'),
+        is_banned: true 
+      });
+      expect(result).toBe(2);
     });
   });
 });

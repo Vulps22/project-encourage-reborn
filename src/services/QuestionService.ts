@@ -43,4 +43,22 @@ export class QuestionService {
   async updateQuestion(id: number, data: Question): Promise<void> {
     await this.db.update('core', 'questions', data, { id: BigInt(id) });
   }
+
+  async getUserQuestionCount(userId: Snowflake): Promise<number> {
+    return await this.db.count('core', 'questions', { user_id: BigInt(userId) });
+  }
+
+  async getUserApprovedQuestionCount(userId: Snowflake): Promise<number> {
+    return await this.db.count('core', 'questions', { 
+      user_id: BigInt(userId),
+      is_approved: true 
+    });
+  }
+
+  async getUserBannedQuestionCount(userId: Snowflake): Promise<number> {
+    return await this.db.count('core', 'questions', { 
+      user_id: BigInt(userId),
+      is_banned: true 
+    });
+  }
 }
