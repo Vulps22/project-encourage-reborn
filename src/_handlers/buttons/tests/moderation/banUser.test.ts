@@ -1,9 +1,10 @@
 import { ButtonInteraction } from 'discord.js';
 import { BotButtonInteraction } from '../../../../structures';
 import banUserButton from '../../moderation/banUser';
-import { userService } from '../../../../services';
+import { moderationService } from '../../../../services';
 import { UserProfileBuilder } from '../../../../builders/UserProfileBuilder';
 import { userProfileView } from '../../../../views';
+import { TargetType } from '../../../../types';
 
 jest.mock('../../../../services');
 jest.mock('../../../../builders/UserProfileBuilder');
@@ -35,27 +36,38 @@ describe('banUserButton', () => {
         expect(banUserButton.params).toEqual({ 'ID': 'id' });
     });
 
-    it('should ban user and refresh profile view', async () => {
+    it('should show ban reasons dropdown', async () => {
         const mockProfile = {
             id: '123456789',
-            isBanned: true,
-            banReason: 'Banned by moderator',
-            joinedAt: new Date(),
-            serversJoined: 5,
-            serversBanned: 1,
-            questionsSubmitted: 10,
-            questionsApproved: 8,
-            questionsBanned: 2
+            isBanned: false,
+            banReason: null,
+            rulesAccepted: true,
+            globalLevel: 1,
+            globalXP: 100,
+            totalQuestions: 10,
+            approvedQuestions: 8,
+            bannedQuestions: 0,
+            totalServers: 5,
+            serversOwned: 2,
+            serversBanned: 0,
+            createdDateTime: new Date(),
+            deleteDate: null
         };
 
+        const mockReasons = [
+            { label: 'Spam', value: 'spam' },
+            { label: 'Under 18', value: 'under_18' }
+        ];
+
         (UserProfileBuilder.prototype.getUserProfile as jest.Mock).mockResolvedValue(mockProfile);
+        (moderationService.getBanReasons as jest.Mock).mockReturnValue(mockReasons);
         (userProfileView as jest.Mock).mockResolvedValue({ components: [] });
 
         await banUserButton.execute(botInteraction);
 
-        expect(userService.banUser).toHaveBeenCalledWith('123456789', 'Banned by moderator');
         expect(UserProfileBuilder.prototype.getUserProfile).toHaveBeenCalledWith('123456789');
-        expect(userProfileView).toHaveBeenCalledWith(mockProfile);
+        expect(moderationService.getBanReasons).toHaveBeenCalledWith(TargetType.User);
+        expect(userProfileView).toHaveBeenCalledWith(mockProfile, mockReasons);
         expect(mockInteraction.reply).toHaveBeenCalled();
     });
 
@@ -71,13 +83,13 @@ describe('banUserButton', () => {
         );
     });
 
-    it('should handle user not found after ban', async () => {
+    it('should handle user not found', async () => {
         (UserProfileBuilder.prototype.getUserProfile as jest.Mock).mockResolvedValue(null);
 
         await banUserButton.execute(botInteraction);
 
-        expect(userService.banUser).toHaveBeenCalledWith('123456789', 'Banned by moderator');
         expect(UserProfileBuilder.prototype.getUserProfile).toHaveBeenCalledWith('123456789');
+        expect(moderationService.getBanReasons).not.toHaveBeenCalled();
         expect(userProfileView).not.toHaveBeenCalled();
     });
 });

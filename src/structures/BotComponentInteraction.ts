@@ -22,4 +22,13 @@ export abstract class BotComponentInteraction extends BotRepliableInteraction {
   update(options: string | InteractionUpdateOptions) {
     return this._interaction.update(options);
   }
+
+  updateComponentMessage(content: string | null, options?: any) {
+        const updateOptions = { ...options };
+    if (content && content.length > 0) {
+      updateOptions.content = content;
+    }
+
+    return this._interaction.update(updateOptions);
+  }
 }

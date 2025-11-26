@@ -1,8 +1,8 @@
-import { ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, StringSelectMenuBuilder, TextDisplayBuilder } from "discord.js";
 import { UserProfile } from "../interface";
 import { UniversalMessage } from "../types";
 
-async function userProfileView(profile: UserProfile): Promise<UniversalMessage> {
+async function userProfileView(profile: UserProfile, banReasons: any[] | null = null): Promise<UniversalMessage> {
     const client = global.client;
 
     // Fetch user to get current username
@@ -70,7 +70,7 @@ async function userProfileView(profile: UserProfile): Promise<UniversalMessage> 
         )
         : null;
 
-    // Action Buttons
+    // Ban/Unban Button or Ban Reasons Select Menu
     const banButton = new ButtonBuilder()
         .setCustomId(`moderation_banUser_id:${profile.id}`)
         .setLabel('Ban User')
@@ -81,13 +81,20 @@ async function userProfileView(profile: UserProfile): Promise<UniversalMessage> 
         .setLabel('Unban User')
         .setStyle(ButtonStyle.Success);
 
+    const banReasonsMenu = banReasons ? new StringSelectMenuBuilder()
+        .addOptions(banReasons)
+        .setCustomId(`moderation_userBanReasonSelected_id:${profile.id}`)
+        .setPlaceholder('Select a reason for banning')
+        .setMinValues(1)
+        .setMaxValues(1) : null;
+
     const userSection = new SectionBuilder()
         .addTextDisplayComponents(userId, accountStatus);
     if (banReasonDisplay) {
         userSection.addTextDisplayComponents(banReasonDisplay);
     }
-    userSection
-        .setButtonAccessory(profile.isBanned ? unbanButton : banButton);
+    // Sections MUST have an accessory button per discords validation standards. so we cannot make the button conditional
+        userSection.setButtonAccessory(profile.isBanned ? unbanButton : banButton);
 
     // Build Container
     const container = new ContainerBuilder()
@@ -102,6 +109,13 @@ async function userProfileView(profile: UserProfile): Promise<UniversalMessage> 
 
     if (deleteDateDisplay) {
         container.addTextDisplayComponents(deleteDateDisplay);
+    }
+
+    // Add ban reasons select menu if provided
+    if (banReasonsMenu) {
+        const selectMenuRow = new ActionRowBuilder<StringSelectMenuBuilder>()
+            .addComponents(banReasonsMenu);
+        container.addActionRowComponents(selectMenuRow);
     }
 
     const message: UniversalMessage = {

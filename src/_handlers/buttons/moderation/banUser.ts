@@ -1,8 +1,9 @@
 import { UserProfileBuilder } from "../../../builders/UserProfileBuilder";
 import { BotButtonInteraction } from "../../../structures";
 import { Handler } from "../../../utils";
-import { userService } from "../../../services";
+import { moderationService } from "../../../services";
 import { userProfileView } from "../../../views";
+import { TargetType } from "../../../types";
 
 const banUserButton: Handler<BotButtonInteraction> = {
     name: "banUser",
@@ -14,17 +15,16 @@ const banUserButton: Handler<BotButtonInteraction> = {
             throw new Error('Invalid user ID when using Button: moderation_banUser');
         }
 
-        // Ban the user
-        await userService.banUser(userId, 'Banned by moderator');
-
-        // Refresh the profile view
+        // Get user profile
         const profile = await new UserProfileBuilder().getUserProfile(userId);
         if (!profile) {
             await interaction.ephemeralReply('❌ User not found');
             return;
         }
 
-        const view = await userProfileView(profile);
+        // Get ban reasons and update message with dropdown
+        const reasons = moderationService.getBanReasons(TargetType.User);
+        const view = await userProfileView(profile, reasons);
         await interaction.sendReply(null, view);
     }
 };
