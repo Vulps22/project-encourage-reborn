@@ -1,5 +1,5 @@
 import { Snowflake } from "discord.js";
-import { userService, questionService } from "../services";
+import { questionService, serverService, userService } from "../services";
 import { Logger } from "../utils";
 import { UserProfile } from "../interface/UserProfileInterface";
 
@@ -30,7 +30,7 @@ export class UserProfileBuilder {
     const totalServersResult = await userService.getUserServerCount(userId);
 
     // Get servers owned
-    const serversOwnedResult = 0; // TODO: Need ServerService.getUserOwnedServerCount(userId)
+    const serversOwnedResult = await serverService.getUserOwnedServerCount(userId);
 
     // Get servers banned from
     const serversBannedResult = await userService.getUserBannedServerCount(userId);

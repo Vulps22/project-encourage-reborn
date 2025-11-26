@@ -1,5 +1,5 @@
 import { UserProfileBuilder } from '../UserProfileBuilder';
-import { userService, questionService } from '../../services';
+import { questionService, serverService, userService } from '../../services';
 import { Logger } from '../../utils';
 
 // Mock services
@@ -13,6 +13,9 @@ jest.mock('../../services', () => ({
     getUserQuestionCount: jest.fn(),
     getUserApprovedQuestionCount: jest.fn(),
     getUserBannedQuestionCount: jest.fn(),
+  },
+  serverService: {
+    getUserOwnedServerCount: jest.fn(),
   },
 }));
 
@@ -61,10 +64,11 @@ describe('UserProfileBuilder', () => {
 
       mockUserService.getUser.mockResolvedValue(mockUser);
       mockQuestionService.getUserQuestionCount.mockResolvedValue(10);
-      mockQuestionService.getUserApprovedQuestionCount.mockResolvedValue(7);
+      mockQuestionService.getUserApprovedQuestionCount.mockResolvedValue(8);
       mockQuestionService.getUserBannedQuestionCount.mockResolvedValue(2);
       mockUserService.getUserServerCount.mockResolvedValue(5);
-      mockUserService.getUserBannedServerCount.mockResolvedValue(1);
+      (serverService.getUserOwnedServerCount as jest.Mock).mockResolvedValue(2);
+      mockUserService.getUserBannedServerCount.mockResolvedValue(0);
 
       const result = await userProfileBuilder.getUserProfile('123456789012345678');
 
@@ -76,11 +80,11 @@ describe('UserProfileBuilder', () => {
         globalLevel: 5,
         globalXP: 250,
         totalQuestions: 10,
-        approvedQuestions: 7,
+        approvedQuestions: 8,
         bannedQuestions: 2,
         totalServers: 5,
-        serversOwned: 0,
-        serversBanned: 1,
+        serversOwned: 2,
+        serversBanned: 0,
         createdDateTime: mockUser.created_datetime,
         deleteDate: null,
       });
@@ -115,6 +119,7 @@ describe('UserProfileBuilder', () => {
       mockQuestionService.getUserApprovedQuestionCount.mockResolvedValue(0);
       mockQuestionService.getUserBannedQuestionCount.mockResolvedValue(5);
       mockUserService.getUserServerCount.mockResolvedValue(0);
+      (serverService.getUserOwnedServerCount as jest.Mock).mockResolvedValue(0);
       mockUserService.getUserBannedServerCount.mockResolvedValue(3);
 
       const result = await userProfileBuilder.getUserProfile('123456789012345678');
@@ -145,7 +150,8 @@ describe('UserProfileBuilder', () => {
       mockQuestionService.getUserQuestionCount.mockResolvedValue(0);
       mockQuestionService.getUserApprovedQuestionCount.mockResolvedValue(0);
       mockQuestionService.getUserBannedQuestionCount.mockResolvedValue(0);
-      mockUserService.getUserServerCount.mockResolvedValue(1);
+      mockUserService.getUserServerCount.mockResolvedValue(3);
+      (serverService.getUserOwnedServerCount as jest.Mock).mockResolvedValue(1);
       mockUserService.getUserBannedServerCount.mockResolvedValue(0);
 
       const result = await userProfileBuilder.getUserProfile('123456789012345678');
