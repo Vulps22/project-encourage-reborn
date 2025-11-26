@@ -1,6 +1,6 @@
 
 CREATE TABLE IF NOT EXISTS "servers" ("id" BIGINT NOT NULL,
-  "name" TEXT NOT NULL,
+  "name" TEXT,
   "owner" BIGINT NOT NULL,
   "has_accepted" BOOLEAN NOT NULL DEFAULT FALSE,
   "is_banned" BOOLEAN NOT NULL DEFAULT FALSE,
