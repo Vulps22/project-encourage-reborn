@@ -57,11 +57,10 @@ describe('UserTrackingService', () => {
       await service.trackInteraction(interaction as any);
 
       expect(mockDb.query).toHaveBeenCalledWith(
-        'SELECT track_user_interaction($1, $2, $3, $4)',
+        'SELECT core.track_user_interaction($1, $2, $3)',
         [
           BigInt('123456789'),
           BigInt('987654321'),
-          'Test Server',
           BigInt('111222333')
         ]
       );

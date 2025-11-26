@@ -3,6 +3,14 @@ import { Logger } from '../../utils';
 jest.mock('../../utils', () => ({
   Logger: {
     logInteractionReceived: jest.fn(),
+    error: jest.fn(),
+    updateExecution: jest.fn(),
+  },
+}));
+
+jest.mock('../../services', () => ({
+  userTrackingService: {
+    trackInteraction: jest.fn(),
   },
 }));
 
@@ -33,6 +41,8 @@ describe('interactionCreate event', () => {
     const mockInteraction = {
       isChatInputCommand: jest.fn().mockReturnValue(true),
       isButton: jest.fn().mockReturnValue(false),
+      isRepliable: jest.fn().mockReturnValue(true),
+      reply: jest.fn()
     } as any;
 
     await interactionCreate.execute(mockInteraction);
@@ -44,6 +54,8 @@ describe('interactionCreate event', () => {
     const mockInteraction = {
       isChatInputCommand: jest.fn().mockReturnValue(false),
       isButton: jest.fn().mockReturnValue(true),
+      isRepliable: jest.fn().mockReturnValue(true),
+      reply: jest.fn()
     } as any;
 
     await interactionCreate.execute(mockInteraction);

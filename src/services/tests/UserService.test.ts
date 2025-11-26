@@ -207,7 +207,7 @@ describe('UserService', () => {
 
       expect(mockDb.query).toHaveBeenCalledWith(
         expect.stringContaining('SELECT COUNT(*)'),
-        ['123456789012345678']
+        [BigInt('123456789012345678')]
       );
       expect(result).toBe(3);
     });
