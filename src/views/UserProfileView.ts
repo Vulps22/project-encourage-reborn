@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
+import { ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 import { UserProfile } from "../interface";
 import { UniversalMessage } from "../types";
 
@@ -73,28 +73,27 @@ async function userProfileView(profile: UserProfile): Promise<UniversalMessage> 
     // Action Buttons
     const banButton = new ButtonBuilder()
         .setCustomId(`moderation_banUser_id:${profile.id}`)
-        .setLabel(profile.isBanned ? 'Unban User' : 'Ban User')
-        .setStyle(profile.isBanned ? ButtonStyle.Success : ButtonStyle.Danger);
+        .setLabel('Ban User')
+        .setStyle(ButtonStyle.Danger);
 
-    const closeButton = new ButtonBuilder()
-        .setCustomId(`moderation_closeUserProfile_id:${profile.id}`)
-        .setLabel('Close')
-        .setStyle(ButtonStyle.Secondary);
+    const unbanButton = new ButtonBuilder()
+        .setCustomId(`moderation_unbanUser_id:${profile.id}`)
+        .setLabel('Unban User')
+        .setStyle(ButtonStyle.Success);
 
-    const buttonRow = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(banButton, closeButton);
+    const userSection = new SectionBuilder()
+        .addTextDisplayComponents(userId, accountStatus);
+    if (banReasonDisplay) {
+        userSection.addTextDisplayComponents(banReasonDisplay);
+    }
+    userSection
+        .setButtonAccessory(profile.isBanned ? unbanButton : banButton);
 
     // Build Container
     const container = new ContainerBuilder()
         .addTextDisplayComponents(title)
         .addSeparatorComponents(new SeparatorBuilder())
-        .addTextDisplayComponents(userId, accountStatus);
-
-    if (banReasonDisplay) {
-        container.addTextDisplayComponents(banReasonDisplay);
-    }
-
-    container
+        .addSectionComponents(userSection)
         .addTextDisplayComponents(rulesStatus, levelXP)
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(questionsStats, serverStats)
@@ -104,8 +103,6 @@ async function userProfileView(profile: UserProfile): Promise<UniversalMessage> 
     if (deleteDateDisplay) {
         container.addTextDisplayComponents(deleteDateDisplay);
     }
-
-    container.addActionRowComponents(buttonRow);
 
     const message: UniversalMessage = {
         components: [container],
