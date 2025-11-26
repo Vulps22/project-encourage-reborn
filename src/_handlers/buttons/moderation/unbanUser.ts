@@ -1,7 +1,7 @@
 import { UserProfileBuilder } from "../../../builders/UserProfileBuilder";
 import { BotButtonInteraction } from "../../../structures";
-import { Handler } from "../../../utils";
-import { userService } from "../../../services";
+import { Handler, Logger } from "../../../utils";
+import { questionService, serverService, userService } from "../../../services";
 import { userProfileView } from "../../../views";
 
 const unbanUserButton: Handler<BotButtonInteraction> = {
@@ -16,6 +16,14 @@ const unbanUserButton: Handler<BotButtonInteraction> = {
 
         // Unban the user
         await userService.unbanUser(userId);
+
+        // Unban all questions that were banned due to user ban
+        const unbannedQuestionsCount = await questionService.unbanUserBannedQuestions(userId);
+        Logger.debug(`Unbanned ${unbannedQuestionsCount} questions from user ${userId}`);
+
+        // Unban all servers owned by the user
+        const unbannedServersCount = await serverService.unbanUserServers(userId);
+        Logger.debug(`Unbanned ${unbannedServersCount} servers owned by user ${userId}`);
 
         // Refresh the profile view
         const profile = await new UserProfileBuilder().getUserProfile(userId);

@@ -1,7 +1,7 @@
 import { ButtonInteraction } from 'discord.js';
 import { BotButtonInteraction } from '../../../../structures';
 import unbanUserButton from '../../moderation/unbanUser';
-import { userService } from '../../../../services';
+import { questionService, serverService, userService } from '../../../../services';
 import { UserProfileBuilder } from '../../../../builders/UserProfileBuilder';
 import { userProfileView } from '../../../../views';
 
@@ -35,25 +35,35 @@ describe('unbanUserButton', () => {
         expect(unbanUserButton.params).toEqual({ 'ID': 'id' });
     });
 
-    it('should unban user and refresh profile view', async () => {
+    it('should unban user, questions, and servers then refresh profile', async () => {
         const mockProfile = {
             id: '123456789',
             isBanned: false,
             banReason: null,
-            joinedAt: new Date(),
-            serversJoined: 5,
+            rulesAccepted: true,
+            globalLevel: 1,
+            globalXP: 100,
+            totalQuestions: 10,
+            approvedQuestions: 8,
+            bannedQuestions: 0,
+            totalServers: 5,
+            serversOwned: 2,
             serversBanned: 0,
-            questionsSubmitted: 10,
-            questionsApproved: 8,
-            questionsBanned: 2
+            createdDateTime: new Date(),
+            deleteDate: null
         };
 
+        (userService.unbanUser as jest.Mock).mockResolvedValue(undefined);
+        (questionService.unbanUserBannedQuestions as jest.Mock).mockResolvedValue(3);
+        (serverService.unbanUserServers as jest.Mock).mockResolvedValue(2);
         (UserProfileBuilder.prototype.getUserProfile as jest.Mock).mockResolvedValue(mockProfile);
         (userProfileView as jest.Mock).mockResolvedValue({ components: [] });
 
         await unbanUserButton.execute(botInteraction);
 
         expect(userService.unbanUser).toHaveBeenCalledWith('123456789');
+        expect(questionService.unbanUserBannedQuestions).toHaveBeenCalledWith('123456789');
+        expect(serverService.unbanUserServers).toHaveBeenCalledWith('123456789');
         expect(UserProfileBuilder.prototype.getUserProfile).toHaveBeenCalledWith('123456789');
         expect(userProfileView).toHaveBeenCalledWith(mockProfile);
         expect(mockInteraction.reply).toHaveBeenCalled();
@@ -72,11 +82,16 @@ describe('unbanUserButton', () => {
     });
 
     it('should handle user not found after unban', async () => {
+        (userService.unbanUser as jest.Mock).mockResolvedValue(undefined);
+        (questionService.unbanUserBannedQuestions as jest.Mock).mockResolvedValue(3);
+        (serverService.unbanUserServers as jest.Mock).mockResolvedValue(2);
         (UserProfileBuilder.prototype.getUserProfile as jest.Mock).mockResolvedValue(null);
 
         await unbanUserButton.execute(botInteraction);
 
         expect(userService.unbanUser).toHaveBeenCalledWith('123456789');
+        expect(questionService.unbanUserBannedQuestions).toHaveBeenCalledWith('123456789');
+        expect(serverService.unbanUserServers).toHaveBeenCalledWith('123456789');
         expect(UserProfileBuilder.prototype.getUserProfile).toHaveBeenCalledWith('123456789');
         expect(userProfileView).not.toHaveBeenCalled();
     });
