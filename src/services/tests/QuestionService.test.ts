@@ -310,7 +310,8 @@ describe('QuestionService', () => {
 
       expect(mockDb.count).toHaveBeenCalledWith('core', 'questions', { 
         user_id: BigInt('123456789012345678'),
-        is_approved: true 
+        is_approved: true,
+        is_banned: false
       });
       expect(result).toBe(3);
     });
@@ -327,6 +328,61 @@ describe('QuestionService', () => {
         is_banned: true 
       });
       expect(result).toBe(2);
+    });
+  });
+
+  describe('banAllUserQuestions', () => {
+    it('should ban all non-banned questions from a user', async () => {
+      mockDb.update.mockResolvedValue({ affectedRows: 3, changedRows: 3 });
+
+      const result = await questionService.banAllUserQuestions('123456789012345678', '999888777666555444');
+
+      expect(mockDb.update).toHaveBeenCalledWith('core', 'questions', {
+        is_banned: true,
+        banned_by: BigInt('999888777666555444'),
+        ban_reason: 'User Banned',
+        datetime_banned: expect.any(Date)
+      }, {
+        user_id: BigInt('123456789012345678'),
+        is_banned: false
+      });
+      expect(result).toBe(3);
+    });
+
+    it('should return 0 when user has no unbanned questions', async () => {
+      mockDb.update.mockResolvedValue({ affectedRows: 0, changedRows: 0 });
+
+      const result = await questionService.banAllUserQuestions('123456789012345678', '999888777666555444');
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('unbanUserBannedQuestions', () => {
+    it('should unban questions banned with "User Banned" reason', async () => {
+      mockDb.update.mockResolvedValue({ affectedRows: 2, changedRows: 2 });
+
+      const result = await questionService.unbanUserBannedQuestions('123456789012345678');
+
+      expect(mockDb.update).toHaveBeenCalledWith('core', 'questions', {
+        is_banned: false,
+        banned_by: null,
+        ban_reason: null,
+        datetime_banned: null
+      }, {
+        user_id: BigInt('123456789012345678'),
+        is_banned: true,
+        ban_reason: 'User Banned'
+      });
+      expect(result).toBe(2);
+    });
+
+    it('should return 0 when no questions match criteria', async () => {
+      mockDb.update.mockResolvedValue({ affectedRows: 0, changedRows: 0 });
+
+      const result = await questionService.unbanUserBannedQuestions('123456789012345678');
+
+      expect(result).toBe(0);
     });
   });
 });
