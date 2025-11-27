@@ -13,6 +13,9 @@ on:
       - 'package*.json'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   fresh-install:
     name: Fresh Install Test

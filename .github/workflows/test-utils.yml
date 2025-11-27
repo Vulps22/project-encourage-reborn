@@ -13,6 +13,9 @@ on:
       - 'package*.json'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test-utils:
     runs-on: ubuntu-latest
