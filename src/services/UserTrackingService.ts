@@ -16,6 +16,7 @@ import { TrackingCacheEntry } from '../interface';
 export class UserTrackingService {
   private db: DatabaseService;
   private cache: Map<string, TrackingCacheEntry>;
+  private cleanupTimer?: NodeJS.Timeout;
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(db: DatabaseService) {
@@ -23,9 +24,24 @@ export class UserTrackingService {
     this.cache = new Map();
     
     // Clean up expired cache entries every 10 minutes
-    setInterval(() => {
+    this.cleanupTimer = setInterval(() => {
       this.cleanupCache();
     }, 10 * 60 * 1000);
+
+    // Allow process to exit if this is the only active handle
+    if (this.cleanupTimer && typeof (this.cleanupTimer as any).unref === 'function') {
+      (this.cleanupTimer as any).unref();
+    }
+  }
+
+  /**
+   * Stop the internal cleanup timer. Useful for explicit teardown in tests.
+   */
+  stopCleanup(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+    }
   }
 
   /**
