@@ -1,0 +1,44 @@
+name: Test Core
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/bot.ts'
+      - 'src/index.ts'
+      - 'src/types/**'
+      - 'src/interface/**'
+      - 'jest.config.js'
+      - 'tsconfig.json'
+      - 'package*.json'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bot.ts'
+      - 'src/index.ts'
+      - 'src/types/**'
+      - 'src/interface/**'
+      - 'jest.config.js'
+      - 'tsconfig.json'
+      - 'package*.json'
+  workflow_dispatch:
+
+jobs:
+  test-core:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run all tests
+        run: npm test
