@@ -30,6 +30,28 @@ async function newQuestionView(question: Question, banReasons: [] | null = null)
     const id: TextDisplayBuilder = new TextDisplayBuilder()
         .setContent(`**Question ID:**\n${question.id}`);
 
+    // Approved info (if available) — show mention rather than fetching username
+    let approvedInfo: TextDisplayBuilder | null = null;
+    if (question.is_approved && question.approved_by) {
+        approvedInfo = new TextDisplayBuilder()
+            .setContent(`**Approved By:**\n<@${question.approved_by}> (User ID: ${question.approved_by})`);
+    }
+
+    // Banned info (if available) — show mention rather than fetching username
+    let bannedByInfo: TextDisplayBuilder | null = null;
+    let banReasonInfo: TextDisplayBuilder | null = null;
+    if (question.is_banned) {
+        if (question.ban_reason) {
+            banReasonInfo = new TextDisplayBuilder()
+                .setContent(`**Ban Reason:**\n${question.ban_reason}`);
+        }
+
+        if (question.banned_by) {
+            bannedByInfo = new TextDisplayBuilder()
+                .setContent(`**Banned By:**\n<@${question.banned_by}> (User ID: ${question.banned_by})`);
+        }
+    }
+
     const approveButton = new ButtonBuilder()
         .setCustomId(`moderation_approveQuestion_id:${question.id}`)
         .setLabel('Approve')
@@ -58,8 +80,14 @@ async function newQuestionView(question: Question, banReasons: [] | null = null)
     const container = new ContainerBuilder()
         .addTextDisplayComponents(title)
         .addSeparatorComponents(new SeparatorBuilder())
-        .addTextDisplayComponents(questionText, authorInfo, serverInfo, id)
-        .addSeparatorComponents(new SeparatorBuilder());
+        .addTextDisplayComponents(questionText, authorInfo, serverInfo, id);
+
+    // Insert approval / ban info when present
+    if (approvedInfo) container.addTextDisplayComponents(approvedInfo);
+    if (banReasonInfo) container.addTextDisplayComponents(banReasonInfo);
+    if (bannedByInfo) container.addTextDisplayComponents(bannedByInfo);
+
+    container.addSeparatorComponents(new SeparatorBuilder());
 
     if (!banReasons || banReasons.length === 0) {
         const buttonRow = new ActionRowBuilder<ButtonBuilder>()
