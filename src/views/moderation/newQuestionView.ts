@@ -80,7 +80,12 @@ async function newQuestionView(question: Question, banReasons: [] | null = null)
     const container = new ContainerBuilder()
         .addTextDisplayComponents(title)
         .addSeparatorComponents(new SeparatorBuilder())
-        .addTextDisplayComponents(questionText, authorInfo, serverInfo, id);
+        .addTextDisplayComponents(questionText, authorInfo, serverInfo, id)
+
+    if (approvedInfo || banReasonInfo || bannedByInfo) {
+        container.addSeparatorComponents(new SeparatorBuilder());
+    }
+
 
     // Insert approval / ban info when present
     if (approvedInfo) container.addTextDisplayComponents(approvedInfo);
