@@ -19,7 +19,7 @@ const showUserButton: Handler<BotButtonInteraction> = {
         }
 
         const view = await userProfileView(profile);
-        await interaction.sendReply(null, view);
+        await interaction.ephemeralReply(null, view);
 
     }
 };
