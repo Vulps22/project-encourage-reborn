@@ -23,5 +23,8 @@ module.exports = {
     '^.+\\.ts$': 'ts-jest'
   },
   clearMocks: true,
-  resetMocks: true
+  resetMocks: true,
+  testTimeout: 10000,
+  maxWorkers: '50%',
+  workerIdleMemoryLimit: '512MB'
 };
