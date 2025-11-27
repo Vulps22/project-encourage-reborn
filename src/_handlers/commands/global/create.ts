@@ -1,3 +1,4 @@
+import { MessageFlags } from 'discord.js';
 import { questionService, moderationService } from '../../../services';
 import { BotCommandInteraction } from '../../../structures';
 import { QuestionType } from '../../../types/QuestionType';
@@ -15,7 +16,7 @@ const create = new Command('create', 'Submit a custom truth or dare question')
   .setNSFW(true)
   .setAdministrator(false)
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (!interaction.guildId) {
       await interaction.editReply({
