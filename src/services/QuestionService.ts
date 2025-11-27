@@ -11,6 +11,21 @@ export class QuestionService {
     return await this.db.get<Question>('core', 'questions', { id: BigInt(id) });
   }
 
+  async getRandomQuestion(type: QuestionType): Promise<Question | null> {
+    const result = await this.db.query<Question>(
+      `SELECT * FROM "core"."questions" 
+       WHERE type = $1 
+       AND is_approved = true 
+       AND is_banned = false 
+       AND is_deleted = false
+       ORDER BY RANDOM() 
+       LIMIT 1`,
+      [type]
+    );
+
+    return result.length > 0 ? result[0] : null;
+  }
+
   async createQuestion(type: QuestionType, question: string, userId: Snowflake, serverId: Snowflake): Promise<Question | string> {
     if (question.length < 5) {
       return 'Question must be at least 5 characters long';

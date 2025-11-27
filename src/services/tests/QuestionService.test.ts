@@ -19,6 +19,7 @@ describe('QuestionService', () => {
       get: jest.fn(),
       update: jest.fn(),
       count: jest.fn(),
+      query: jest.fn(),
     } as any;
 
     questionService = new QuestionService(mockDb);
@@ -385,4 +386,106 @@ describe('QuestionService', () => {
       expect(result).toBe(0);
     });
   });
+
+  describe('getRandomQuestion', () => {
+    it('should return a random approved truth question', async () => {
+      const mockQuestion = {
+        id: 42,
+        type: QuestionType.Truth,
+        question: 'What is your biggest secret?',
+        user_id: '123456789012345678',
+        server_id: '987654321098765432',
+        is_approved: true,
+        approved_by: '111222333444555666',
+        datetime_approved: new Date(),
+        is_banned: false,
+        ban_reason: null,
+        banned_by: null,
+        datetime_banned: null,
+        created: new Date(),
+        message_id: null,
+        is_deleted: false,
+        datetime_deleted: null,
+      };
+
+      mockDb.query.mockResolvedValue([mockQuestion]);
+
+      const result = await questionService.getRandomQuestion(QuestionType.Truth);
+
+      expect(mockDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT * FROM "core"."questions"'),
+        [QuestionType.Truth]
+      );
+      expect(mockDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('is_approved = true'),
+        [QuestionType.Truth]
+      );
+      expect(mockDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('is_banned = false'),
+        [QuestionType.Truth]
+      );
+      expect(mockDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('is_deleted = false'),
+        [QuestionType.Truth]
+      );
+      expect(mockDb.query).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY RANDOM()'),
+        [QuestionType.Truth]
+      );
+      expect(result).toEqual(mockQuestion);
+    });
+
+    it('should return a random approved dare question', async () => {
+      const mockQuestion = {
+        id: 99,
+        type: QuestionType.Dare,
+        question: 'Do 20 pushups',
+        user_id: '123456789012345678',
+        server_id: '987654321098765432',
+        is_approved: true,
+        approved_by: '111222333444555666',
+        datetime_approved: new Date(),
+        is_banned: false,
+        ban_reason: null,
+        banned_by: null,
+        datetime_banned: null,
+        created: new Date(),
+        message_id: null,
+        is_deleted: false,
+        datetime_deleted: null,
+      };
+
+      mockDb.query.mockResolvedValue([mockQuestion]);
+
+      const result = await questionService.getRandomQuestion(QuestionType.Dare);
+
+      expect(mockDb.query).toHaveBeenCalledWith(
+        expect.any(String),
+        [QuestionType.Dare]
+      );
+      expect(result).toEqual(mockQuestion);
+    });
+
+    it('should return null when no approved questions available', async () => {
+      mockDb.query.mockResolvedValue([]);
+
+      const result = await questionService.getRandomQuestion(QuestionType.Truth);
+
+      expect(result).toBeNull();
+    });
+
+    it('should only return approved, non-banned, non-deleted questions', async () => {
+      mockDb.query.mockResolvedValue([]);
+
+      await questionService.getRandomQuestion(QuestionType.Truth);
+
+      const callArgs = mockDb.query.mock.calls[0];
+      const sql = callArgs[0] as string;
+
+      expect(sql).toContain('is_approved = true');
+      expect(sql).toContain('is_banned = false');
+      expect(sql).toContain('is_deleted = false');
+    });
+  });
 });
+
