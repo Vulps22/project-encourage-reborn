@@ -46,7 +46,7 @@ export abstract class BotRepliableInteraction extends BotInteraction {
     }
   }
 
-  async ephemeralReply(content: string, options: UniversalMessage = {}): Promise<void> {
+  async ephemeralReply(content: string | null = null, options: UniversalMessage = {}): Promise<void> {
     const existingFlags = Number(options.flags) || 0;
     const combinedFlags = existingFlags | MessageFlags.Ephemeral;
     const finalOptions = { ...options, flags: combinedFlags };
