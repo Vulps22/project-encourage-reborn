@@ -1,17 +1,21 @@
-import { BotCommandInteraction } from '../../../structures';
-import { questionService } from '../../../services';
-import { confirmNewQuestionEmbed } from '../../../views';
+import { BotCommandInteraction } from '../../../../structures';
+import { questionService } from '../../../../services';
+import { confirmNewQuestionEmbed } from '../../../../views';
 import create from '../../global/create';
-import { QuestionType } from '../../../types';
+import { QuestionType } from '../../../../types';
 
 // Mock dependencies
-jest.mock('../../../services', () => ({
+jest.mock('../../../../services', () => ({
   questionService: {
     createQuestion: jest.fn(),
+    updateQuestion: jest.fn(),
+  },
+  moderationService: {
+    sendToApprovalQueue: jest.fn(),
   },
 }));
 
-jest.mock('../../../views', () => ({
+jest.mock('../../../../views', () => ({
   confirmNewQuestionEmbed: jest.fn(),
 }));
 

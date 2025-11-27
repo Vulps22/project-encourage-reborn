@@ -36,10 +36,11 @@ async function freshInstall() {
     const schemasDir = path.join(__dirname, '../schemas');
     const schemaEntries = await fs.readdir(schemasDir, { withFileTypes: true });
 
-    // Find all schemas and their tables/views/triggers
+    // Find all schemas and their tables/views/triggers/procedures
     const tablesToCreate = [];
     const viewsToCreate = [];
     const triggersToCreate = [];
+    const proceduresToCreate = [];
     
     for (const schemaEntry of schemaEntries) {
       if (schemaEntry.isDirectory()) {
@@ -94,6 +95,23 @@ async function freshInstall() {
               schema: schemaName,
               file: file,
               path: path.join(triggersPath, file),
+            });
+          }
+        } catch (err) {
+          if (err.code !== 'ENOENT') throw err;
+        }
+        
+        // Check for procedures subdirectory
+        const proceduresPath = path.join(schemaPath, 'procedures');
+        try {
+          const procedureFiles = await fs.readdir(proceduresPath);
+          const sqlFiles = procedureFiles.filter(file => file.endsWith('.sql')).sort();
+          
+          for (const file of sqlFiles) {
+            proceduresToCreate.push({
+              schema: schemaName,
+              file: file,
+              path: path.join(proceduresPath, file),
             });
           }
         } catch (err) {
@@ -254,6 +272,29 @@ async function freshInstall() {
         await client.query(sql);
         
         if (trigger.schema !== 'public') {
+          await client.query('SET search_path TO public;');
+        }
+        
+        console.log(`✓ ${displayName} executed successfully`);
+      }
+    }
+
+    // Read and execute procedure files
+    if (proceduresToCreate.length > 0) {
+      console.log(`\nFound ${proceduresToCreate.length} procedure files`);
+      for (const procedure of proceduresToCreate) {
+        const displayName = `${procedure.schema}/${procedure.file}`;
+        console.log(`Executing ${displayName}...`);
+        
+        let sql = await fs.readFile(procedure.path, 'utf8');
+        
+        if (procedure.schema !== 'public') {
+          await client.query(`SET search_path TO "${procedure.schema}", public;`);
+        }
+        
+        await client.query(sql);
+        
+        if (procedure.schema !== 'public') {
           await client.query('SET search_path TO public;');
         }
         

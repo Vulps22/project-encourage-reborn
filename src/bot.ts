@@ -1,8 +1,10 @@
 import { Client, Collection, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { Command, Logger } from './utils';
+import { Handler, Command, Logger } from './utils';
 import { EventHandler } from './types';
+import { Config } from './config';
+import { BotButtonInteraction, BotSelectMenuInteraction } from './structures';
 
 // Initialize Discord client for this shard
 const client = new Client({
@@ -14,11 +16,16 @@ const client = new Client({
 // Set global client
 global.client = client;
 
-// Initialize commands collection
+// Initialize global config
+global.config = Config;
+
+// Initialize global collections
 global.commands = new Collection<string, Command>();
+global.buttons = new Collection<string, Handler<BotButtonInteraction>>();
+global.selects = new Collection<string, Handler<BotSelectMenuInteraction>>();
 
 // Load commands from global folder
-const globalCommandsPath = join(__dirname, 'commands', 'global');
+const globalCommandsPath = join(__dirname, '_handlers', 'commands', 'global');
 const globalCommandFiles = readdirSync(globalCommandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of globalCommandFiles) {
@@ -29,7 +36,7 @@ for (const file of globalCommandFiles) {
 }
 
 // Load commands from mod folder (if exists)
-const modCommandsPath = join(__dirname, 'commands', 'mod');
+const modCommandsPath = join(__dirname, '_handlers', 'commands', 'mod');
 if (existsSync(modCommandsPath)) {
     const modCommandFiles = readdirSync(modCommandsPath).filter(file => file.endsWith('.js'));
     
@@ -98,6 +105,64 @@ const registerCommands = async (): Promise<void> => {
         throw error;
     }
 };
+
+// Load buttons from button folder (including nested folders)
+const buttonsPath = join(__dirname, '_handlers', 'buttons');
+console.log(`Looking for buttons in: ${buttonsPath}`);
+console.log(`__dirname is: ${__dirname}`);
+if (existsSync(buttonsPath)) {
+    const loadButtonsFromDirectory = (dirPath: string, prefix: string = '') => {
+        const items = readdirSync(dirPath, { withFileTypes: true });
+        
+        for (const item of items) {
+            const itemPath = join(dirPath, item.name);
+            
+            if (item.isDirectory()) {
+                // Recursively load buttons from subdirectories with prefix
+                const newPrefix = prefix ? `${prefix}_${item.name}` : item.name;
+                loadButtonsFromDirectory(itemPath, newPrefix);
+            } else if (item.isFile() && item.name.endsWith('.js')) {
+                console.log(`Trying to load button from: ${itemPath}`);
+                const button: Handler<BotButtonInteraction> = require(itemPath).default;
+                console.log(`Loaded button:`, button);
+                const fullButtonName = prefix ? `${prefix}_${button.name}` : button.name;
+                global.buttons.set(fullButtonName, button);
+                Logger.debug(`Loaded button: ${fullButtonName}`);
+            }
+        }
+    };
+    
+    loadButtonsFromDirectory(buttonsPath);
+}
+
+// Load select menus from selects folder (including nested folders)
+const selectsPath = join(__dirname, '_handlers', 'selects');
+console.log(`Looking for select menus in: ${selectsPath}`);
+if (existsSync(selectsPath)) {
+    const loadSelectsFromDirectory = (dirPath: string, prefix: string = '') => {
+        const items = readdirSync(dirPath, { withFileTypes: true });
+        
+        for (const item of items) {
+            const itemPath = join(dirPath, item.name);
+            
+            if (item.isDirectory()) {
+                // Recursively load select menus from subdirectories with prefix
+                const newPrefix = prefix ? `${prefix}_${item.name}` : item.name;
+                loadSelectsFromDirectory(itemPath, newPrefix);
+            } else if (item.isFile() && item.name.endsWith('.js')) {
+                console.log(`Trying to load select menu from: ${itemPath}`);
+                const selectMenu: Handler<BotSelectMenuInteraction> = require(itemPath).default;
+                console.log(`Loaded select menu:`, selectMenu);
+                const fullSelectName = prefix ? `${prefix}_${selectMenu.name}` : selectMenu.name;
+                global.selects.set(fullSelectName, selectMenu);
+                Logger.debug(`Loaded select menu: ${fullSelectName}`);
+            }
+        }
+    };
+    
+    loadSelectsFromDirectory(selectsPath);
+}
+
 
 // Load and register event handlers
 const eventsPath = join(__dirname, 'events');

@@ -1,8 +1,8 @@
-import { questionService } from '../../services';
-import { BotCommandInteraction } from '../../structures';
-import { QuestionType } from '../../types/QuestionType';
-import { Command } from '../../utils';
-import { confirmNewQuestionEmbed } from '../../views';
+import { questionService, moderationService } from '../../../services';
+import { BotCommandInteraction } from '../../../structures';
+import { QuestionType } from '../../../types/QuestionType';
+import { Command, Logger } from '../../../utils';
+import { confirmNewQuestionEmbed } from '../../../views';
 
 const create = new Command('create', 'Submit a custom truth or dare question')
   .addStringOption('type', 'Question type', true)
@@ -35,6 +35,13 @@ const create = new Command('create', 'Submit a custom truth or dare question')
       });
       return;
     }
+
+    Logger.debug(`User ${interaction.user.id} submitted new question ID ${savedQuestion.id} for moderation`);
+    const messageId = await moderationService.sendToApprovalQueue(savedQuestion);
+
+    savedQuestion.message_id = messageId;
+
+    await questionService.updateQuestion(savedQuestion.id, savedQuestion)
 
     const response = confirmNewQuestionEmbed(savedQuestion);
 

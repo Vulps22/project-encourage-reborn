@@ -1,7 +1,9 @@
 import { Interaction } from 'discord.js';
+import { DMInteractionError } from '../errors';
+import { userTrackingService } from '../services';
 import { EventHandler } from '../types';
 import { Logger } from '../utils';
-import { BotCommandInteraction } from '../structures';
+import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 
 /**
  * InteractionCreate event handler
@@ -13,24 +15,47 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
   execute: async (interaction: Interaction): Promise<void> => {
     const executionId = await Logger.logInteractionReceived(interaction);
 
-    if(interaction.isChatInputCommand()) {
-        const command = global.commands.get(interaction.commandName);
-        if (!command) {
-            Logger.error(`No command found for name: ${interaction.commandName}`);
-            return;
+    // Track user interaction before processing
+    try {
+      await userTrackingService.trackInteraction(interaction);
+    } catch (error) {
+      if (error instanceof DMInteractionError) {
+        // DM interactions are not supported - reply and exit
+        if (interaction.isRepliable()) {
+          await interaction.reply({
+            content: error.message,
+            ephemeral: true
+          });
         }
-
-        const botInteraction = new BotCommandInteraction(interaction, executionId);
-
-        if(command.isAdministrator && !botInteraction.isAdministrator()) {
-            await botInteraction.sendReply('❌ You do not have permission to use this command.');
-            await Logger.updateExecution(executionId, 'Failed: Permission denied');
-            return;
-        }
-
-        command.execute(botInteraction)
+        await Logger.updateExecution(executionId, 'Failed: DM interaction not supported');
         return;
+      }
+      // Other errors are critical - block the interaction
+      Logger.error(`User tracking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      await Logger.updateExecution(executionId, `Failed: Tracking error - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      if (interaction.isRepliable()) {
+        await interaction.reply({
+          content: 'An error occurred while processing your request. Please try again later.',
+          ephemeral: true
+        });
+      }
+      return;
+    }
 
+    if (interaction.isChatInputCommand()) {
+      new CommandInteractionEvent().execute(interaction, executionId);
+      return;
+    }
+
+    if (interaction.isButton()) {
+      new ButtonInteractionEvent().execute(interaction, executionId);
+      return;
+    }
+
+    if (interaction.isStringSelectMenu()) {
+      new StringSelectInteractionEvent().execute(interaction, executionId);
+      return;
     }
   },
 };
