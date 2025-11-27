@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, StringSelectMenuBuilder, TextDisplayBuilder } from "discord.js";
-import { UserProfile } from "../interface";
-import { UniversalMessage } from "../types";
+import { UserProfile } from "../../interface";
+import { UniversalMessage } from "../../types";
 
 async function userProfileView(profile: UserProfile, banReasons: any[] | null = null): Promise<UniversalMessage> {
     const client = global.client;
@@ -88,13 +88,18 @@ async function userProfileView(profile: UserProfile, banReasons: any[] | null = 
         .setMinValues(1)
         .setMaxValues(1) : null;
 
+    const sendToModeratorsButton = new ButtonBuilder()
+        .setCustomId(`moderation_sendToModerators_id:${profile.id}`)
+        .setLabel('Send to Mod Chat')
+        .setStyle(ButtonStyle.Secondary);
+
     const userSection = new SectionBuilder()
         .addTextDisplayComponents(userId, accountStatus);
     if (banReasonDisplay) {
         userSection.addTextDisplayComponents(banReasonDisplay);
     }
     // Sections MUST have an accessory button per discords validation standards. so we cannot make the button conditional
-        userSection.setButtonAccessory(profile.isBanned ? unbanButton : banButton);
+    userSection.setButtonAccessory(profile.isBanned ? unbanButton : banButton);
 
     // Build Container
     const container = new ContainerBuilder()
@@ -105,7 +110,8 @@ async function userProfileView(profile: UserProfile, banReasons: any[] | null = 
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(questionsStats, serverStats)
         .addSeparatorComponents(new SeparatorBuilder())
-        .addTextDisplayComponents(accountDates);
+        .addTextDisplayComponents(accountDates)
+
 
     if (deleteDateDisplay) {
         container.addTextDisplayComponents(deleteDateDisplay);
@@ -117,6 +123,8 @@ async function userProfileView(profile: UserProfile, banReasons: any[] | null = 
             .addComponents(banReasonsMenu);
         container.addActionRowComponents(selectMenuRow);
     }
+
+    container.addActionRowComponents(new ActionRowBuilder<ButtonBuilder>().addComponents(sendToModeratorsButton));
 
     const message: UniversalMessage = {
         components: [container],
