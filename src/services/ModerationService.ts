@@ -48,7 +48,7 @@ export class ModerationService {
         try {
             // Update the question in the database
             const result = await this.db.update(
-                'core',
+                'question',
                 'questions',
                 {
                     is_approved: true,
@@ -83,7 +83,7 @@ export class ModerationService {
         try {
             // Update the question in the database
             const result = await this.db.update(
-                'core',
+                'question',
                 'questions',
                 {
                     is_approved: false,

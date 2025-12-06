@@ -8,12 +8,12 @@ export class QuestionService {
 
 
   async getQuestionById(id: number): Promise<Question | null> {
-    return await this.db.get<Question>('core', 'questions', { id: BigInt(id) });
+    return await this.db.get<Question>('question', 'questions', { id: BigInt(id) });
   }
 
   async getRandomQuestion(type: QuestionType): Promise<Question | null> {
     const result = await this.db.query<Question>(
-      `SELECT * FROM "core"."questions" 
+      `SELECT * FROM "question"."questions" 
        WHERE type = $1 
        AND is_approved = true 
        AND is_banned = false 
@@ -35,7 +35,7 @@ export class QuestionService {
       return 'Question must be 500 characters or less';
     }
 
-    const result = await this.db.insert('core', 'questions', {
+    const result = await this.db.insert('question', 'questions', {
       type,
       question,
       user_id: userId,
@@ -56,15 +56,15 @@ export class QuestionService {
   }
 
   async updateQuestion(id: number, data: Question): Promise<void> {
-    await this.db.update('core', 'questions', data, { id: BigInt(id) });
+    await this.db.update('question', 'questions', data, { id: BigInt(id) });
   }
 
   async getUserQuestionCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('core', 'questions', { user_id: BigInt(userId) });
+    return await this.db.count('question', 'questions', { user_id: BigInt(userId) });
   }
 
   async getUserApprovedQuestionCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('core', 'questions', { 
+    return await this.db.count('question', 'questions', { 
       user_id: BigInt(userId),
       is_approved: true,
       is_banned: false
@@ -72,7 +72,7 @@ export class QuestionService {
   }
 
   async getUserBannedQuestionCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('core', 'questions', { 
+    return await this.db.count('question', 'questions', { 
       user_id: BigInt(userId),
       is_banned: true 
     });
@@ -85,7 +85,7 @@ export class QuestionService {
    * @returns Number of questions banned
    */
   async banAllUserQuestions(userId: Snowflake, moderatorId: Snowflake): Promise<number> {
-    const result = await this.db.update('core', 'questions', {
+    const result = await this.db.update('question', 'questions', {
       is_banned: true,
       banned_by: BigInt(moderatorId),
       ban_reason: 'User Banned',
@@ -104,7 +104,7 @@ export class QuestionService {
    * @returns Number of questions unbanned
    */
   async unbanUserBannedQuestions(userId: Snowflake): Promise<number> {
-    const result = await this.db.update('core', 'questions', {
+    const result = await this.db.update('question', 'questions', {
       is_banned: false,
       banned_by: null,
       ban_reason: null,
