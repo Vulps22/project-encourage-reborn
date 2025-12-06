@@ -56,7 +56,7 @@ describe('QuestionService', () => {
         validServerId
       );
 
-      expect(mockDb.insert).toHaveBeenCalledWith('core', 'questions', {
+      expect(mockDb.insert).toHaveBeenCalledWith('question', 'questions', {
         type: 'truth',
         question: 'What is your biggest fear?',
         user_id: validUserId,
@@ -224,7 +224,7 @@ describe('QuestionService', () => {
       await questionService.createQuestion(QuestionType.Truth, 'Test question', validUserId, validServerId);
 
       expect(mockDb.insert).toHaveBeenCalledWith(
-        'core',
+        'question',
         'questions',
         expect.objectContaining({
           is_approved: false,
@@ -244,7 +244,7 @@ describe('QuestionService', () => {
       await questionService.createQuestion(QuestionType.Truth, 'Test question', validUserId, validServerId);
 
       expect(mockDb.insert).toHaveBeenCalledWith(
-        'core',
+        'question',
         'questions',
         expect.objectContaining({
           is_banned: false,
@@ -269,7 +269,7 @@ describe('QuestionService', () => {
 
       const result = await questionService.getQuestionById(123);
 
-      expect(mockDb.get).toHaveBeenCalledWith('core', 'questions', { id: BigInt(123) });
+      expect(mockDb.get).toHaveBeenCalledWith('question', 'questions', { id: BigInt(123) });
       expect(result).toEqual(mockQuestion);
     });
 
@@ -288,7 +288,7 @@ describe('QuestionService', () => {
 
       const result = await questionService.getUserQuestionCount('123456789012345678');
 
-      expect(mockDb.count).toHaveBeenCalledWith('core', 'questions', { 
+      expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', { 
         user_id: BigInt('123456789012345678') 
       });
       expect(result).toBe(5);
@@ -309,7 +309,7 @@ describe('QuestionService', () => {
 
       const result = await questionService.getUserApprovedQuestionCount('123456789012345678');
 
-      expect(mockDb.count).toHaveBeenCalledWith('core', 'questions', { 
+      expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', { 
         user_id: BigInt('123456789012345678'),
         is_approved: true,
         is_banned: false
@@ -324,7 +324,7 @@ describe('QuestionService', () => {
 
       const result = await questionService.getUserBannedQuestionCount('123456789012345678');
 
-      expect(mockDb.count).toHaveBeenCalledWith('core', 'questions', { 
+      expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', { 
         user_id: BigInt('123456789012345678'),
         is_banned: true 
       });
@@ -338,7 +338,7 @@ describe('QuestionService', () => {
 
       const result = await questionService.banAllUserQuestions('123456789012345678', '999888777666555444');
 
-      expect(mockDb.update).toHaveBeenCalledWith('core', 'questions', {
+      expect(mockDb.update).toHaveBeenCalledWith('question', 'questions', {
         is_banned: true,
         banned_by: BigInt('999888777666555444'),
         ban_reason: 'User Banned',
@@ -365,7 +365,7 @@ describe('QuestionService', () => {
 
       const result = await questionService.unbanUserBannedQuestions('123456789012345678');
 
-      expect(mockDb.update).toHaveBeenCalledWith('core', 'questions', {
+      expect(mockDb.update).toHaveBeenCalledWith('question', 'questions', {
         is_banned: false,
         banned_by: null,
         ban_reason: null,
@@ -413,7 +413,7 @@ describe('QuestionService', () => {
       const result = await questionService.getRandomQuestion(QuestionType.Truth);
 
       expect(mockDb.query).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT * FROM "core"."questions"'),
+        expect.stringContaining('SELECT * FROM "question"."questions"'),
         [QuestionType.Truth]
       );
       expect(mockDb.query).toHaveBeenCalledWith(

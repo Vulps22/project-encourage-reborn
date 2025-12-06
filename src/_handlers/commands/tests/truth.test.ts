@@ -1,14 +1,19 @@
-import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import { questionService } from '../../../services';
 import { BotCommandInteraction } from '../../../structures';
 import { QuestionType } from '../../../types';
+import { questionEmbed } from '../../../views';
 import truth from '../global/truth';
 
-// Mock services
+// Mock services and views
 jest.mock('../../../services', () => ({
   questionService: {
     getRandomQuestion: jest.fn(),
   },
+}));
+
+jest.mock('../../../views', () => ({
+  questionEmbed: jest.fn(),
 }));
 
 describe('truth command', () => {
@@ -56,15 +61,23 @@ describe('truth command', () => {
       datetime_deleted: null,
     };
 
+    const mockEmbedMessage = {
+      content: { type: 'container', children: [] },
+      components: [],
+    };
+
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(mockQuestion);
+    (questionEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
+
+    // Mock the deferred state
+    Object.defineProperty(botInteraction, 'deferred', { get: () => true });
 
     await truth.execute(botInteraction);
 
-    expect(mockInteraction.deferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
+    expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
-    expect(mockInteraction.editReply).toHaveBeenCalledWith({
-      content: `**Truth:** ${mockQuestion.question}`,
-    });
+    expect(questionEmbed).toHaveBeenCalledWith(mockQuestion);
+    expect(mockInteraction.editReply).toHaveBeenCalledWith(mockEmbedMessage);
   });
 
   it('should handle no approved questions available', async () => {
@@ -72,7 +85,7 @@ describe('truth command', () => {
 
     await truth.execute(botInteraction);
 
-    expect(mockInteraction.deferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
+    expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
     expect(mockInteraction.editReply).toHaveBeenCalledWith({
       content: '❌ No approved truth questions available. Try again later!',

@@ -130,7 +130,7 @@ export class UserTrackingService {
 
       // Call stored procedure to track user interaction
       await this.db.query(
-        'SELECT core.track_user_interaction($1, $2, $3)',
+        'SELECT user.track_user_interaction($1, $2, $3)',
         [
           BigInt(userId),
           BigInt(serverId),

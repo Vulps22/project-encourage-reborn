@@ -127,7 +127,7 @@ describe('ModerationService', () => {
             await moderationService.approveQuestion('1', '123456789012345678');
 
             expect(mockDb.update).toHaveBeenCalledWith(
-                'core',
+                'question',
                 'questions',
                 {
                     is_approved: true,
@@ -173,7 +173,7 @@ describe('ModerationService', () => {
             await moderationService.banQuestion('1', '123456789012345678', 'Inappropriate content');
 
             expect(mockDb.update).toHaveBeenCalledWith(
-                'core',
+                'question',
                 'questions',
                 {
                     is_banned: true,

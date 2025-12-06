@@ -27,7 +27,7 @@ describe('ServerService', () => {
 
       const result = await serverService.banUserServers('123456789012345678', 'Spam');
 
-      expect(mockDb.update).toHaveBeenCalledWith('core', 'servers', {
+      expect(mockDb.update).toHaveBeenCalledWith('server', 'servers', {
         is_banned: true,
         ban_reason: 'Spam'
       }, {
@@ -54,7 +54,7 @@ describe('ServerService', () => {
 
       const result = await serverService.unbanUserServers('123456789012345678');
 
-      expect(mockDb.update).toHaveBeenCalledWith('core', 'servers', {
+      expect(mockDb.update).toHaveBeenCalledWith('server', 'servers', {
         is_banned: false,
         ban_reason: null
       }, {
@@ -81,7 +81,7 @@ describe('ServerService', () => {
 
       const result = await serverService.getUserOwnedServerCount('123456789012345678');
 
-      expect(mockDb.count).toHaveBeenCalledWith('core', 'servers', { 
+      expect(mockDb.count).toHaveBeenCalledWith('server', 'servers', { 
         owner: BigInt('123456789012345678') 
       });
       expect(result).toBe(5);

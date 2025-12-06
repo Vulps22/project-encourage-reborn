@@ -163,7 +163,8 @@ async function freshInstall() {
         // Extract FOREIGN KEY constraints so we can add them after all tables are created.
         // This handles both named CONSTRAINT "name" FOREIGN KEY (...) REFERENCES ...
         // and anonymous FOREIGN KEY (...) REFERENCES ...
-        const fkRegex = /,?\s*CONSTRAINT\s+"?([\w\-]+)"?\s+FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+"?([\w\-]+)"?\s*\(([^)]+)\)([^;\n]*)/gi;
+        // Pattern matches schema-qualified references like "schema"."table" or just "table"
+        const fkRegex = /,?\s*CONSTRAINT\s+"?([\w\-]+)"?\s+FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+("?[\w\-]+"?\."?[\w\-]+"?|"?[\w\-]+"?)\s*\(([^)]+)\)([^,\)]*)/gi;
         let modifiedSql = sql;
         let match;
         while ((match = fkRegex.exec(sql)) !== null) {
@@ -176,7 +177,7 @@ async function freshInstall() {
           // Build ALTER TABLE statement
           const tableName = table.file.replace(/\.sql$/i, '');
           const fullTable = table.schema === 'public' ? `\"${tableName}\"` : `\"${table.schema}\".\"${tableName}\"`;
-          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${constraintName}\" FOREIGN KEY (${localCols}) REFERENCES \"${refTable}\" (${refCols}) ${tail};`;
+          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${constraintName}\" FOREIGN KEY (${localCols}) REFERENCES ${refTable} (${refCols}) ${tail};`;
           fkStatements.push({ schema: table.schema, statement: alter });
 
           // remove the matched constraint from the create statement (including leading comma if present)
@@ -184,7 +185,7 @@ async function freshInstall() {
         }
 
         // handle anonymous FOREIGN KEY (...) REFERENCES ... (no CONSTRAINT name)
-        const anonFkRegex = /,?\s*FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+"?([\w\-]+)"?\s*\(([^)]+)\)([^;\n]*)/gi;
+        const anonFkRegex = /,?\s*FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+("?[\w\-]+"?\."?[\w\-]+"?|"?[\w\-]+"?)\s*\(([^)]+)\)([^,\)]*)/gi;
         while ((match = anonFkRegex.exec(sql)) !== null) {
           // generate a constraint name
           const localCols = match[1].trim();
@@ -194,7 +195,7 @@ async function freshInstall() {
           const tableName = table.file.replace(/\.sql$/i, '');
           const cname = `${tableName}_fk_${Math.random().toString(36).slice(2,8)}`;
           const fullTable = table.schema === 'public' ? `\"${tableName}\"` : `\"${table.schema}\".\"${tableName}\"`;
-          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${cname}\" FOREIGN KEY (${localCols}) REFERENCES \"${refTable}\" (${refCols}) ${tail};`;
+          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${cname}\" FOREIGN KEY (${localCols}) REFERENCES ${refTable} (${refCols}) ${tail};`;
           fkStatements.push({ schema: table.schema, statement: alter });
           modifiedSql = modifiedSql.replace(match[0], '');
         }
