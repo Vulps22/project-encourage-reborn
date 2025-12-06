@@ -1,14 +1,14 @@
-import { MessageFlags } from 'discord.js';
 import { questionService } from '../../../services';
 import { BotCommandInteraction } from '../../../structures';
 import { QuestionType } from '../../../types';
 import { Command } from '../../../utils';
+import { questionEmbed } from '../../../views';
 
 const truth = new Command('truth', 'Get a random truth question')
   .setNSFW(true)
   .setAdministrator(false)
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.deferReply();
 
     const question = await questionService.getRandomQuestion(QuestionType.Truth);
 
@@ -19,9 +19,8 @@ const truth = new Command('truth', 'Get a random truth question')
       return;
     }
 
-    await interaction.editReply({
-      content: `**Truth:** ${question.question}`,
-    });
+    const message = questionEmbed(question);
+    await interaction.sendReply(null, message);
   });
 
 export default truth;
