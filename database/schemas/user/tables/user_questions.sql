@@ -31,4 +31,4 @@ COMMENT ON COLUMN "user"."user_questions"."image_url" IS 'Profile image URL at t
 COMMENT ON COLUMN "user"."user_questions"."done_count" IS 'Number of votes for successful completion';
 COMMENT ON COLUMN "user"."user_questions"."failed_count" IS 'Number of votes for failure';
 COMMENT ON COLUMN "user"."user_questions"."skipped" IS 'Whether user skipped the question';
-COMMENT ON COLUMN "user"."user_questions"."skipped" IS 'When the final result was determined (set by trigger)';
+COMMENT ON COLUMN "user"."user_questions"."finalised_datetime" IS 'When the final result was determined (set by trigger)';
