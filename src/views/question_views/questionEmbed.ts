@@ -58,8 +58,6 @@ function questionEmbed(question: Question): UniversalMessage {
     const buttonRow = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(doneButton, failedButton, skipButton);
 
-    //container.addActionRowComponents(buttonRow);
-
     const message: UniversalMessage = {
         flags: MessageFlags.IsComponentsV2,
         components: [container, buttonRow],
