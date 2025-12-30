@@ -1,9 +1,9 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { questionService } from '../../../services';
-import { BotCommandInteraction } from '../../../structures';
-import { QuestionType } from '../../../types';
-import { questionEmbed } from '../../../views';
-import truth from '../global/truth';
+import { questionService } from '../../../../services';
+import { BotCommandInteraction } from '../../../../structures';
+import { QuestionType } from '../../../../types';
+import { questionEmbed } from '../../../../views';
+import truth from '../../global/truth';
 
 // Mock services and views
 jest.mock('../../../services', () => ({
