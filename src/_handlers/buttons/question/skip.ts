@@ -4,10 +4,7 @@ import { Handler } from '../../../utils';
 const skip: Handler<BotButtonInteraction> = {
     name: 'skip',
     async execute(interaction: BotButtonInteraction): Promise<void> {
-        const questionId = interaction.params.get('id');
-        
-        console.log(`User ${interaction.user.id} clicked SKIP on question ${questionId}`);
-        
+        const questionId = interaction.params.get('id');        
         await interaction.reply({
             content: '⏭️ Skipped!',
             ephemeral: true,
