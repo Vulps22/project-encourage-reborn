@@ -36,10 +36,7 @@ describe('done button handler', () => {
     it('should reply with done confirmation message', async () => {
       await done.execute(mockInteraction);
 
-      expect(mockInteraction.reply).toHaveBeenCalledWith({
-        content: '✅ Marked as DONE!',
-        ephemeral: true,
-      });
+      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('✅ Marked as DONE!');
     });
 
     it('should read questionId from params', async () => {
@@ -55,10 +52,7 @@ describe('done button handler', () => {
 
       await done.execute(mockInteraction);
 
-      expect(mockInteraction.reply).toHaveBeenCalledWith({
-        content: '✅ Marked as DONE!',
-        ephemeral: true,
-      });
+      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('✅ Marked as DONE!');
     });
 
     it('should send ephemeral reply', async () => {

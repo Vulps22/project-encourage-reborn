@@ -36,10 +36,7 @@ describe('failed button handler', () => {
     it('should reply with failed confirmation message', async () => {
       await failed.execute(mockInteraction);
 
-      expect(mockInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ Marked as FAILED!',
-        ephemeral: true,
-      });
+      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Marked as FAILED!');
     });
 
     it('should read questionId from params', async () => {
@@ -55,10 +52,7 @@ describe('failed button handler', () => {
 
       await failed.execute(mockInteraction);
 
-      expect(mockInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ Marked as FAILED!',
-        ephemeral: true,
-      });
+      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Marked as FAILED!');
     });
 
     it('should send ephemeral reply', async () => {

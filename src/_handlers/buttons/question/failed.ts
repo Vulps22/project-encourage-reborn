@@ -5,10 +5,7 @@ const failed: Handler<BotButtonInteraction> = {
     name: 'failed',
     async execute(interaction: BotButtonInteraction): Promise<void> {
         const questionId = interaction.params.get('id');        
-        await interaction.reply({
-            content: '❌ Marked as FAILED!',
-            ephemeral: true,
-        });
+                await interaction.ephemeralReply('❌ Marked as FAILED!');
     }
 };
 

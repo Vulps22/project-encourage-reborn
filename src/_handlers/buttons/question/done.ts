@@ -5,10 +5,7 @@ const done: Handler<BotButtonInteraction> = {
     name: 'done',
     async execute(interaction: BotButtonInteraction): Promise<void> {
         const questionId = interaction.params.get('id');        
-        await interaction.reply({
-            content: '✅ Marked as DONE!',
-            ephemeral: true,
-        });
+        await interaction.ephemeralReply('✅ Marked as DONE!');
     }
 };
 

@@ -36,10 +36,7 @@ describe('skip button handler', () => {
     it('should reply with skip confirmation message', async () => {
       await skip.execute(mockInteraction);
 
-      expect(mockInteraction.reply).toHaveBeenCalledWith({
-        content: '⏭️ Skipped!',
-        ephemeral: true,
-      });
+      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('⏭️ Skipped!');
     });
 
     it('should read questionId from params', async () => {
@@ -55,10 +52,7 @@ describe('skip button handler', () => {
 
       await skip.execute(mockInteraction);
 
-      expect(mockInteraction.reply).toHaveBeenCalledWith({
-        content: '⏭️ Skipped!',
-        ephemeral: true,
-      });
+      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('⏭️ Skipped!');
     });
 
     it('should send ephemeral reply', async () => {
