@@ -6,13 +6,13 @@ import { questionEmbed } from '../../../../views';
 import truth from '../../global/truth';
 
 // Mock services and views
-jest.mock('../../../services', () => ({
+jest.mock('../../../../services', () => ({
   questionService: {
     getRandomQuestion: jest.fn(),
   },
 }));
 
-jest.mock('../../../views', () => ({
+jest.mock('../../../../views', () => ({
   questionEmbed: jest.fn(),
 }));
 
@@ -69,15 +69,15 @@ describe('truth command', () => {
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(mockQuestion);
     (questionEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
 
-    // Mock the deferred state
-    Object.defineProperty(botInteraction, 'deferred', { get: () => true });
+    // Mock sendReply method
+    botInteraction.sendReply = jest.fn().mockResolvedValue(undefined);
 
     await truth.execute(botInteraction);
 
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
     expect(questionEmbed).toHaveBeenCalledWith(mockQuestion);
-    expect(mockInteraction.editReply).toHaveBeenCalledWith(mockEmbedMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockEmbedMessage);
   });
 
   it('should handle no approved questions available', async () => {
