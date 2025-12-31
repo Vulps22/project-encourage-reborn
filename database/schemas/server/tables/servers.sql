@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS "server"."servers" ("id" BIGINT NOT NULL,
   "name" TEXT,
   "owner" BIGINT NOT NULL,
   "has_accepted" BOOLEAN NOT NULL DEFAULT FALSE,
+  "can_create" BOOLEAN NOT NULL DEFAULT FALSE,
   "is_banned" BOOLEAN NOT NULL DEFAULT FALSE,
   "ban_reason" TEXT,
   "date_created" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,6 +34,7 @@ CREATE INDEX IF NOT EXISTS "idx_deleted" ON "server"."servers"("is_deleted");
 COMMENT ON TABLE "server"."servers" IS 'Stores Discord server configuration and settings';
 COMMENT ON COLUMN "server"."servers"."name" IS 'Discord server name';
 COMMENT ON COLUMN "server"."servers"."has_accepted" IS 'Whether owner has accepted bot terms/rules';
+COMMENT ON COLUMN "server"."servers"."can_create" IS 'Whether server can create new truth/dare questions (requires rules acceptance)';
 COMMENT ON COLUMN "server"."servers"."is_banned" IS 'Whether server is banned from using the bot';
 COMMENT ON COLUMN "server"."servers"."ban_reason" IS 'Reason for server ban';
 COMMENT ON COLUMN "server"."servers"."dare_success_xp" IS 'XP awarded for successfully completing a dare';
