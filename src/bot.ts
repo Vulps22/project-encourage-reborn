@@ -108,9 +108,9 @@ async function loadEvents(client: Client): Promise<void> {
         const event: EventHandler = eventModule.default;
 
         if (event.once) {
-            client.once(event.event, (...args) => event.execute(...args));
+            client.once(event.event, (...args) => void event.execute(...args));
         } else {
-            client.on(event.event, (...args) => event.execute(...args));
+            client.on(event.event, (...args) => void event.execute(...args));
         }
 
         Logger.debug(`Registered event: ${event.event} (once: ${event.once})`);
@@ -217,10 +217,12 @@ async function startBot(): Promise<void> {
     await loadSelectMenus();
     await loadEvents(client);
 
-    client.once(Events.ClientReady, async () => {
-        Logger.debug('Client is ready. Registering commands...');
-        await registerCommands();
-        Logger.debug('Commands registered successfully');
+    client.once(Events.ClientReady, () => {
+        void (async (): Promise<void> => {
+            Logger.debug('Client is ready. Registering commands...');
+            await registerCommands();
+            Logger.debug('Commands registered successfully');
+        })();
     });
 
     await client.login().catch((error: Error) => {
