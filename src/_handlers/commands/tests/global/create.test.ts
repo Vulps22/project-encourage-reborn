@@ -3,6 +3,7 @@ import { questionService } from '../../../../services';
 import { confirmNewQuestionEmbed } from '../../../../views';
 import create from '../../global/create';
 import { QuestionType } from '../../../../types';
+import { MessageFlags } from 'discord.js';
 
 // Mock dependencies
 jest.mock('../../../../services', () => ({
@@ -100,7 +101,7 @@ describe('create command', () => {
 
       await create.execute(mockInteraction as BotCommandInteraction);
 
-      expect(mockDeferReply).toHaveBeenCalledWith({ ephemeral: true });
+      expect(mockDeferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
     });
 
     it('should fail if not in a guild', async () => {

@@ -1,4 +1,4 @@
-import { Interaction } from 'discord.js';
+import { Interaction, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
 import { userTrackingService } from '../services';
 import { EventHandler } from '../types';
@@ -24,7 +24,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
         if (interaction.isRepliable()) {
           await interaction.reply({
             content: error.message,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
         }
         await Logger.updateExecution(executionId, 'Failed: DM interaction not supported');
@@ -37,7 +37,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       if (interaction.isRepliable()) {
         await interaction.reply({
           content: 'An error occurred while processing your request. Please try again later.',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       }
       return;

@@ -91,10 +91,10 @@ describe('DatabaseService', () => {
       const mockRow = { id: 1, name: 'Test User', email: 'test@example.com' };
       mockPool.query.mockResolvedValue({ rows: [mockRow], rowCount: 1 });
 
-      const result = await dbService.get('core', 'users', { id: 1 });
+      const result = await dbService.get('user', 'users', { id: 1 });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT * FROM "core"."users" WHERE "id" = $1 LIMIT 1',
+        'SELECT * FROM "user"."users" WHERE "id" = $1 LIMIT 1',
         [1]
       );
       expect(result).toEqual(mockRow);
@@ -103,7 +103,7 @@ describe('DatabaseService', () => {
     it('should return null if no record found', async () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const result = await dbService.get('core', 'users', { id: 999 });
+      const result = await dbService.get('user', 'users', { id: 999 });
 
       expect(result).toBeNull();
     });
@@ -112,10 +112,10 @@ describe('DatabaseService', () => {
       const mockRow = { uuid: 'abc-123', name: 'Test', status: 'active' };
       mockPool.query.mockResolvedValue({ rows: [mockRow], rowCount: 1 });
 
-      await dbService.get('core', 'users', { uuid: 'abc-123', status: 'active' });
+      await dbService.get('user', 'users', { uuid: 'abc-123', status: 'active' });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT * FROM "core"."users" WHERE "uuid" = $1 AND "status" = $2 LIMIT 1',
+        'SELECT * FROM "user"."users" WHERE "uuid" = $1 AND "status" = $2 LIMIT 1',
         ['abc-123', 'active']
       );
     });
@@ -124,28 +124,28 @@ describe('DatabaseService', () => {
       const mockRow = { id: 2, name: 'Second User' };
       mockPool.query.mockResolvedValue({ rows: [mockRow], rowCount: 1 });
 
-      await dbService.get('core', 'users', { status: 'active' }, { offset: 1 });
+      await dbService.get('user', 'users', { status: 'active' }, { offset: 1 });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT * FROM "core"."users" WHERE "status" = $1 LIMIT 1 OFFSET $2',
+        'SELECT * FROM "user"."users" WHERE "status" = $1 LIMIT 1 OFFSET $2',
         ['active', 1]
       );
     });
 
     it('should throw error on invalid table name', async () => {
-      await expect(dbService.get('core', 'users; DROP TABLE users;--', { id: 1 })).rejects.toThrow(
+      await expect(dbService.get('user', 'users; DROP TABLE users;--', { id: 1 })).rejects.toThrow(
         'Invalid table name'
       );
     });
 
     it('should throw error on invalid column name', async () => {
-      await expect(dbService.get('core', 'users', { 'id; DROP TABLE users;--': 1 })).rejects.toThrow(
+      await expect(dbService.get('user', 'users', { 'id; DROP TABLE users;--': 1 })).rejects.toThrow(
         'Invalid column name'
       );
     });
 
     it('should throw error for empty conditions', async () => {
-      await expect(dbService.get('core', 'users', {})).rejects.toThrow(
+      await expect(dbService.get('user', 'users', {})).rejects.toThrow(
         'Get conditions cannot be empty'
       );
     });
@@ -153,8 +153,8 @@ describe('DatabaseService', () => {
     it('should handle database errors', async () => {
       mockPool.query.mockRejectedValue(new Error('Database connection lost'));
 
-      await expect(dbService.get('core', 'users', { id: 1 })).rejects.toThrow(
-        'Failed to get record from core.users: Database connection lost'
+      await expect(dbService.get('user', 'users', { id: 1 })).rejects.toThrow(
+        'Failed to get record from user.users: Database connection lost'
       );
     });
   });
@@ -167,9 +167,9 @@ describe('DatabaseService', () => {
       ];
       mockPool.query.mockResolvedValue({ rows: mockRows, rowCount: 2 });
 
-      const result = await dbService.list('core', 'users');
+      const result = await dbService.list('user', 'users');
 
-      expect(mockPool.query).toHaveBeenCalledWith('SELECT * FROM "core"."users"', []);
+      expect(mockPool.query).toHaveBeenCalledWith('SELECT * FROM "user"."users"', []);
       expect(result).toEqual(mockRows);
     });
 
@@ -177,10 +177,10 @@ describe('DatabaseService', () => {
       const mockRows = [{ id: 1, name: 'Active User', status: 'active' }];
       mockPool.query.mockResolvedValue({ rows: mockRows, rowCount: 1 });
 
-      const result = await dbService.list('core', 'users', { status: 'active' });
+      const result = await dbService.list('user', 'users', { status: 'active' });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT * FROM "core"."users" WHERE "status" = $1',
+        'SELECT * FROM "user"."users" WHERE "status" = $1',
         ['active']
       );
       expect(result).toEqual(mockRows);
@@ -189,10 +189,10 @@ describe('DatabaseService', () => {
     it('should list records with multiple conditions', async () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      await dbService.list('core', 'users', { status: 'active', role: 'admin' });
+      await dbService.list('user', 'users', { status: 'active', role: 'admin' });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT * FROM "core"."users" WHERE "status" = $1 AND "role" = $2',
+        'SELECT * FROM "user"."users" WHERE "status" = $1 AND "role" = $2',
         ['active', 'admin']
       );
     });
@@ -200,10 +200,10 @@ describe('DatabaseService', () => {
     it('should list records with limit', async () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      await dbService.list('core', 'users', {}, { limit: 10 });
+      await dbService.list('user', 'users', {}, { limit: 10 });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT * FROM "core"."users" LIMIT $1',
+        'SELECT * FROM "user"."users" LIMIT $1',
         [10]
       );
     });
@@ -211,10 +211,10 @@ describe('DatabaseService', () => {
     it('should list records with limit and offset', async () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      await dbService.list('core', 'users', {}, { limit: 10, offset: 20 });
+      await dbService.list('user', 'users', {}, { limit: 10, offset: 20 });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT * FROM "core"."users" LIMIT $1 OFFSET $2',
+        'SELECT * FROM "user"."users" LIMIT $1 OFFSET $2',
         [10, 20]
       );
     });
@@ -222,8 +222,8 @@ describe('DatabaseService', () => {
     it('should handle database errors', async () => {
       mockPool.query.mockRejectedValue(new Error('Query timeout'));
 
-      await expect(dbService.list('core', 'users')).rejects.toThrow(
-        'Failed to list records from core.users: Query timeout'
+      await expect(dbService.list('user', 'users')).rejects.toThrow(
+        'Failed to list records from user.users: Query timeout'
       );
     });
   });
@@ -232,10 +232,10 @@ describe('DatabaseService', () => {
     it('should count all records without conditions', async () => {
       mockPool.query.mockResolvedValue({ rows: [{ count: '42' }], rowCount: 1 });
 
-      const result = await dbService.count('core', 'users');
+      const result = await dbService.count('user', 'users');
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT COUNT(*) as count FROM "core"."users"',
+        'SELECT COUNT(*) as count FROM "user"."users"',
         []
       );
       expect(result).toBe(42);
@@ -244,10 +244,10 @@ describe('DatabaseService', () => {
     it('should count records with conditions', async () => {
       mockPool.query.mockResolvedValue({ rows: [{ count: '5' }], rowCount: 1 });
 
-      const result = await dbService.count('core', 'users', { status: 'active' });
+      const result = await dbService.count('user', 'users', { status: 'active' });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'SELECT COUNT(*) as count FROM "core"."users" WHERE "status" = $1',
+        'SELECT COUNT(*) as count FROM "user"."users" WHERE "status" = $1',
         ['active']
       );
       expect(result).toBe(5);
@@ -256,8 +256,8 @@ describe('DatabaseService', () => {
     it('should handle database errors', async () => {
       mockPool.query.mockRejectedValue(new Error('Table not found'));
 
-      await expect(dbService.count('core', 'users')).rejects.toThrow(
-        'Failed to count records in core.users: Table not found'
+      await expect(dbService.count('user', 'users')).rejects.toThrow(
+        'Failed to count records in user.users: Table not found'
       );
     });
   });
@@ -267,13 +267,13 @@ describe('DatabaseService', () => {
       const mockRows = [{ id: 123, name: 'New User', email: 'new@example.com' }];
       mockPool.query.mockResolvedValue({ rows: mockRows, rowCount: 1 });
 
-      const result = await dbService.insert('core', 'users', {
+      const result = await dbService.insert('user', 'users', {
         name: 'New User',
         email: 'new@example.com',
       });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'INSERT INTO "core"."users" ("name", "email") VALUES ($1, $2) RETURNING *',
+        'INSERT INTO "user"."users" ("name", "email") VALUES ($1, $2) RETURNING *',
         ['New User', 'new@example.com']
       );
       expect(result).toEqual({
@@ -284,7 +284,7 @@ describe('DatabaseService', () => {
     });
 
     it('should throw error for empty data', async () => {
-      await expect(dbService.insert('core', 'users', {})).rejects.toThrow(
+      await expect(dbService.insert('user', 'users', {})).rejects.toThrow(
         'Insert data cannot be empty'
       );
     });
@@ -293,8 +293,8 @@ describe('DatabaseService', () => {
       mockPool.query.mockRejectedValue(new Error('Duplicate entry'));
 
       await expect(
-        dbService.insert('core', 'users', { email: 'duplicate@example.com' })
-      ).rejects.toThrow('Failed to insert record into core.users: Duplicate entry');
+        dbService.insert('user', 'users', { email: 'duplicate@example.com' })
+      ).rejects.toThrow('Failed to insert record into user.users: Duplicate entry');
     });
   });
 
@@ -303,14 +303,14 @@ describe('DatabaseService', () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 1 });
 
       const result = await dbService.update(
-        'core',
+        'user',
         'users',
         { name: 'Updated Name' },
         { id: 1 }
       );
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'UPDATE "core"."users" SET "name" = $1 WHERE "id" = $2',
+        'UPDATE "user"."users" SET "name" = $1 WHERE "id" = $2',
         ['Updated Name', 1]
       );
       expect(result).toEqual({
@@ -323,27 +323,27 @@ describe('DatabaseService', () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 1 });
 
       await dbService.update(
-        'core',
+        'user',
         'users',
         { name: 'New Name', email: 'new@example.com' },
         { id: 1 }
       );
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'UPDATE "core"."users" SET "name" = $1, "email" = $2 WHERE "id" = $3',
+        'UPDATE "user"."users" SET "name" = $1, "email" = $2 WHERE "id" = $3',
         ['New Name', 'new@example.com', 1]
       );
     });
 
     it('should throw error for empty data', async () => {
-      await expect(dbService.update('core', 'users', {}, { id: 1 })).rejects.toThrow(
+      await expect(dbService.update('user', 'users', {}, { id: 1 })).rejects.toThrow(
         'Update data cannot be empty'
       );
     });
 
     it('should throw error for empty conditions', async () => {
       await expect(
-        dbService.update('core', 'users', { name: 'Test' }, {})
+        dbService.update('user', 'users', { name: 'Test' }, {})
       ).rejects.toThrow('Update conditions cannot be empty');
     });
 
@@ -351,8 +351,8 @@ describe('DatabaseService', () => {
       mockPool.query.mockRejectedValue(new Error('Lock timeout'));
 
       await expect(
-        dbService.update('core', 'users', { name: 'Test' }, { id: 1 })
-      ).rejects.toThrow('Failed to update records in core.users: Lock timeout');
+        dbService.update('user', 'users', { name: 'Test' }, { id: 1 })
+      ).rejects.toThrow('Failed to update records in user.users: Lock timeout');
     });
   });
 
@@ -360,10 +360,10 @@ describe('DatabaseService', () => {
     it('should delete records', async () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 1 });
 
-      const result = await dbService.delete('core', 'users', { id: 1 });
+      const result = await dbService.delete('user', 'users', { id: 1 });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'DELETE FROM "core"."users" WHERE "id" = $1',
+        'DELETE FROM "user"."users" WHERE "id" = $1',
         [1]
       );
       expect(result).toEqual({ affectedRows: 1 });
@@ -372,16 +372,16 @@ describe('DatabaseService', () => {
     it('should delete with multiple conditions', async () => {
       mockPool.query.mockResolvedValue({ rows: [], rowCount: 2 });
 
-      await dbService.delete('core', 'users', { status: 'inactive', verified: false });
+      await dbService.delete('user', 'users', { status: 'inactive', verified: false });
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'DELETE FROM "core"."users" WHERE "status" = $1 AND "verified" = $2',
+        'DELETE FROM "user"."users" WHERE "status" = $1 AND "verified" = $2',
         ['inactive', false]
       );
     });
 
     it('should throw error for empty conditions', async () => {
-      await expect(dbService.delete('core', 'users', {})).rejects.toThrow(
+      await expect(dbService.delete('user', 'users', {})).rejects.toThrow(
         'Delete conditions cannot be empty'
       );
     });
@@ -389,8 +389,8 @@ describe('DatabaseService', () => {
     it('should handle database errors', async () => {
       mockPool.query.mockRejectedValue(new Error('Foreign key constraint'));
 
-      await expect(dbService.delete('core', 'users', { id: 1 })).rejects.toThrow(
-        'Failed to delete records from core.users: Foreign key constraint'
+      await expect(dbService.delete('user', 'users', { id: 1 })).rejects.toThrow(
+        'Failed to delete records from user.users: Foreign key constraint'
       );
     });
   });
@@ -483,14 +483,14 @@ describe('DatabaseService', () => {
       mockClient.query.mockResolvedValue({ rows: mockRows, rowCount: 1 });
 
       const result = await dbService.transaction(async (db) => {
-        await db.insert('core', 'users', { name: 'Test' });
+        await db.insert('user', 'users', { name: 'Test' });
         return 'success';
       });
 
       expect(mockPool.connect).toHaveBeenCalled();
       expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
       expect(mockClient.query).toHaveBeenCalledWith(
-        'INSERT INTO "core"."users" ("name") VALUES ($1) RETURNING *',
+        'INSERT INTO "user"."users" ("name") VALUES ($1) RETURNING *',
         ['Test']
       );
       expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
@@ -503,7 +503,7 @@ describe('DatabaseService', () => {
       mockClient.query.mockResolvedValue({ rows: mockRows, rowCount: 1 });
 
       await dbService.transaction(async (db) => {
-        const users = await db.list('core', 'users', { status: 'active' });
+        const users = await db.list('user', 'users', { status: 'active' });
         expect(users).toEqual(mockRows);
       });
 
@@ -599,13 +599,13 @@ describe('DatabaseService', () => {
 
   describe('validation', () => {
     it('should reject table names with special characters', async () => {
-      await expect(dbService.get('core', 'users; DROP TABLE', { id: 1 })).rejects.toThrow(
+      await expect(dbService.get('user', 'users; DROP TABLE', { id: 1 })).rejects.toThrow(
         'Invalid table name'
       );
     });
 
     it('should reject column names with special characters', async () => {
-      await expect(dbService.get('core', 'users', { 'id OR 1=1': 1 })).rejects.toThrow(
+      await expect(dbService.get('user', 'users', { 'id OR 1=1': 1 })).rejects.toThrow(
         'Invalid column name'
       );
     });
@@ -615,7 +615,7 @@ describe('DatabaseService', () => {
 
       // Should not throw
       await expect(
-        dbService.get('core', 'valid_table_123', { valid_column_123: 1 })
+        dbService.get('user', 'valid_table_123', { valid_column_123: 1 })
       ).resolves.not.toThrow();
     });
   });
@@ -625,32 +625,32 @@ describe('DatabaseService', () => {
       const dbError = new Error('relation "users" does not exist');
       mockPool.query.mockRejectedValue(dbError);
 
-      await expect(dbService.get('core', 'users', { id: 123 }))
-        .rejects.toThrow('Failed to get record from core.users: relation "users" does not exist');
+      await expect(dbService.get('user', 'users', { id: 123 }))
+        .rejects.toThrow('Failed to get record from user.users: relation "users" does not exist');
     });
 
     it('should include query and values in error for update method', async () => {
       const dbError = new Error('column "invalid_column" does not exist');
       mockPool.query.mockRejectedValue(dbError);
 
-      await expect(dbService.update('core', 'users', { name: 'John' }, { id: 123 }))
-        .rejects.toThrow(/Failed to update records in core\.users: column "invalid_column" does not exist\nQuery: UPDATE "core"\."users" SET "name" = \$1 WHERE "id" = \$2\nValues: \["John",123\]/);
+      await expect(dbService.update('user', 'users', { name: 'John' }, { id: 123 }))
+        .rejects.toThrow(/Failed to update records in user\.users: column "invalid_column" does not exist\nQuery: UPDATE "user"\."users" SET "name" = \$1 WHERE "id" = \$2\nValues: \["John",123\]/);
     });
 
     it('should include basic error message for insert method', async () => {
       const dbError = new Error('duplicate key value violates unique constraint');  
       mockPool.query.mockRejectedValue(dbError);
 
-      await expect(dbService.insert('core', 'users', { name: 'John', email: 'john@example.com' }))
-        .rejects.toThrow('Failed to insert record into core.users: duplicate key value violates unique constraint');
+      await expect(dbService.insert('user', 'users', { name: 'John', email: 'john@example.com' }))
+        .rejects.toThrow('Failed to insert record into user.users: duplicate key value violates unique constraint');
     });
 
     it('should include basic error message for delete method', async () => {
       const dbError = new Error('permission denied for table users');
       mockPool.query.mockRejectedValue(dbError);
 
-      await expect(dbService.delete('core', 'users', { id: 123 }))
-        .rejects.toThrow('Failed to delete records from core.users: permission denied for table users');
+      await expect(dbService.delete('user', 'users', { id: 123 }))
+        .rejects.toThrow('Failed to delete records from user.users: permission denied for table users');
     });
 
     it('should include basic error message for raw query method', async () => {
@@ -674,7 +674,7 @@ describe('DatabaseService', () => {
       mockPool.query.mockRejectedValue(dbError);
 
       // BigInt cannot be serialized by JSON.stringify, so this should throw a different error
-      await expect(dbService.update('core', 'test', { name: 'test string', active: true }, { id: BigInt('123456789012345678') }))
+      await expect(dbService.update('user', 'test', { name: 'test string', active: true }, { id: BigInt('123456789012345678') }))
         .rejects.toThrow('Do not know how to serialize a BigInt');
     });
   });
