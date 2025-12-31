@@ -16,7 +16,9 @@
       "Bash(npm install:*)",
       "Bash(npm run lint)",
       "Bash(findstr:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue view:*)"
     ]
   }
 }
