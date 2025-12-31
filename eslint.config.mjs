@@ -52,6 +52,9 @@ export default tseslint.config(
   {
     files: ['**/*.test.ts'],
     extends: [tseslint.configs.disableTypeChecked],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
   {
     ignores: ['dist/**', 'node_modules/**', '**/*.js', '**/*.mjs', 'coverage/**']
