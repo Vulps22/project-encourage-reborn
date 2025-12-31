@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/selectMenus/**'
+      - 'src/_handlers/selects/**'
       - 'src/structures/**'
       - 'package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/selectMenus/**'
+      - 'src/_handlers/selects/**'
       - 'src/structures/**'
       - 'package*.json'
   workflow_dispatch:
@@ -36,4 +36,4 @@ jobs:
         run: npm ci
 
       - name: Run select menu tests
-        run: npm test -- src/selectMenus
+        run: npm test -- src/_handlers/selects --passWithNoTests

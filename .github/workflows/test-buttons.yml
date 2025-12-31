@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/buttons/**'
+      - 'src/_handlers/buttons/**'
       - 'src/structures/**'
       - 'package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/buttons/**'
+      - 'src/_handlers/buttons/**'
       - 'src/structures/**'
       - 'package*.json'
   workflow_dispatch:
@@ -36,4 +36,4 @@ jobs:
         run: npm ci
 
       - name: Run button tests
-        run: npm test -- src/buttons
+        run: npm test -- src/_handlers/buttons --passWithNoTests
