@@ -259,7 +259,7 @@ export class DatabaseService {
   conditions: Record<string, any>
 ): Promise<MutationResult> {
   let query = '';  // Declare here
-  let values: any[] = [];  // Declare here
+  const values: any[] = [];  // Declare here
   
   try {
     this.validateTableName(schema);

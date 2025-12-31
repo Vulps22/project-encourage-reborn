@@ -2,6 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, Message
 import { UserProfile } from "../../interface";
 import { UniversalMessage } from "../../types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function userProfileView(profile: UserProfile, banReasons: any[] | null = null): Promise<UniversalMessage> {
     const client = global.client;
 
