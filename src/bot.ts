@@ -20,16 +20,17 @@ function initializeGlobals(client: Client): void {
 /**
  * Load commands from a specific directory
  */
-function loadCommandsFromDirectory(dirPath: string, commandType: 'global' | 'mod'): void {
+async function loadCommandsFromDirectory(dirPath: string, commandType: 'global' | 'mod'): Promise<void> {
     if (!existsSync(dirPath)) {
         return;
     }
 
     const commandFiles = readdirSync(dirPath).filter(file => file.endsWith('.js'));
-    
+
     for (const file of commandFiles) {
         const filePath = join(dirPath, file);
-        const command: Command = require(filePath).default;
+        const commandModule = await import(filePath) as { default: Command };
+        const command: Command = commandModule.default;
         global.commands.set(command.name, command);
         Logger.debug(`Loaded ${commandType} command: ${command.name}`);
     }
@@ -38,32 +39,33 @@ function loadCommandsFromDirectory(dirPath: string, commandType: 'global' | 'mod
 /**
  * Load all commands (global and mod)
  */
-function loadCommands(): void {
+async function loadCommands(): Promise<void> {
     const globalCommandsPath = join(__dirname, '_handlers', 'commands', 'global');
     const modCommandsPath = join(__dirname, '_handlers', 'commands', 'mod');
-    
-    loadCommandsFromDirectory(globalCommandsPath, 'global');
-    loadCommandsFromDirectory(modCommandsPath, 'mod');
+
+    await loadCommandsFromDirectory(globalCommandsPath, 'global');
+    await loadCommandsFromDirectory(modCommandsPath, 'mod');
 }
 
 /**
  * Load handlers recursively from a directory with prefix support
  */
-function loadHandlersFromDirectory<T>(
-    dirPath: string, 
+async function loadHandlersFromDirectory<T>(
+    dirPath: string,
     collection: Collection<string, Handler<T>>,
     prefix: string = ''
-): void {
+): Promise<void> {
     const items = readdirSync(dirPath, { withFileTypes: true });
-    
+
     for (const item of items) {
         const itemPath = join(dirPath, item.name);
-        
+
         if (item.isDirectory()) {
             const newPrefix = prefix ? `${prefix}_${item.name}` : item.name;
-            loadHandlersFromDirectory(itemPath, collection, newPrefix);
+            await loadHandlersFromDirectory(itemPath, collection, newPrefix);
         } else if (item.isFile() && item.name.endsWith('.js')) {
-            const handler: Handler<T> = require(itemPath).default;
+            const handlerModule = await import(itemPath) as { default: Handler<T> };
+            const handler: Handler<T> = handlerModule.default;
             const fullHandlerName = prefix ? `${prefix}_${handler.name}` : handler.name;
             collection.set(fullHandlerName, handler);
             Logger.debug(`Loaded ${collection === global.buttons ? 'button' : 'select menu'}: ${fullHandlerName}`);
@@ -74,42 +76,43 @@ function loadHandlersFromDirectory<T>(
 /**
  * Load all button handlers
  */
-function loadButtons(): void {
+async function loadButtons(): Promise<void> {
     const buttonsPath = join(__dirname, '_handlers', 'buttons');
-    
+
     if (existsSync(buttonsPath)) {
-        loadHandlersFromDirectory(buttonsPath, global.buttons);
+        await loadHandlersFromDirectory(buttonsPath, global.buttons);
     }
 }
 
 /**
  * Load all select menu handlers
  */
-function loadSelectMenus(): void {
+async function loadSelectMenus(): Promise<void> {
     const selectsPath = join(__dirname, '_handlers', 'selects');
-    
+
     if (existsSync(selectsPath)) {
-        loadHandlersFromDirectory(selectsPath, global.selects);
+        await loadHandlersFromDirectory(selectsPath, global.selects);
     }
 }
 
 /**
  * Load and register all event handlers
  */
-function loadEvents(client: Client): void {
+async function loadEvents(client: Client): Promise<void> {
     const eventsPath = join(__dirname, 'events');
     const eventFiles = readdirSync(eventsPath).filter(file => file.endsWith('.js') && file !== 'index.js');
 
     for (const file of eventFiles) {
         const filePath = join(eventsPath, file);
-        const event: EventHandler = require(filePath).default;
-        
+        const eventModule = await import(filePath) as { default: EventHandler };
+        const event: EventHandler = eventModule.default;
+
         if (event.once) {
-            client.once(event.event, (...args) => event.execute(...args));
+            client.once(event.event, (...args) => void event.execute(...args));
         } else {
-            client.on(event.event, (...args) => event.execute(...args));
+            client.on(event.event, (...args) => void event.execute(...args));
         }
-        
+
         Logger.debug(`Registered event: ${event.event} (once: ${event.once})`);
     }
 }
@@ -123,9 +126,9 @@ async function registerCommands(): Promise<void> {
     }
 
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
-    
-    const globalCommands = collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'global'));
-    const modCommands = collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'mod'));
+
+    const globalCommands = await collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'global'));
+    const modCommands = await collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'mod'));
 
     await registerGlobalCommands(rest, globalCommands);
     await registerModCommands(rest, modCommands);
@@ -134,19 +137,20 @@ async function registerCommands(): Promise<void> {
 /**
  * Collect commands from a directory
  */
-function collectCommandsFromDirectory(dirPath: string): Command[] {
+async function collectCommandsFromDirectory(dirPath: string): Promise<Command[]> {
     if (!existsSync(dirPath)) {
         return [];
     }
 
     const commands: Command[] = [];
     const commandFiles = readdirSync(dirPath).filter(file => file.endsWith('.js'));
-    
+
     for (const file of commandFiles) {
-        const command: Command = require(join(dirPath, file)).default;
+        const commandModule = await import(join(dirPath, file)) as { default: Command };
+        const command: Command = commandModule.default;
         commands.push(command);
     }
-    
+
     return commands;
 }
 
@@ -166,7 +170,8 @@ async function registerGlobalCommands(rest: REST, commands: Command[]): Promise<
         );
         Logger.debug(`Registered ${commands.length} global commands`);
     } catch (error) {
-        Logger.error(`Failed to register global commands: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        Logger.error(`Failed to register global commands: ${errorMessage}`);
         throw error;
     }
 }
@@ -192,7 +197,8 @@ async function registerModCommands(rest: REST, commands: Command[]): Promise<voi
         );
         Logger.debug(`Registered ${commands.length} mod commands to guild ${process.env.MOD_GUILD_ID}`);
     } catch (error) {
-        Logger.error(`Failed to register mod commands: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        Logger.error(`Failed to register mod commands: ${errorMessage}`);
         throw error;
     }
 }
@@ -200,28 +206,30 @@ async function registerModCommands(rest: REST, commands: Command[]): Promise<voi
 /**
  * Initialize and start the Discord bot
  */
-function startBot(): void {
+async function startBot(): Promise<void> {
     const client = new Client({
         intents: [GatewayIntentBits.Guilds],
     });
 
     initializeGlobals(client);
-    loadCommands();
-    loadButtons();
-    loadSelectMenus();
-    loadEvents(client);
+    await loadCommands();
+    await loadButtons();
+    await loadSelectMenus();
+    await loadEvents(client);
 
-    client.once(Events.ClientReady, async () => {
-        Logger.debug('Client is ready. Registering commands...');
-        await registerCommands();
-        Logger.debug('Commands registered successfully');
+    client.once(Events.ClientReady, () => {
+        void (async (): Promise<void> => {
+            Logger.debug('Client is ready. Registering commands...');
+            await registerCommands();
+            Logger.debug('Commands registered successfully');
+        })();
     });
 
-    client.login().catch((error: Error) => {
+    await client.login().catch((error: Error) => {
         console.error('Failed to login:', error);
         process.exit(1);
     });
 }
 
 // Start the bot
-startBot();
+void startBot();

@@ -44,17 +44,17 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
     }
 
     if (interaction.isChatInputCommand()) {
-      new CommandInteractionEvent().execute(interaction, executionId);
+      void new CommandInteractionEvent().execute(interaction, executionId);
       return;
     }
 
     if (interaction.isButton()) {
-      new ButtonInteractionEvent().execute(interaction, executionId);
+      void new ButtonInteractionEvent().execute(interaction, executionId);
       return;
     }
 
     if (interaction.isStringSelectMenu()) {
-      new StringSelectInteractionEvent().execute(interaction, executionId);
+      void new StringSelectInteractionEvent().execute(interaction, executionId);
       return;
     }
   },

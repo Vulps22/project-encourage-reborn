@@ -29,7 +29,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
     }
 };
 
-async function showBanReasons(questionId: number, channelId: Snowflake) {
+async function showBanReasons(questionId: number, channelId: Snowflake): Promise<void> {
 
     const question = await questionService.getQuestionById(questionId);
 
@@ -37,7 +37,7 @@ async function showBanReasons(questionId: number, channelId: Snowflake) {
         throw new QuestionNotFoundError(questionId);
     }
 
-    const reasons = await moderationService.getBanReasons(TargetType.Question);
+    const reasons = moderationService.getBanReasons(TargetType.Question);
 
     await Logger.updateQuestionLog(question, channelId, reasons);
 

@@ -21,7 +21,7 @@ const sendToModeratorsButton: Handler<BotButtonInteraction> = {
         }
 
         const view = await userProfileView(profile);
-        const channel = await interaction.client.channels.fetch(Config.MOD_CHAT_CHANNEL_ID!);
+        const channel = await interaction.client.channels.fetch(Config.MOD_CHAT_CHANNEL_ID);
         if(!channel || !channel.isTextBased()) {
             await interaction.ephemeralReply('❌ Mod chat channel not found');
             throw new Error('Mod chat channel not found when using Button: moderation_sendToModerators');
