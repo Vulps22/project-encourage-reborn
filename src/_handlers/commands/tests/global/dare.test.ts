@@ -45,7 +45,7 @@ describe('dare command', () => {
     const mockQuestion = {
       id: 1,
       type: QuestionType.Dare,
-      question: 'What is your biggest secret?',
+      question: 'Do 10 jumping jacks.',
       user_id: '999888777',
       is_approved: true,
       approved_by: '111222333',
