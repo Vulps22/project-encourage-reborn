@@ -1,9 +1,17 @@
 // Barrel file for services
 import { DatabaseService } from './DatabaseService';
 import { QuestionService } from './QuestionService';
+import { ModerationService } from './ModerationService';
+import { ServerService } from './ServerService';
+import { UserService } from './UserService';
+import { UserTrackingService } from './UserTrackingService';
 
 export { DatabaseService } from './DatabaseService';
+export { ModerationService } from './ModerationService';
 export { QuestionService } from './QuestionService';
+export { ServerService } from './ServerService';
+export { UserService } from './UserService';
+export { UserTrackingService } from './UserTrackingService';
 export type { 
   QueryResult, 
   MutationResult, 
@@ -23,3 +31,7 @@ export const db = new DatabaseService({
 
 // Create service instances with dependency injection
 export const questionService = new QuestionService(db);
+export const moderationService = new ModerationService(db);
+export const serverService = new ServerService(db);
+export const userService = new UserService(db);
+export const userTrackingService = new UserTrackingService(db);

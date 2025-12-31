@@ -1,112 +1,104 @@
-import { Client, Collection, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, Collection, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { Command, Logger } from './utils';
+import { Handler, Command, Logger } from './utils';
 import { EventHandler } from './types';
+import { Config } from './config';
+import { BotButtonInteraction, BotSelectMenuInteraction } from './structures';
 
-// Initialize Discord client for this shard
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-    ],
-});
+/**
+ * Initialize global objects
+ */
+function initializeGlobals(client: Client): void {
+    global.client = client;
+    global.config = Config;
+    global.commands = new Collection<string, Command>();
+    global.buttons = new Collection<string, Handler<BotButtonInteraction>>();
+    global.selects = new Collection<string, Handler<BotSelectMenuInteraction>>();
+}
 
-// Set global client
-global.client = client;
+/**
+ * Load commands from a specific directory
+ */
+async function loadCommandsFromDirectory(dirPath: string, commandType: 'global' | 'mod'): Promise<void> {
+    if (!existsSync(dirPath)) {
+        return;
+    }
 
-// Initialize commands collection
-global.commands = new Collection<string, Command>();
+    const commandFiles = readdirSync(dirPath).filter(file => file.endsWith('.js'));
 
-// Main initialization function
-async function initializeBot(): Promise<void> {
-    // Load commands from global folder
-    const globalCommandsPath = join(__dirname, 'commands', 'global');
-    const globalCommandFiles = readdirSync(globalCommandsPath).filter(file => file.endsWith('.js'));
-
-    for (const file of globalCommandFiles) {
-        const filePath = join(globalCommandsPath, file);
+    for (const file of commandFiles) {
+        const filePath = join(dirPath, file);
         const commandModule = await import(filePath) as { default: Command };
         const command: Command = commandModule.default;
         global.commands.set(command.name, command);
-        Logger.debug(`Loaded global command: ${command.name}`);
+        Logger.debug(`Loaded ${commandType} command: ${command.name}`);
     }
+}
 
-    // Load commands from mod folder (if exists)
-    const modCommandsPath = join(__dirname, 'commands', 'mod');
-    if (existsSync(modCommandsPath)) {
-        const modCommandFiles = readdirSync(modCommandsPath).filter(file => file.endsWith('.js'));
+/**
+ * Load all commands (global and mod)
+ */
+async function loadCommands(): Promise<void> {
+    const globalCommandsPath = join(__dirname, '_handlers', 'commands', 'global');
+    const modCommandsPath = join(__dirname, '_handlers', 'commands', 'mod');
 
-        for (const file of modCommandFiles) {
-            const filePath = join(modCommandsPath, file);
-            const commandModule = await import(filePath) as { default: Command };
-            const command: Command = commandModule.default;
-            global.commands.set(command.name, command);
-            Logger.debug(`Loaded mod command: ${command.name}`);
+    await loadCommandsFromDirectory(globalCommandsPath, 'global');
+    await loadCommandsFromDirectory(modCommandsPath, 'mod');
+}
+
+/**
+ * Load handlers recursively from a directory with prefix support
+ */
+async function loadHandlersFromDirectory<T>(
+    dirPath: string,
+    collection: Collection<string, Handler<T>>,
+    prefix: string = ''
+): Promise<void> {
+    const items = readdirSync(dirPath, { withFileTypes: true });
+
+    for (const item of items) {
+        const itemPath = join(dirPath, item.name);
+
+        if (item.isDirectory()) {
+            const newPrefix = prefix ? `${prefix}_${item.name}` : item.name;
+            await loadHandlersFromDirectory(itemPath, collection, newPrefix);
+        } else if (item.isFile() && item.name.endsWith('.js')) {
+            const handlerModule = await import(itemPath) as { default: Handler<T> };
+            const handler: Handler<T> = handlerModule.default;
+            const fullHandlerName = prefix ? `${prefix}_${handler.name}` : handler.name;
+            collection.set(fullHandlerName, handler);
+            Logger.debug(`Loaded ${collection === global.buttons ? 'button' : 'select menu'}: ${fullHandlerName}`);
         }
     }
+}
 
-    // Register commands to Discord
-    const registerCommands = async (): Promise<void> => {
-        if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
-            throw new Error('Missing DISCORD_TOKEN or CLIENT_ID in environment variables');
-        }
+/**
+ * Load all button handlers
+ */
+async function loadButtons(): Promise<void> {
+    const buttonsPath = join(__dirname, '_handlers', 'buttons');
 
-        const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+    if (existsSync(buttonsPath)) {
+        await loadHandlersFromDirectory(buttonsPath, global.buttons);
+    }
+}
 
-        try {
-            // Separate global and mod commands
-            const globalCommands: Command[] = [];
-            const modCommands: Command[] = [];
+/**
+ * Load all select menu handlers
+ */
+async function loadSelectMenus(): Promise<void> {
+    const selectsPath = join(__dirname, '_handlers', 'selects');
 
-            // Categorize commands based on their file location
-            const globalFiles = existsSync(join(__dirname, 'commands', 'global'))
-                ? readdirSync(join(__dirname, 'commands', 'global')).filter(file => file.endsWith('.js'))
-                : [];
-            const modFiles = existsSync(join(__dirname, 'commands', 'mod'))
-                ? readdirSync(join(__dirname, 'commands', 'mod')).filter(file => file.endsWith('.js'))
-                : [];
+    if (existsSync(selectsPath)) {
+        await loadHandlersFromDirectory(selectsPath, global.selects);
+    }
+}
 
-            for (const file of globalFiles) {
-                const commandModule = await import(join(__dirname, 'commands', 'global', file)) as { default: Command };
-                const command: Command = commandModule.default;
-                globalCommands.push(command);
-            }
-
-            for (const file of modFiles) {
-                const commandModule = await import(join(__dirname, 'commands', 'mod', file)) as { default: Command };
-                const command: Command = commandModule.default;
-                modCommands.push(command);
-            }
-
-            // Register global commands
-            if (globalCommands.length > 0) {
-                await rest.put(
-                    Routes.applicationCommands(process.env.CLIENT_ID),
-                    { body: globalCommands.map(cmd => cmd.toJSON()) }
-                );
-                Logger.log(`Registered ${globalCommands.length} global commands`);
-            }
-
-            // Register mod commands to specific guild
-            if (modCommands.length > 0) {
-                if (!process.env.MOD_GUILD_ID) {
-                    Logger.log('MOD_GUILD_ID not set - mod commands will not be registered');
-                } else {
-                    await rest.put(
-                        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.MOD_GUILD_ID),
-                        { body: modCommands.map(cmd => cmd.toJSON()) }
-                    );
-                    Logger.log(`Registered ${modCommands.length} mod commands to guild ${process.env.MOD_GUILD_ID}`);
-                }
-            }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            Logger.log(`Failed to register commands: ${errorMessage}`);
-            throw error;
-        }
-    };
-
-    // Load and register event handlers
+/**
+ * Load and register all event handlers
+ */
+async function loadEvents(client: Client): Promise<void> {
     const eventsPath = join(__dirname, 'events');
     const eventFiles = readdirSync(eventsPath).filter(file => file.endsWith('.js') && file !== 'index.js');
 
@@ -123,13 +115,114 @@ async function initializeBot(): Promise<void> {
 
         Logger.debug(`Registered event: ${event.event} (once: ${event.once})`);
     }
+}
 
-    // Register commands when client is ready
-    client.once('ready', async () => {
-        await registerCommands();
+/**
+ * Register all commands with Discord API
+ */
+async function registerCommands(): Promise<void> {
+    if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
+        throw new Error('Missing DISCORD_TOKEN or CLIENT_ID in environment variables');
+    }
+
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
+    const globalCommands = await collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'global'));
+    const modCommands = await collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'mod'));
+
+    await registerGlobalCommands(rest, globalCommands);
+    await registerModCommands(rest, modCommands);
+}
+
+/**
+ * Collect commands from a directory
+ */
+async function collectCommandsFromDirectory(dirPath: string): Promise<Command[]> {
+    if (!existsSync(dirPath)) {
+        return [];
+    }
+
+    const commands: Command[] = [];
+    const commandFiles = readdirSync(dirPath).filter(file => file.endsWith('.js'));
+
+    for (const file of commandFiles) {
+        const commandModule = await import(join(dirPath, file)) as { default: Command };
+        const command: Command = commandModule.default;
+        commands.push(command);
+    }
+
+    return commands;
+}
+
+/**
+ * Register global commands with Discord
+ */
+async function registerGlobalCommands(rest: REST, commands: Command[]): Promise<void> {
+    if (commands.length === 0) {
+        Logger.debug('No global commands to register');
+        return;
+    }
+
+    try {
+        await rest.put(
+            Routes.applicationCommands(process.env.CLIENT_ID!),
+            { body: commands.map(cmd => cmd.toJSON()) }
+        );
+        Logger.debug(`Registered ${commands.length} global commands`);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        Logger.error(`Failed to register global commands: ${errorMessage}`);
+        throw error;
+    }
+}
+
+/**
+ * Register mod commands to specific guild
+ */
+async function registerModCommands(rest: REST, commands: Command[]): Promise<void> {
+    if (commands.length === 0) {
+        Logger.debug('No mod commands to register');
+        return;
+    }
+
+    if (!process.env.MOD_GUILD_ID) {
+        Logger.debug('MOD_GUILD_ID not set - mod commands will not be registered');
+        return;
+    }
+
+    try {
+        await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID!, process.env.MOD_GUILD_ID),
+            { body: commands.map(cmd => cmd.toJSON()) }
+        );
+        Logger.debug(`Registered ${commands.length} mod commands to guild ${process.env.MOD_GUILD_ID}`);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        Logger.error(`Failed to register mod commands: ${errorMessage}`);
+        throw error;
+    }
+}
+
+/**
+ * Initialize and start the Discord bot
+ */
+async function startBot(): Promise<void> {
+    const client = new Client({
+        intents: [GatewayIntentBits.Guilds],
     });
 
-    // Login to Discord (token is passed by ShardingManager)
+    initializeGlobals(client);
+    await loadCommands();
+    await loadButtons();
+    await loadSelectMenus();
+    await loadEvents(client);
+
+    client.once(Events.ClientReady, async () => {
+        Logger.debug('Client is ready. Registering commands...');
+        await registerCommands();
+        Logger.debug('Commands registered successfully');
+    });
+
     await client.login().catch((error: Error) => {
         console.error('Failed to login:', error);
         process.exit(1);
@@ -137,4 +230,4 @@ async function initializeBot(): Promise<void> {
 }
 
 // Start the bot
-void initializeBot();
+void startBot();

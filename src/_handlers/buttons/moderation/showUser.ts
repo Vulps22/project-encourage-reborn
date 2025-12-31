@@ -1,0 +1,27 @@
+import { UserProfileBuilder } from "../../../builders/UserProfileBuilder";
+import { BotButtonInteraction } from "../../../structures";
+import { Handler } from "../../../utils";
+import { userProfileView } from "../../../views";
+
+const showUserButton: Handler<BotButtonInteraction> = {
+    name: "showUser",
+    params: { 'ID': 'id' },
+    async execute(interaction) {
+        const userId = interaction.params.get(showUserButton.params!.ID);
+        if(!userId) {
+            await interaction.ephemeralReply('❌ Invalid user ID');
+            throw new Error('Invalid user ID when using Button: moderator_showUser');
+        }
+        const profile = await new UserProfileBuilder().getUserProfile(userId);
+        if(!profile) {
+            await interaction.ephemeralReply('❌ User not found');
+            return;
+        }
+
+        const view = await userProfileView(profile);
+        await interaction.ephemeralReply(null, view);
+
+    }
+};
+
+export default showUserButton;

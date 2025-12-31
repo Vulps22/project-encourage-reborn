@@ -36,10 +36,11 @@ async function freshInstall() {
     const schemasDir = path.join(__dirname, '../schemas');
     const schemaEntries = await fs.readdir(schemasDir, { withFileTypes: true });
 
-    // Find all schemas and their tables/views/triggers
+    // Find all schemas and their tables/views/triggers/procedures
     const tablesToCreate = [];
     const viewsToCreate = [];
     const triggersToCreate = [];
+    const proceduresToCreate = [];
     
     for (const schemaEntry of schemaEntries) {
       if (schemaEntry.isDirectory()) {
@@ -99,6 +100,23 @@ async function freshInstall() {
         } catch (err) {
           if (err.code !== 'ENOENT') throw err;
         }
+        
+        // Check for procedures subdirectory
+        const proceduresPath = path.join(schemaPath, 'procedures');
+        try {
+          const procedureFiles = await fs.readdir(proceduresPath);
+          const sqlFiles = procedureFiles.filter(file => file.endsWith('.sql')).sort();
+          
+          for (const file of sqlFiles) {
+            proceduresToCreate.push({
+              schema: schemaName,
+              file: file,
+              path: path.join(proceduresPath, file),
+            });
+          }
+        } catch (err) {
+          if (err.code !== 'ENOENT') throw err;
+        }
       } else if (schemaEntry.isFile() && schemaEntry.name.endsWith('.sql')) {
         // Legacy: Table in root schemas directory (public schema)
         tablesToCreate.push({
@@ -145,7 +163,8 @@ async function freshInstall() {
         // Extract FOREIGN KEY constraints so we can add them after all tables are created.
         // This handles both named CONSTRAINT "name" FOREIGN KEY (...) REFERENCES ...
         // and anonymous FOREIGN KEY (...) REFERENCES ...
-        const fkRegex = /,?\s*CONSTRAINT\s+"?([\w\-]+)"?\s+FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+"?([\w\-]+)"?\s*\(([^)]+)\)([^;\n]*)/gi;
+        // Pattern matches schema-qualified references like "schema"."table" or just "table"
+        const fkRegex = /,?\s*CONSTRAINT\s+"?([\w\-]+)"?\s+FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+("?[\w\-]+"?\."?[\w\-]+"?|"?[\w\-]+"?)\s*\(([^)]+)\)([^,\)]*)/gi;
         let modifiedSql = sql;
         let match;
         while ((match = fkRegex.exec(sql)) !== null) {
@@ -158,7 +177,7 @@ async function freshInstall() {
           // Build ALTER TABLE statement
           const tableName = table.file.replace(/\.sql$/i, '');
           const fullTable = table.schema === 'public' ? `\"${tableName}\"` : `\"${table.schema}\".\"${tableName}\"`;
-          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${constraintName}\" FOREIGN KEY (${localCols}) REFERENCES \"${refTable}\" (${refCols}) ${tail};`;
+          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${constraintName}\" FOREIGN KEY (${localCols}) REFERENCES ${refTable} (${refCols}) ${tail};`;
           fkStatements.push({ schema: table.schema, statement: alter });
 
           // remove the matched constraint from the create statement (including leading comma if present)
@@ -166,7 +185,7 @@ async function freshInstall() {
         }
 
         // handle anonymous FOREIGN KEY (...) REFERENCES ... (no CONSTRAINT name)
-        const anonFkRegex = /,?\s*FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+"?([\w\-]+)"?\s*\(([^)]+)\)([^;\n]*)/gi;
+        const anonFkRegex = /,?\s*FOREIGN KEY\s*\(([^)]+)\)\s+REFERENCES\s+("?[\w\-]+"?\."?[\w\-]+"?|"?[\w\-]+"?)\s*\(([^)]+)\)([^,\)]*)/gi;
         while ((match = anonFkRegex.exec(sql)) !== null) {
           // generate a constraint name
           const localCols = match[1].trim();
@@ -176,7 +195,7 @@ async function freshInstall() {
           const tableName = table.file.replace(/\.sql$/i, '');
           const cname = `${tableName}_fk_${Math.random().toString(36).slice(2,8)}`;
           const fullTable = table.schema === 'public' ? `\"${tableName}\"` : `\"${table.schema}\".\"${tableName}\"`;
-          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${cname}\" FOREIGN KEY (${localCols}) REFERENCES \"${refTable}\" (${refCols}) ${tail};`;
+          const alter = `ALTER TABLE ${fullTable} ADD CONSTRAINT \"${cname}\" FOREIGN KEY (${localCols}) REFERENCES ${refTable} (${refCols}) ${tail};`;
           fkStatements.push({ schema: table.schema, statement: alter });
           modifiedSql = modifiedSql.replace(match[0], '');
         }
@@ -254,6 +273,29 @@ async function freshInstall() {
         await client.query(sql);
         
         if (trigger.schema !== 'public') {
+          await client.query('SET search_path TO public;');
+        }
+        
+        console.log(`✓ ${displayName} executed successfully`);
+      }
+    }
+
+    // Read and execute procedure files
+    if (proceduresToCreate.length > 0) {
+      console.log(`\nFound ${proceduresToCreate.length} procedure files`);
+      for (const procedure of proceduresToCreate) {
+        const displayName = `${procedure.schema}/${procedure.file}`;
+        console.log(`Executing ${displayName}...`);
+        
+        let sql = await fs.readFile(procedure.path, 'utf8');
+        
+        if (procedure.schema !== 'public') {
+          await client.query(`SET search_path TO "${procedure.schema}", public;`);
+        }
+        
+        await client.query(sql);
+        
+        if (procedure.schema !== 'public') {
           await client.query('SET search_path TO public;');
         }
         

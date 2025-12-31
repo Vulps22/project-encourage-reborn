@@ -66,9 +66,9 @@ describe('BotRepliableInteraction', () => {
 
   describe('deferReply', () => {
     it('should call underlying interaction deferReply', async () => {
-      await botInteraction.deferReply({ ephemeral: true });
+      await botInteraction.deferReply({ flags: MessageFlags.Ephemeral });
 
-      expect(mockInteraction.deferReply).toHaveBeenCalledWith({ ephemeral: true });
+      expect(mockInteraction.deferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
     });
   });
 
