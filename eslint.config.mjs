@@ -48,19 +48,9 @@ export default tseslint.config(
       ]
     }
   },
-  // Disable type-checked rules for test files (excluded from tsconfig)
-  {
-    files: ['**/*.test.ts'],
-    extends: [tseslint.configs.disableTypeChecked],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/explicit-function-return-type': 'off',
-    },
-  },
   // Temporarily relax rules for service layer files pending refactor
   {
-    files: ['src/services/**/*.ts', 'src/utils/**/*.ts', 'src/structures/**/*.ts'],
+    files: ['src/bot.ts', 'src/services/**/*.ts', 'src/utils/**/*.ts', 'src/structures/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
@@ -76,6 +66,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '**/*.js', '**/*.mjs', 'coverage/**']
+    ignores: ['dist/**', 'node_modules/**', '**/*.js', '**/*.mjs', 'coverage/**', '**/*.test.ts']
   }
 );

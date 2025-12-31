@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, Message
 import { UserProfile } from "../../interface";
 import { UniversalMessage } from "../../types";
 
-async function userProfileView(profile: UserProfile, banReasons: any[] | null = null): Promise<UniversalMessage> {
+async function userProfileView(profile: UserProfile, banReasons: object[] | null = null): Promise<UniversalMessage> {
     const client = global.client;
 
     // Fetch user to get current username
