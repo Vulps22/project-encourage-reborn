@@ -17,8 +17,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger
-DROP TRIGGER IF EXISTS "trg_set_question_review_timestamps" ON "questions";
+DROP TRIGGER IF EXISTS "trg_set_question_review_timestamps" ON "question"."questions";
 CREATE TRIGGER "trg_set_question_review_timestamps"
-  BEFORE UPDATE ON "questions"
+  BEFORE UPDATE ON "question"."questions"
   FOR EACH ROW
   EXECUTE FUNCTION "trg_set_question_review_timestamps_func"();

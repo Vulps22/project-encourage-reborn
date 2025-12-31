@@ -11,7 +11,6 @@ class ButtonInteractionEvent implements InteractionEvent<ButtonInteraction> {
             Logger.error(`Button not found for Custom ID: ${botInteraction.baseId}`);
             return;
         }
-        console.log(`Button Found:`, button.name, `| Execution ID:`, executionId);
         await button.execute(botInteraction);
     }
 }

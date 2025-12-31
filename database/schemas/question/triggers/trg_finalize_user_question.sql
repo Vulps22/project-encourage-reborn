@@ -27,8 +27,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger
-DROP TRIGGER IF EXISTS "trg_finalize_user_question" ON "user_questions";
+DROP TRIGGER IF EXISTS "trg_finalize_user_question" ON "user"."user_questions";
 CREATE TRIGGER "trg_finalize_user_question"
-  BEFORE UPDATE ON "user_questions"
+  BEFORE UPDATE ON "user"."user_questions"
   FOR EACH ROW
   EXECUTE FUNCTION "trg_finalize_user_question_func"();

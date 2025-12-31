@@ -21,7 +21,7 @@ export class ServerService {
   async banUserServers(userId: Snowflake, reason: string): Promise<number> {
     Logger.debug(`Banning all servers owned by user ${userId} with reason: ${reason}`);
 
-    const result = await this.db.update('core', 'servers', {
+    const result = await this.db.update('server', 'servers', {
       is_banned: true,
       ban_reason: reason
     }, {
@@ -41,7 +41,7 @@ export class ServerService {
   async unbanUserServers(userId: Snowflake): Promise<number> {
     Logger.debug(`Unbanning all servers owned by user ${userId}`);
 
-    const result = await this.db.update('core', 'servers', {
+    const result = await this.db.update('server', 'servers', {
       is_banned: false,
       ban_reason: null
     }, {
@@ -59,6 +59,6 @@ export class ServerService {
    * @returns Number of servers owned
    */
   async getUserOwnedServerCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('core', 'servers', { owner: BigInt(userId) });
+    return await this.db.count('server', 'servers', { owner: BigInt(userId) });
   }
 }

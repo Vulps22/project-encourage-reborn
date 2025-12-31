@@ -229,7 +229,7 @@ static async updateQuestionLog(question: Question, channelId: Snowflake, reasons
           // Fetch the existing message
           const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
           if (!existingMessage) {
-            return null;
+            return { success: false, error: 'Message not found', message: null };
           }
 
           // Import view function using absolute path
@@ -247,16 +247,14 @@ static async updateQuestionLog(question: Question, channelId: Snowflake, reasons
           };
           
           const view = await newQuestionView(questionData, context.reasons);
-          console.log('Generated view:', view);
           const updatedMessage = await existingMessage.edit(view as any);
-          console.log('Updated message:', updatedMessage.toJSON());
-          return updatedMessage;
-        } catch (error) {
-          console.error('Failed to update question log:', error);
-          return null;
+          return { success: true, error: null, message: updatedMessage };
+        } catch (err) {
+          console.error('Failed to update question log:', err);
+          return { success: false, error: String(err), message: null };
         }
       }
-      return null;
+      return { success: false, error: 'Channel not found or not text-based', message: null };
     },
     { 
       context: { 
@@ -268,8 +266,15 @@ static async updateQuestionLog(question: Question, channelId: Snowflake, reasons
     }
   );
   
-  // Return the first non-null message from the shards
-  return results.find(result => result !== null) as Message || null;
+  // Handle errors in parent context with Logger
+  const errorResult = results.find(r => r && !r.success);
+  if (errorResult) {
+    this.error(`Failed to update question log: ${errorResult.error}`);
+  }
+  
+  // Return the first successful message from the shards
+  const successResult = results.find(result => result && result.success);
+  return (successResult ? successResult.message : null) as Message | null;
 }
 
   /**

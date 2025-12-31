@@ -10,17 +10,17 @@ CREATE OR REPLACE FUNCTION track_user_interaction(
 RETURNS void AS $$
 BEGIN
     -- Insert user if not exists (minimal data, just ID and defaults)
-    INSERT INTO core.users ("id")
+    INSERT INTO "user"."users" ("id")
     VALUES (p_user_id)
     ON CONFLICT ("id") DO NOTHING;
 
     -- Insert server if not exists (requires name and owner)
-    INSERT INTO core.servers ("id", "owner")
+    INSERT INTO "server"."servers" ("id", "owner")
     VALUES (p_server_id, p_server_owner)
     ON CONFLICT ("id") DO NOTHING;
 
     -- Insert server_users relationship if not exists
-    INSERT INTO core.server_users ("user_id", "server_id")
+    INSERT INTO "server"."server_users" ("user_id", "server_id")
     VALUES (p_user_id, p_server_id)
     ON CONFLICT ("user_id", "server_id") DO NOTHING;
 END;

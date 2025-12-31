@@ -52,7 +52,7 @@ describe('UserService', () => {
 
       const result = await userService.getUser('123456789012345678');
 
-      expect(mockDb.get).toHaveBeenCalledWith('core', 'users', { id: BigInt('123456789012345678') });
+      expect(mockDb.get).toHaveBeenCalledWith('user', 'users', { id: BigInt('123456789012345678') });
       expect(result).toEqual(mockUser);
       expect(Logger.debug).toHaveBeenCalledWith('Fetching user 123456789012345678');
       expect(Logger.debug).toHaveBeenCalledWith('User 123456789012345678 retrieved successfully');
@@ -135,7 +135,7 @@ describe('UserService', () => {
       await userService.banUser('123456789012345678', 'Spam');
 
       expect(mockDb.update).toHaveBeenCalledWith(
-        'core',
+        'user',
         'users',
         {
           is_banned: true,
@@ -153,7 +153,7 @@ describe('UserService', () => {
       await userService.banUser('123456789012345678', 'Spam', '999888777666555444');
 
       expect(mockDb.update).toHaveBeenCalledWith(
-        'core',
+        'user',
         'users',
         {
           is_banned: true,
@@ -172,7 +172,7 @@ describe('UserService', () => {
       await userService.unbanUser('123456789012345678');
 
       expect(mockDb.update).toHaveBeenCalledWith(
-        'core',
+        'user',
         'users',
         {
           is_banned: false,
@@ -192,7 +192,7 @@ describe('UserService', () => {
 
       const result = await userService.getUserServerCount('123456789012345678');
 
-      expect(mockDb.count).toHaveBeenCalledWith('core', 'server_users', { 
+      expect(mockDb.count).toHaveBeenCalledWith('server', 'server_users', { 
         user_id: BigInt('123456789012345678') 
       });
       expect(result).toBe(5);

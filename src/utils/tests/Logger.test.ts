@@ -214,7 +214,10 @@ describe('Logger', () => {
       
       (global as any).client = {
         shard: {
-          broadcastEval: jest.fn().mockResolvedValue([mockUpdatedMessage, null]),
+          broadcastEval: jest.fn().mockResolvedValue([
+            { success: true, error: null, message: mockUpdatedMessage },
+            { success: false, error: 'Channel not found or not text-based', message: null }
+          ]),
         },
       } as unknown as Client;
 
@@ -243,7 +246,10 @@ describe('Logger', () => {
       
       (global as any).client = {
         shard: {
-          broadcastEval: jest.fn().mockResolvedValue([mockUpdatedMessage, null]),
+          broadcastEval: jest.fn().mockResolvedValue([
+            { success: true, error: null, message: mockUpdatedMessage },
+            { success: false, error: 'Channel not found or not text-based', message: null }
+          ]),
         },
       } as unknown as Client;
 
@@ -263,7 +269,7 @@ describe('Logger', () => {
       expect(result).toBe(mockUpdatedMessage);
     });
 
-    it('should return null if no message found in shards', async () => {
+    it('should return null if no successful message found in shards', async () => {
       const question = {
         id: 123,
         message_id: 'msg-456',
@@ -275,13 +281,51 @@ describe('Logger', () => {
       
       (global as any).client = {
         shard: {
-          broadcastEval: jest.fn().mockResolvedValue([null, null]),
+          broadcastEval: jest.fn().mockResolvedValue([
+            { success: false, error: 'Channel not found or not text-based', message: null },
+            { success: false, error: 'Channel not found or not text-based', message: null }
+          ]),
         },
       } as unknown as Client;
+
+      // Mock Logger.error to prevent actual error logging
+      const errorSpy = jest.spyOn(Logger, 'error').mockImplementation();
 
       const result = await Logger.updateQuestionLog(question as any, 'channel-123');
 
       expect(result).toBeNull();
+      expect(errorSpy).toHaveBeenCalledWith('Failed to update question log: Channel not found or not text-based');
+
+      errorSpy.mockRestore();
+    });
+
+    it('should log error when broadcast eval returns error result', async () => {
+      const question = {
+        id: 123,
+        message_id: 'msg-456',
+        datetime_approved: null,
+        datetime_banned: null,
+        datetime_deleted: null,
+        created: new Date('2024-01-01')
+      };
+      
+      (global as any).client = {
+        shard: {
+          broadcastEval: jest.fn().mockResolvedValue([
+            { success: false, error: 'Message not found', message: null }
+          ]),
+        },
+      } as unknown as Client;
+
+      // Mock Logger.error to capture the call
+      const errorSpy = jest.spyOn(Logger, 'error').mockImplementation();
+
+      const result = await Logger.updateQuestionLog(question as any, 'channel-123');
+
+      expect(errorSpy).toHaveBeenCalledWith('Failed to update question log: Message not found');
+      expect(result).toBeNull();
+
+      errorSpy.mockRestore();
     });
 
     it('should handle errors gracefully', async () => {
