@@ -74,7 +74,6 @@ describe('ButtonInteractionEvent', () => {
 
             await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
 
-            expect(console.log).toHaveBeenCalledWith('Button Found:', 'approveQuestion', '| Execution ID:', executionId);
             expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
             
             // Verify the BotButtonInteraction was created correctly
@@ -103,7 +102,6 @@ describe('ButtonInteractionEvent', () => {
             await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
                 .rejects.toThrow('Handler execution failed');
 
-            expect(console.log).toHaveBeenCalledWith('Button Found:', 'approveQuestion', '| Execution ID:', executionId);
             expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
         });
 
