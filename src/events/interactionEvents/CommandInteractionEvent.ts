@@ -6,7 +6,7 @@ import { InteractionEvent } from "./InteractionEvent";
 export class CommandInteractionEvent implements InteractionEvent<ChatInputCommandInteraction> {
 
 
-    async execute(interaction: ChatInputCommandInteraction, executionId: string) {
+    async execute(interaction: ChatInputCommandInteraction, executionId: string): Promise<void> {
         const command = global.commands.get(interaction.commandName);
         if (!command) {
             Logger.error(`No command found for name: ${interaction.commandName}`);
@@ -27,7 +27,8 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
             await Logger.updateExecution(executionId, 'Success');
         } catch (error) {
             console.error('Command execution error:', error);
-            await Logger.updateExecution(executionId, `Failed: ${error}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
             
             // Try to send error message to user if interaction hasn't been responded to
             if (!interaction.replied && !interaction.deferred) {

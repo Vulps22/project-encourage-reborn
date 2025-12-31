@@ -5,7 +5,7 @@ export class QuestionNotFoundError extends Error {
     /**
      * Create a QuestionNotFoundError
      */
-    constructor(questionId: any) {
+    constructor(questionId: number | string) {
         const message = `Question with ID ${questionId} not found`;
 
         super(message);
