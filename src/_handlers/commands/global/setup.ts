@@ -9,8 +9,15 @@ const setup = new Command('setup', 'Configure server settings (Admin only)')
   .setAdministrator(false) // We'll check permissions manually for better UX
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
     // Check if user has admin permissions
-    if (!interaction.interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) &&
-        !interaction.interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+    const member = interaction.member;
+    if (!member || !('permissions' in member)) {
+      await interaction.ephemeralReply('❌ You need Administrator or Manage Server permissions to run this command.');
+      return;
+    }
+
+    const permissions = member.permissions as import('discord.js').PermissionsBitField;
+    if (!permissions.has(PermissionFlagsBits.Administrator) &&
+        !permissions.has(PermissionFlagsBits.ManageGuild)) {
       await interaction.ephemeralReply('❌ You need Administrator or Manage Server permissions to run this command.');
       return;
     }
@@ -18,8 +25,8 @@ const setup = new Command('setup', 'Configure server settings (Admin only)')
     // Defer reply since we'll have multi-step interaction and potential IPC calls later
     await interaction.deferReply();
 
-    const guildId = interaction.interaction.guildId;
-    const guild = interaction.interaction.guild;
+    const guildId = interaction.guildId;
+    const guild = interaction.guild;
 
     if (!guildId || !guild) {
       await interaction.editReply({ content: '❌ This command can only be used in a server.' });

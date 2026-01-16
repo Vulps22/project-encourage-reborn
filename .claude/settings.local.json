@@ -18,7 +18,10 @@
       "Bash(findstr:*)",
       "Bash(cat:*)",
       "Bash(gh issue create:*)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(for file in acceptRules.ts declineRules.ts)",
+      "Bash(do sed -i 's/interaction\\.interaction\\.memberPermissions/member.permissions/g; s/interaction\\.interaction\\.guildId/interaction.guildId/g; s/const guildId = /const member = interaction.member;\\n        if (!member || !('\"''\"'permissions'\"''\"' in member)) {\\n            await interaction.ephemeralReply('\"''\"'❌ Only administrators can'\"''\"');\\n            return;\\n        }\\n\\n        const permissions = member.permissions as import('\"''\"'discord.js'\"''\"').PermissionsBitField;\\n        if (!permissions.has(PermissionFlagsBits.Administrator) \\&\\&\\n            !permissions.has(PermissionFlagsBits.ManageGuild)) {\\n            await interaction.ephemeralReply('\"''\"'❌ Only administrators'\"''\"');\\n            return;\\n        }\\n\\n        const guildId = /g' \"$file\")",
+      "Bash(done)"
     ]
   }
 }
