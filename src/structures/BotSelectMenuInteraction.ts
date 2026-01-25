@@ -1,17 +1,17 @@
-import { StringSelectMenuInteraction } from 'discord.js';
 import { BotComponentInteraction } from './BotComponentInteraction';
+import { AnySelectMenuInteraction } from '../types/AnySelectMenuInteraction';
 
 /**
  * BotSelectMenuInteraction - Wrapper for Discord select menu interactions
  * Adds select menu-specific properties like values and parsed customId params
  */
 export class BotSelectMenuInteraction extends BotComponentInteraction {
-  protected readonly _interaction: StringSelectMenuInteraction;
+  protected readonly _interaction: AnySelectMenuInteraction;
   private readonly _params: Map<string, string>;
   private readonly _baseId: string;
   private readonly _action: string;
 
-  constructor(interaction: StringSelectMenuInteraction, executionId: string) {
+  constructor(interaction: AnySelectMenuInteraction, executionId: string) {
     super(interaction, executionId);
     this._interaction = interaction;
     

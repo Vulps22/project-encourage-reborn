@@ -1,5 +1,6 @@
-import { ButtonInteraction, InteractionUpdateOptions, StringSelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, InteractionUpdateOptions } from 'discord.js';
 import { BotRepliableInteraction } from './BotRepliableInteraction';
+import { AnySelectMenuInteraction } from '../types';
 
 /**
  * BotComponentInteraction - Abstract base class for message component interactions
@@ -7,9 +8,9 @@ import { BotRepliableInteraction } from './BotRepliableInteraction';
  * Adds component-specific properties and methods (customId, update)
  */
 export abstract class BotComponentInteraction extends BotRepliableInteraction {
-  protected declare readonly _interaction: ButtonInteraction | StringSelectMenuInteraction;
+  protected declare readonly _interaction: ButtonInteraction | AnySelectMenuInteraction;
 
-  constructor(interaction: ButtonInteraction | StringSelectMenuInteraction, executionId: string) {
+  constructor(interaction: ButtonInteraction | AnySelectMenuInteraction, executionId: string) {
     super(interaction, executionId);
     this._interaction = interaction;
   }
@@ -20,7 +21,14 @@ export abstract class BotComponentInteraction extends BotRepliableInteraction {
 
   // --- COMPONENT-SPECIFIC METHODS ---
   update(options: string | InteractionUpdateOptions) {
+    if(this._interaction.deferred) {
+      return this._interaction.editReply(options);
+    }
     return this._interaction.update(options);
+  }
+
+  deferUpdate() {
+    return this._interaction.deferUpdate();
   }
 
   updateComponentMessage(content: string | null, options?: any) {
