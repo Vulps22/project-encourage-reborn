@@ -1,6 +1,7 @@
 import { BaseInteraction, Message, MessageCreateOptions, Snowflake, TextChannel } from 'discord.js';
 import { UniversalMessage } from '../types';
-import { Question } from '../interface';
+import { Question, Report } from '../interface';
+import { Config } from '../config';
 
 
 /**
@@ -32,7 +33,7 @@ export class Logger {
    */
   private static sanitize(message: string): string {
     let sanitized = message;
-    
+
     // Replace each sensitive value with xxxxxxxxxxxx
     for (const sensitive of this.sensitiveValues) {
       // Escape special regex characters in the sensitive value
@@ -40,7 +41,7 @@ export class Logger {
       const regex = new RegExp(escaped, 'gi');
       sanitized = sanitized.replace(regex, 'xxxxxxxxxxxx');
     }
-    
+
     return sanitized;
   }
 
@@ -141,7 +142,7 @@ export class Logger {
     if (!logChannelId) {
       return;
     }
-    
+
     await this.logTo(logChannelId, message);
   }
 
@@ -177,62 +178,13 @@ export class Logger {
   }
 
   // Inside Logger
-static async logQuestion(question: Question, channelId: Snowflake): Promise<Message | null> {
-  
-  const results = await global.client.shard!.broadcastEval(
-    async (c, context) => {
-      const ch = c.channels.cache.get(context.channelId);
-      if (ch?.isTextBased()) {
-        // Import view function using absolute path1`
-        const path = await import('path');
-        const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
-        const { newQuestionView } = await import(viewPath);
+  static async logQuestion(question: Question, channelId: Snowflake): Promise<Message | null> {
 
-        // Reconstruct dates from serialized strings
-        const questionData = {
-          ...context.question,
-          datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
-          datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
-          datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
-          created: new Date(context.question.created)
-        };
-        
-        const view = await newQuestionView(questionData);
-        const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
-        return sentMessage;
-      }
-      return null;
-    },
-    { 
-      context: { 
-        channelId: channelId, 
-        question: question
-      } 
-    }
-  );
-  
-  // Return the first non-null message from the shards
-  return results.find(result => result !== null) as Message || null;
-}
-
-static async updateQuestionLog(question: Question, channelId: Snowflake, reasons: {}[] | null = null): Promise<Message | null> {
-  this.debug(`Updating question log for question ID ${question.id} in channel ${channelId}`);
-  if (!question.message_id) {
-    return null;
-  }
-
-  const results = await global.client.shard!.broadcastEval(
-    async (c, context) => {
-      const ch = c.channels.cache.get(context.channelId);
-      if (ch?.isTextBased()) {
-        try {
-          // Fetch the existing message
-          const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
-          if (!existingMessage) {
-            return { success: false, error: 'Message not found', message: null };
-          }
-
-          // Import view function using absolute path
+    const results = await global.client.shard!.broadcastEval(
+      async (c, context) => {
+        const ch = c.channels.cache.get(context.channelId);
+        if (ch?.isTextBased()) {
+          // Import view function using absolute path1`
           const path = await import('path');
           const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
           const { newQuestionView } = await import(viewPath);
@@ -245,37 +197,123 @@ static async updateQuestionLog(question: Question, channelId: Snowflake, reasons
             datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
             created: new Date(context.question.created)
           };
-          
-          const view = await newQuestionView(questionData, context.reasons);
-          const updatedMessage = await existingMessage.edit(view as any);
-          return { success: true, error: null, message: updatedMessage };
-        } catch (err) {
-          console.error('Failed to update question log:', err);
-          return { success: false, error: String(err), message: null };
+
+          const view = await newQuestionView(questionData);
+          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
+          return sentMessage;
+        }
+        return null;
+      },
+      {
+        context: {
+          channelId: channelId,
+          question: question
         }
       }
-      return { success: false, error: 'Channel not found or not text-based', message: null };
-    },
-    { 
-      context: { 
-        channelId: channelId, 
-        question: question,
-        messageId: question.message_id,
-        reasons: reasons
-      } 
+    );
+
+    // Return the first non-null message from the shards
+    return results.find(result => result !== null) as Message || null;
+  }
+
+  static async updateQuestionLog(question: Question, channelId: Snowflake, reasons: {}[] | null = null): Promise<Message | null> {
+    this.debug(`Updating question log for question ID ${question.id} in channel ${channelId}`);
+    if (!question.message_id) {
+      return null;
     }
-  );
-  
+
+    const results = await global.client.shard!.broadcastEval(
+      async (c, context) => {
+        const ch = c.channels.cache.get(context.channelId);
+        if (ch?.isTextBased()) {
+          try {
+            // Fetch the existing message
+            const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
+            if (!existingMessage) {
+              return { success: false, error: 'Message not found', message: null };
+            }
+
+            // Import view function using absolute path
+            const path = await import('path');
+            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
+            const { newQuestionView } = await import(viewPath);
+
+            // Reconstruct dates from serialized strings
+            const questionData = {
+              ...context.question,
+              datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
+              datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
+              datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
+              created: new Date(context.question.created)
+            };
+
+            const view = await newQuestionView(questionData, context.reasons);
+            const updatedMessage = await existingMessage.edit(view as any);
+            return { success: true, error: null, message: updatedMessage };
+          } catch (err) {
+            console.error('Failed to update question log:', err);
+            return { success: false, error: String(err), message: null };
+          }
+        }
+        return { success: false, error: 'Channel not found or not text-based', message: null };
+      },
+      {
+        context: {
+          channelId: channelId,
+          question: question,
+          messageId: question.message_id,
+          reasons: reasons
+        }
+      }
+    );
+
   // Handle errors in parent context with Logger
   const errorResult = results.find(r => r && !r.success);
-  if (errorResult) {
+  if(errorResult) {
     this.error(`Failed to update question log: ${errorResult.error}`);
   }
-  
+
   // Return the first successful message from the shards
   const successResult = results.find(result => result && result.success);
-  return (successResult ? successResult.message : null) as Message | null;
+  return(successResult? successResult.message: null) as Message | null;
 }
+
+
+  static async logReport(report: Report): Promise<Message | null> {
+
+    const results = await global.client.shard!.broadcastEval(
+      async (c, context) => {
+        const ch = c.channels.cache.get(context.channelId);
+        if (ch?.isTextBased()) {
+          // Import view function using absolute path
+          const path = await import('path');
+          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'reportView.js');
+          const { ReportView } = await import(viewPath);
+
+          // Reconstruct dates from serialized strings
+          const reportData = {
+            ...context.report,
+            created_at: context.report.created_at ? new Date(context.report.created_at) : undefined,
+            updated_at: context.report.updated_at ? new Date(context.report.updated_at) : undefined
+          };
+
+          const view = await ReportView(reportData);
+          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
+          return sentMessage;
+        }
+        return null;
+      },
+      {
+        context: {
+          channelId: Config.REPORT_CHANNEL_ID,
+          report: report
+        }
+      }
+    );
+
+    // Return the first non-null message from the shards
+    return results.find(result => result !== null) as Message || null;
+  }
 
   /**
    * Debug logging to console (STREAMER SAFE - auto-redacts sensitive data)
@@ -283,9 +321,9 @@ static async updateQuestionLog(question: Question, channelId: Snowflake, reasons
    * @param message Message to log to console
    */
   static debug(message: string): void {
-    const sanitized = this.sanitize(message);
-    console.log(sanitized);
-  }
+  const sanitized = this.sanitize(message);
+  console.log(sanitized);
+}
 
   /**
    * Error logging to both console and discord
@@ -293,7 +331,7 @@ static async updateQuestionLog(question: Question, channelId: Snowflake, reasons
    * @throws Error with "Not Implemented Yet"
    */
   static error(message: string): void {
-    console.error(this.sanitize(message));
-    //throw new Error("Not Implemented Yet");
-  }
+  console.error(this.sanitize(message));
+  //throw new Error("Not Implemented Yet");
+}
 }

@@ -6,7 +6,7 @@ export enum ReportStatus {
 }
 
 export interface Report {
-    id: string;
+    id?: number;
     type: string;
     reason: string | null;
     status: ReportStatus;

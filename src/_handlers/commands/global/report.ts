@@ -1,7 +1,7 @@
 import { Question, Report, ReportStatus, Server } from "../../../interface";
 import { db } from "../../../services";
 import { BotCommandInteraction } from "../../../structures";
-import { Command } from "../../../utils";
+import { Command, Logger } from "../../../utils";
 
 const report = new Command('report', 'Report Inappropriate Content')
     .setNSFW(false)
@@ -10,7 +10,7 @@ const report = new Command('report', 'Report Inappropriate Content')
     .addChoice('truth/dare', 'question')
     .addChoice('server', 'server')
     .done()
-    .addIntegerOption('id', 'ID of the content to report', true)
+    .addStringOption('id', 'ID of the content to report', true)
     .done()
     .addStringOption('reason', 'Reason for reporting', false)
     .done()
@@ -23,36 +23,39 @@ const report = new Command('report', 'Report Inappropriate Content')
         switch (interaction.options.getString('type')) {
             case 'question':
                 //fetch question by id
-                content = await getQuestion(interaction.options.getInteger('id') || 0);
+                content = await getQuestion(parseInt(interaction.options.getString('id') || '0'));
                 break;
             case 'server':
-                content = await getServer(interaction.options.getInteger('id') || 0);
+                content = await getServer(parseInt(interaction.options.getString('id') || '0'));
                 break;
             default:
                 await interaction.ephemeralReply('❌ Invalid report type specified.');
                 return;
         }
 
-        if (!content) {
-            await interaction.ephemeralReply('❌ Question not found.');
+        if (!content || content === undefined || content === null) {
+            await interaction.ephemeralReply('❌ Question not found. If this is an Error, Please open a ticket on the [Official Server](https://discord.vulps.co.uk).');
             return;
         }
 
         //build report Object
-        const reportData: Report = {
-            id: String(content.id),
+        const reportData: Partial<Report> = {
             type: interaction.options.getString('type') || 'unknown',
             reason: interaction.options.getString('reason') || 'No reason provided',
             status: ReportStatus.PENDING,
             sender_id: interaction.user.id,
-            offender_id: content.user_id,
+            offender_id: interaction.options.getString('id')!,
             server_id: interaction.guildId!,
             moderator_id: null,
             ban_reason: null
         };
 
-        //store report in database
-        await db.insert('moderation', 'reports', reportData);
+        //store report in database (omit id, created_at, updated_at - database handles these)
+        const { id, created_at, updated_at, ...insertData } = reportData as any;
+        const res = (await db.insert('moderation', 'reports', insertData)!).rows![0];
+
+        await Logger.logReport(res as Report);
+        
     });
 
 export default report;
