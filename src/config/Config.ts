@@ -7,7 +7,7 @@ export enum Config {
     DARES_LOG_CHANNEL_ID = '1235306341724196976',
     LOG_CHANNEL_ID = '1266041224914276424',
     MOD_CHAT_CHANNEL_ID = '1160740531094159492',
-    ANNOUNCEMENT_CHANNEL_ID = '', // UPDATE: Official announcement channel for server subscriptions
+    ANNOUNCEMENT_CHANNEL_ID = '1465005614664126718', // UPDATE: Official announcement channel for server subscriptions
 
     // Discord Guild/Server IDs
     OFFICIAL_GUILD_ID = '1079206786021732412',
