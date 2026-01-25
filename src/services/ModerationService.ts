@@ -1,9 +1,10 @@
 import { DatabaseService } from './DatabaseService';
-import { Question } from '../interface';
+import { Question, Report, ReportStatus } from '../interface';
 import { Logger } from '../utils';
 import { QuestionType, TargetType } from '../types';
 import { Message, Snowflake } from 'discord.js';
 import { banReasons } from '../config';
+import { db } from '.';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class ModerationService {
@@ -114,6 +115,47 @@ export class ModerationService {
      */
     getBanReasons(type: TargetType): {}[]{
         return banReasons[type];
+    }
+
+    /**
+     * Clear a report (mark as resolved without action)
+     * @param reportId - ID of the report to clear
+     * @param moderatorId - ID of the moderator clearing the report
+     * @returns Updated report object
+     */
+    async clearReport(reportId: number, moderatorId: string): Promise<Report> {
+        Logger.log(`Clearing report ${reportId} by moderator ${moderatorId}`);
+        
+        try {
+            // Update the report status to cleared
+            const res = await this.db.update(
+                'moderation',
+                'reports',
+                {
+                    status: ReportStatus.CLEARED,
+                    moderator_id: moderatorId
+                },
+                { id: reportId }
+            );
+            console.log(res)
+            if(res.changedRows == 0) {
+                Logger.error("Unexpectedly failed to clear report")
+                throw new Error("Unexpectedly failed to clear Report");
+            }
+
+            const report = await db.get<Report>('moderation', 'reports', { id: reportId });
+
+            if (!report) {
+                throw new Error(`Report with ID ${reportId} not found after update`);
+            }
+
+            Logger.debug(`Report ${reportId} cleared successfully`);
+            return report;
+            
+        } catch (error) {
+            Logger.error(`Failed to clear report ${reportId}: ${error}`);
+            throw error;
+        }
     }
 
 
