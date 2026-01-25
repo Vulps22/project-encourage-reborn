@@ -28,8 +28,7 @@ const declineTermsButton: Handler<BotButtonInteraction> = {
 
         // Send farewell message
         await interaction.sendReply(
-            '👋 Terms declined. The bot will now leave this server. You can re-add the bot at any time if you change your mind.',
-            null
+            '👋 Terms declined. The bot will now leave this server. You can re-add the bot at any time if you change your mind.'
         );
 
         // Leave the server
