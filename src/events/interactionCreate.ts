@@ -4,6 +4,7 @@ import { userTrackingService } from '../services';
 import { EventHandler } from '../types';
 import { Logger } from '../utils';
 import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
+import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';
 
 /**
  * InteractionCreate event handler
@@ -52,9 +53,12 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       void new ButtonInteractionEvent().execute(interaction, executionId);
       return;
     }
-
     if (interaction.isStringSelectMenu()) {
       void new StringSelectInteractionEvent().execute(interaction, executionId);
+      return;
+    }
+    if(interaction.isChannelSelectMenu()){
+      void new ChannelSelectInteractionEvent().execute(interaction, executionId);
       return;
     }
   },
