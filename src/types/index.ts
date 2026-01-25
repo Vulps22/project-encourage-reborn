@@ -1,6 +1,7 @@
 // Barrel file for types
+export { AnySelectMenuInteraction } from './AnySelectMenuInteraction';
 export { CommandHandler } from './CommandHandler';
 export { EventHandler } from './EventHandler';
 export { QuestionType } from './QuestionType';
-export { UniversalMessage } from './UniversalMessage';
 export { TargetType } from './TargetType';
+export { UniversalMessage } from './UniversalMessage';
