@@ -5,7 +5,8 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
-CREATE TABLE IF NOT EXISTS "reports" ("id" SERIAL,
+CREATE TABLE IF NOT EXISTS "reports" (
+  "id" SERIAL,
   "type" TEXT NOT NULL,
   "reason" TEXT NOT NULL,
   "status" report_status NOT NULL DEFAULT 'pending',

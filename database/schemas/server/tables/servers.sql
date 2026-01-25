@@ -1,5 +1,6 @@
 
-CREATE TABLE IF NOT EXISTS "server"."servers" ("id" BIGINT NOT NULL,
+CREATE TABLE IF NOT EXISTS "server"."servers" (
+  "id" BIGINT NOT NULL,
   "name" TEXT,
   "user_id" BIGINT NOT NULL,
   "has_accepted" BOOLEAN NOT NULL DEFAULT FALSE,
