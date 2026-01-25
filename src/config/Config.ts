@@ -8,7 +8,7 @@ export enum Config {
     LOG_CHANNEL_ID = '1266041224914276424',
     MOD_CHAT_CHANNEL_ID = '1160740531094159492',
     ANNOUNCEMENT_CHANNEL_ID = '1465005614664126718', // UPDATE: Official announcement channel for server subscriptions
-
+    REPORT_CHANNEL_ID = '1303062344133513258',
     // Discord Guild/Server IDs
     OFFICIAL_GUILD_ID = '1079206786021732412',
 }
