@@ -34,7 +34,9 @@ describe('setup command', () => {
         ownerId: '111222333',
       },
       channelId: '444555666',
-      memberPermissions: new PermissionsBitField(['Administrator']),
+      member: {
+        permissions: new PermissionsBitField(['Administrator']),
+      },
       options: {
         getString: jest.fn(),
       },
@@ -78,7 +80,7 @@ describe('setup command', () => {
   });
 
   it('should reject non-admin users', async () => {
-    mockInteraction.memberPermissions = new PermissionsBitField([]);
+    mockInteraction.member.permissions = new PermissionsBitField([]);
 
     await setup.execute(botInteraction);
 
