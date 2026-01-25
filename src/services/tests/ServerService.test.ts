@@ -95,4 +95,34 @@ describe('ServerService', () => {
       expect(result).toBe(0);
     });
   });
+
+  describe('acceptTerms', () => {
+    it('should mark server as having accepted terms', async () => {
+      mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 });
+
+      await serverService.acceptTerms('987654321');
+
+      expect(Logger.debug).toHaveBeenCalledWith('Server 987654321 accepted terms');
+    });
+  });
+
+  describe('acceptRules', () => {
+    it('should grant can_create permission', async () => {
+      mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 });
+
+      await serverService.acceptRules('987654321');
+
+      expect(Logger.debug).toHaveBeenCalledWith('Server 987654321 accepted rules');
+    });
+  });
+
+  describe('setAnnouncementChannel', () => {
+    it('should set announcement channel', async () => {
+      mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 });
+
+      await serverService.setAnnouncementChannel('987654321', '111222333');
+
+      expect(Logger.debug).toHaveBeenCalledWith('Setting announcement channel for server 987654321 to 111222333');
+    });
+  });
 });
