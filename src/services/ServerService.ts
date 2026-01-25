@@ -122,13 +122,11 @@ export class ServerService {
    * @returns Server settings or null if not found
    */
   async getServerSettings(serverId: Snowflake): Promise<Server | null> {
-    const result = await this.db.select('server', 'servers', { id: BigInt(serverId) });
+    const row = await this.db.get('server', 'servers', { id: BigInt(serverId) });
 
-    if (!result || result.length === 0) {
+    if (!row) {
       return null;
     }
-
-    const row = result[0];
     return {
       id: String(row.id),
       name: row.name,
