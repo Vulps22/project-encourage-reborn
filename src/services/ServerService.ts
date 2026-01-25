@@ -130,7 +130,7 @@ export class ServerService {
     return {
       id: String(row.id),
       name: row.name,
-      owner: String(row.owner),
+      user_id: String(row.user_id),
       has_accepted: row.has_accepted,
       can_create: row.can_create,
       is_banned: row.is_banned,

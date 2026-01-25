@@ -6,7 +6,7 @@ import { Snowflake } from 'discord.js';
 export interface Server {
   id: Snowflake;
   name: string | null;
-  owner: Snowflake;
+  user_id: Snowflake;
   has_accepted: boolean;
   can_create: boolean;
   is_banned: boolean;
