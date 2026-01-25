@@ -49,6 +49,11 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       return;
     }
 
+    if(interaction.isAutocomplete()) {
+      void new CommandInteractionEvent().autocomplete?.(interaction);
+      return;
+    }
+
     if (interaction.isButton()) {
       void new ButtonInteractionEvent().execute(interaction, executionId);
       return;
@@ -61,6 +66,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       void new ChannelSelectInteractionEvent().execute(interaction, executionId);
       return;
     }
+
   },
 };
 

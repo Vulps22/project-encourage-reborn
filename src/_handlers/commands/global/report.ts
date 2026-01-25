@@ -1,3 +1,4 @@
+import { AutocompleteInteraction } from "discord.js";
 import { Question, Report, ReportStatus, Server } from "../../../interface";
 import { db } from "../../../services";
 import { BotCommandInteraction } from "../../../structures";
@@ -7,13 +8,44 @@ const report = new Command('report', 'Report Inappropriate Content')
     .setNSFW(false)
     .setAdministrator(false)
     .addStringOption('type', 'Type of content to report', true)
+    //TODO: SUBCOMMANDS
     .addChoice('truth/dare', 'question')
     .addChoice('server', 'server')
     .done()
     .addStringOption('id', 'ID of the content to report', true)
+    .setAutocomplete(true)
     .done()
     .addStringOption('reason', 'Reason for reporting', false)
     .done()
+    .setAutoComplete(async (interaction: AutocompleteInteraction): Promise<void> => {
+        console.log("Autocomplete triggered");
+        const focusedOption = interaction.options.getFocused(true);
+        console.log(focusedOption.name);
+        if (focusedOption.name === 'id') {
+            const type = interaction.options.getString('type');
+            const searchValue = focusedOption.value || '';
+            
+            if (type === 'question') {
+                // Search questions by content
+                const result = await db.query<Question>(
+                    'SELECT * FROM "question"."questions" WHERE question ILIKE $1 LIMIT 25',
+                    [`%${searchValue}%`]
+                );
+                
+                // Format for Discord
+                const choices = result.map(q => ({
+                    name: `${q.id} - ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}`,
+                    value: q.id.toString()
+                }));
+                console.log(choices);
+                await interaction.respond(choices);
+            } else {
+                await interaction.respond([]);
+            }
+        } else {
+            await interaction.respond([]);
+        }
+    })
     .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
         console.log(interaction.executionId);
         await interaction.deferReply({ ephemeral: true });
@@ -34,7 +66,7 @@ const report = new Command('report', 'Report Inappropriate Content')
         }
 
         if (!content || content === undefined || content === null) {
-            await interaction.ephemeralReply('❌ Question not found. If this is an Error, Please open a ticket on the [Official Server](https://discord.vulps.co.uk).');
+            await interaction.ephemeralReply('❌ Content not found. If this is an Error, Please open a ticket on the [Official Server](https://discord.vulps.co.uk).');
             return;
         }
 
