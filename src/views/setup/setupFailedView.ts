@@ -1,9 +1,8 @@
 /** Component V2 message for setup failure (IPC error) */
 
-import { ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { UniversalMessage } from "../../types";
+import { ContainerBuilder, InteractionUpdateOptions, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 
-function setupFailedView(error: string): UniversalMessage {
+function setupFailedView(error: string): InteractionUpdateOptions {
     const title = new TextDisplayBuilder()
         .setContent(`## ⚠️ **Setup Incomplete**`);
 
@@ -24,7 +23,7 @@ function setupFailedView(error: string): UniversalMessage {
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(description);
 
-    const message: UniversalMessage = {
+    const message: InteractionUpdateOptions = {
         flags: MessageFlags.IsComponentsV2,
         components: [container],
     };

@@ -1,9 +1,8 @@
 /** Component V2 message for successful setup completion */
 
-import { ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { UniversalMessage } from "../../types";
+import { ContainerBuilder, InteractionUpdateOptions, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 
-function setupCompleteView(announcementChannelId: string): UniversalMessage {
+function setupCompleteView(announcementChannelId: string): InteractionUpdateOptions {
     const title = new TextDisplayBuilder()
         .setContent(`## ✅ **Setup Complete!**`);
 
@@ -22,7 +21,7 @@ function setupCompleteView(announcementChannelId: string): UniversalMessage {
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(description);
 
-    const message: UniversalMessage = {
+    const message: InteractionUpdateOptions = {
         flags: MessageFlags.IsComponentsV2,
         components: [container],
     };
