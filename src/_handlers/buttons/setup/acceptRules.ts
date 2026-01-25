@@ -9,22 +9,21 @@ const acceptRulesButton: Handler<BotButtonInteraction> = {
     params: {},
     async execute(interaction) {
         // Verify user is admin
-        if (!member.permissions?.has(PermissionFlagsBits.Administrator) &&
-            !member.permissions?.has(PermissionFlagsBits.ManageGuild)) {
+        const member = interaction.member;
+        if (!member || !('permissions' in member)) {
             await interaction.ephemeralReply('❌ Only administrators can accept rules for this server.');
             return;
         }
 
-        const member = interaction.member;
-        if (!member || !('permissions' in member)) {
-            await interaction.ephemeralReply('❌ Only administrators can');
+        const permissions = member.permissions;
+        if (typeof permissions === 'string') {
+            await interaction.ephemeralReply('❌ Only administrators can accept rules for this server.');
             return;
         }
 
-        const permissions = member.permissions as import('discord.js').PermissionsBitField;
         if (!permissions.has(PermissionFlagsBits.Administrator) &&
             !permissions.has(PermissionFlagsBits.ManageGuild)) {
-            await interaction.ephemeralReply('❌ Only administrators');
+            await interaction.ephemeralReply('❌ Only administrators can accept rules for this server.');
             return;
         }
 
