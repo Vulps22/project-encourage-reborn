@@ -7,57 +7,56 @@ import { Command, Logger } from "../../../utils";
 const report = new Command('report', 'Report Inappropriate Content')
     .setNSFW(false)
     .setAdministrator(false)
-    .addStringOption('type', 'Type of content to report', true)
-    //TODO: SUBCOMMANDS
-    .addChoice('truth/dare', 'question')
-    .addChoice('server', 'server')
+    .addSubcommand('question', 'Report a truth or dare question')
+        .addStringOption('id', 'Search for the question to report', true)
+        .setAutocomplete(true)
+        .done()
+        .addStringOption('reason', 'Reason for reporting', false)
+        .done()
     .done()
-    .addStringOption('id', 'ID of the content to report', true)
-    .setAutocomplete(true)
-    .done()
-    .addStringOption('reason', 'Reason for reporting', false)
+    .addSubcommand('server', 'Report a server')
+        .addStringOption('reason', 'Reason for reporting', false)
+        .done()
     .done()
     .setAutoComplete(async (interaction: AutocompleteInteraction): Promise<void> => {
-        console.log("Autocomplete triggered");
+        const subcommand = interaction.options.getSubcommand();
         const focusedOption = interaction.options.getFocused(true);
-        console.log(focusedOption.name);
-        if (focusedOption.name === 'id') {
-            const type = interaction.options.getString('type');
+        
+        if (focusedOption.name === 'id' && subcommand === 'question') {
             const searchValue = focusedOption.value || '';
             
-            if (type === 'question') {
-                // Search questions by content
-                const result = await db.query<Question>(
-                    'SELECT * FROM "question"."questions" WHERE question ILIKE $1 LIMIT 25',
-                    [`%${searchValue}%`]
-                );
-                
-                // Format for Discord
-                const choices = result.map(q => ({
-                    name: `${q.id} - ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}`,
-                    value: q.id.toString()
-                }));
-                console.log(choices);
-                await interaction.respond(choices);
-            } else {
-                await interaction.respond([]);
-            }
+            // Search questions by content
+            const result = await db.query<Question>(
+                'SELECT * FROM "question"."questions" WHERE question ILIKE $1 LIMIT 25',
+                [`%${searchValue}%`]
+            );
+            
+            // Format for Discord
+            const choices = result.map(q => ({
+                name: `${q.id} - ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}`,
+                value: q.id.toString()
+            }));
+            
+            await interaction.respond(choices);
         } else {
             await interaction.respond([]);
         }
     })
     .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
-        console.log(interaction.executionId);
         await interaction.deferReply({ ephemeral: true });
+        
+        const subcommand = interaction.options.getSubcommand();
         let content: Question | Server | false;
+        let reportType: string;
 
         //check the reported content exists
-        switch (interaction.options.getString('type')) {
+        switch (subcommand) {
             case 'question':
-                //fetch question by id
+                reportType = 'question';
                 content = await getQuestion(parseInt(interaction.options.getString('id') || '0'));
                 break;
             case 'server':
+                reportType = 'server';
                 content = await getServer(parseInt(interaction.options.getString('id') || '0'));
                 break;
             default:
@@ -72,7 +71,7 @@ const report = new Command('report', 'Report Inappropriate Content')
 
         //build report Object
         const reportData: Partial<Report> = {
-            type: interaction.options.getString('type') || 'unknown',
+            type: reportType,
             reason: interaction.options.getString('reason') || 'No reason provided',
             status: ReportStatus.PENDING,
             sender_id: interaction.user.id,
@@ -87,6 +86,7 @@ const report = new Command('report', 'Report Inappropriate Content')
         const res = (await db.insert('moderation', 'reports', insertData)!).rows![0];
 
         await Logger.logReport(res as Report);
+        await interaction.ephemeralReply('✅ Report submitted successfully.');
         
     });
 

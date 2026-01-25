@@ -2,6 +2,81 @@ import { AutocompleteInteraction, SlashCommandBuilder } from 'discord.js';
 import { BotCommandInteraction } from '../structures';
 
 /**
+ * Subcommand - Helper for building subcommands with a fluent API
+ */
+class Subcommand {
+  private subcommand: any;
+  private parent: Command;
+
+  constructor(subcommand: any, parent: Command) {
+    this.subcommand = subcommand;
+    this.parent = parent;
+  }
+
+  addStringOption(name: string, description: string, required: boolean = false): SubcommandOption {
+    this.subcommand.addStringOption((option: any) =>
+      option
+        .setName(name)
+        .setDescription(description)
+        .setRequired(required)
+    );
+    const lastOption = this.subcommand.options[this.subcommand.options.length - 1];
+    return new SubcommandOption(lastOption, this);
+  }
+
+  addIntegerOption(name: string, description: string, required: boolean = false): SubcommandOption {
+    this.subcommand.addIntegerOption((option: any) =>
+      option
+        .setName(name)
+        .setDescription(description)
+        .setRequired(required)
+    );
+    const lastOption = this.subcommand.options[this.subcommand.options.length - 1];
+    return new SubcommandOption(lastOption, this);
+  }
+
+  done(): Command {
+    return this.parent;
+  }
+}
+
+/**
+ * SubcommandOption - Helper for building options within subcommands
+ */
+class SubcommandOption {
+  private option: any;
+  private parent: Subcommand;
+
+  constructor(option: any, parent: Subcommand) {
+    this.option = option;
+    this.parent = parent;
+  }
+
+  setAutocomplete(autocomplete: boolean): SubcommandOption {
+    this.option.setAutocomplete(autocomplete);
+    return this;
+  }
+
+  setMinLength(min: number): SubcommandOption {
+    if (this.option.setMinLength) {
+      this.option.setMinLength(min);
+    }
+    return this;
+  }
+
+  setMaxLength(max: number): SubcommandOption {
+    if (this.option.setMaxLength) {
+      this.option.setMaxLength(max);
+    }
+    return this;
+  }
+
+  done(): Subcommand {
+    return this.parent;
+  }
+}
+
+/**
  * CommandOption - Helper for building command options with a fluent API
  */
 class CommandOption {
@@ -126,6 +201,16 @@ export class Command {
         .setRequired(required)
     );
     return this;
+  }
+
+  addSubcommand(name: string, description: string): Subcommand {
+    this.builder.addSubcommand(subcommand =>
+      subcommand
+        .setName(name)
+        .setDescription(description)
+    );
+    const lastSubcommand = this.builder.options[this.builder.options.length - 1];
+    return new Subcommand(lastSubcommand, this);
   }
 
   setNSFW(isNSFW: boolean): Command {
