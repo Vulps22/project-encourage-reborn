@@ -3,6 +3,7 @@ import { Question, Report, ReportStatus, Server } from "../../../interface";
 import { db } from "../../../services";
 import { BotCommandInteraction } from "../../../structures";
 import { Command, Logger } from "../../../utils";
+import { TargetType } from "../../../types";
 
 const report = new Command('report', 'Report Inappropriate Content')
     .setNSFW(false)
@@ -47,16 +48,16 @@ const report = new Command('report', 'Report Inappropriate Content')
         
         const subcommand = interaction.options.getSubcommand();
         let content: Question | Server | false;
-        let reportType: string;
+        let reportType: TargetType;
 
         //check the reported content exists
         switch (subcommand) {
             case 'question':
-                reportType = 'question';
+                reportType = TargetType.Question;
                 content = await getQuestion(parseInt(interaction.options.getString('id') || '0'));
                 break;
             case 'server':
-                reportType = 'server';
+                reportType = TargetType.Server;
                 content = await getServer(parseInt(interaction.options.getString('id') || '0'));
                 break;
             default:

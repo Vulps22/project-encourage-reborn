@@ -158,5 +158,46 @@ export class ModerationService {
         }
     }
 
+    /**
+     * Mark a report as actioning (indicates that action is being taken)
+     * @param reportId - ID of the report to mark as actioning
+     * @param moderatorId - ID of the moderator marking the report
+     * @returns Updated report object
+     */
+    async actioningReport(reportId: number, moderatorId: string): Promise<Report> {
+        Logger.log(`Marking report ${reportId} as actioning by moderator ${moderatorId}`);
+        
+        try {
+            // Update the report status to actioning
+            const res = await this.db.update(
+                'moderation',
+                'reports',
+                {
+                    status: ReportStatus.ACTIONING,
+                    moderator_id: moderatorId
+                },
+                { id: reportId }
+            );
+            console.log(res)
+            if(res.changedRows == 0) {
+                Logger.error("Unexpectedly failed to mark report as actioning")
+                throw new Error("Unexpectedly failed to mark report as actioning");
+            }
+
+            const report = await db.get<Report>('moderation', 'reports', { id: reportId });
+
+            if (!report) {
+                throw new Error(`Report with ID ${reportId} not found after update`);
+            }
+
+            Logger.debug(`Report ${reportId} marked as actioning successfully`);
+            return report;
+            
+        } catch (error) {
+            Logger.error(`Failed to mark report ${reportId} as actioning: ${error}`);
+            throw error;
+        }
+    }
+
 
 }

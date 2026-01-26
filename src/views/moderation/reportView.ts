@@ -1,9 +1,9 @@
 
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { Report } from "../../interface";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, TextDisplayBuilder } from "discord.js";
+import { Report, ReportStatus } from "../../interface";
 import { UniversalMessage } from "../../types";
 
-async function ReportView(report: Report): Promise<UniversalMessage> {
+async function ReportView(report: Report, banReasons: [] | null ): Promise<UniversalMessage> {
     const title = new TextDisplayBuilder()
         .setContent(`## **New Report Submitted**`);
 
@@ -36,11 +36,26 @@ async function ReportView(report: Report): Promise<UniversalMessage> {
     const buttonRow = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(clearButton, actionButton, viewOffenderButton);
 
+        const reasonList = new StringSelectMenuBuilder()
+        .addOptions(banReasons || [])
+        .setCustomId(`moderation_banReasonSelected_id:${report.offender_id}|type:${report.type}`)
+        .setPlaceholder('Select a reason for banning')
+        .setMinValues(1)
+        .setMaxValues(1);
+
+    const selectMenuRow = new ActionRowBuilder<StringSelectMenuBuilder>()
+                .addComponents(reasonList);
+
     const container = new ContainerBuilder()
         .addTextDisplayComponents(title)
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(reportInfo)
-        .addActionRowComponents(buttonRow);
+
+    if (report.status == ReportStatus.ACTIONING) {
+        container.addActionRowComponents(selectMenuRow);
+    } else {
+        container.addActionRowComponents(buttonRow);
+    }
 
     const message: UniversalMessage = {
         components: [container],

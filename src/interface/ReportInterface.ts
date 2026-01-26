@@ -1,13 +1,15 @@
+import { TargetType } from "../types";
+
 export enum ReportStatus {
     PENDING = 'pending',
     ACTIONED = 'actioned',
-    RESOLVED = 'resolved',
+    ACTIONING = 'actioning',
     CLEARED = 'cleared'
 }
 
 export interface Report {
     id?: number;
-    type: string;
+    type: TargetType;
     reason: string | null;
     status: ReportStatus;
     moderator_id: string | null;
