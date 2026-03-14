@@ -1,8 +1,8 @@
 import { AutocompleteInteraction } from "discord.js";
-import { Question, Report, ReportStatus, Server } from "../../../interface";
-import { db } from "../../../services";
+import { Question, Server } from "../../../interface";
+import { db, reportService } from "../../../services";
 import { BotCommandInteraction } from "../../../structures";
-import { Command, Logger } from "../../../utils";
+import { Command } from "../../../utils";
 import { TargetType } from "../../../types";
 
 const report = new Command('report', 'Report Inappropriate Content')
@@ -70,23 +70,14 @@ const report = new Command('report', 'Report Inappropriate Content')
             return;
         }
 
-        //build report Object
-        const reportData: Partial<Report> = {
-            type: reportType,
-            reason: interaction.options.getString('reason') || 'No reason provided',
-            status: ReportStatus.PENDING,
-            sender_id: interaction.user.id,
-            offender_id: interaction.options.getString('id')!,
-            server_id: interaction.guildId!,
-            moderator_id: null,
-            ban_reason: null
-        };
+        await reportService.createReport(
+            interaction.user.id,
+            interaction.options.getString('id')!,
+            reportType,
+            interaction.guildId!,
+            interaction.options.getString('reason') || 'No reason provided'
+        );
 
-        //store report in database (omit id, created_at, updated_at - database handles these)
-        const { id, created_at, updated_at, ...insertData } = reportData as any;
-        const res = (await db.insert('moderation', 'reports', insertData)!).rows![0];
-
-        await Logger.logReport(res as Report);
         await interaction.ephemeralReply('✅ Report submitted successfully.');
         
     });
