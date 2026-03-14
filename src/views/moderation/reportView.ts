@@ -1,7 +1,7 @@
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, TextDisplayBuilder } from "discord.js";
 import { Report, ReportStatus } from "../../interface";
-import { UniversalMessage } from "../../types";
+import { TargetType, UniversalMessage } from "../../types";
 
 async function ReportView(report: Report, banReasons: [] | null ): Promise<UniversalMessage> {
     const title = new TextDisplayBuilder()
@@ -20,25 +20,25 @@ async function ReportView(report: Report, banReasons: [] | null ): Promise<Unive
         .setCustomId(`moderation_clearReport_id:${report.id}`)
         .setLabel('Clear Report')
         .setStyle(ButtonStyle.Success)
-        .setDisabled(report.status === 'cleared');
+        .setDisabled(report.status === ReportStatus.CLEARED || report.status === ReportStatus.ACTIONED);
 
     const actionButton = new ButtonBuilder()
         .setCustomId(`moderation_takeAction_id:${report.id}`)
         .setLabel('Take Action')
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(report.status === 'actioned');
+        .setDisabled(report.status === ReportStatus.ACTIONED);
 
     const viewOffenderButton = new ButtonBuilder()
-        .setCustomId(`moderation_viewOffender_id:${report.offender_id}`)
+        .setCustomId(`moderation_viewOffender_id:${report.sender_id}`)
         .setLabel('View Offender')
         .setStyle(ButtonStyle.Secondary);
 
     const buttonRow = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(clearButton, actionButton, viewOffenderButton);
 
-        const selectHandlerName = report.type === 'server'
+        const selectHandlerName = report.type === TargetType.Server
             ? 'serverBanReasonSelected'
-            : report.type === 'user'
+            : report.type === TargetType.User
                 ? 'userBanReasonSelected'
                 : 'questionBanReasonSelected';
 
