@@ -40,7 +40,18 @@ export class ReportService {
 
     const res = (await this.db.insert('moderation', 'reports', reportData))!.rows![0] as Report;
 
-    await Logger.logReport(res);
+    const logMessage = await Logger.logReport(res);
+    
+    // Update the report with the message ID from the log
+    if (logMessage?.id) {
+      await this.db.update(
+        'moderation',
+        'reports',
+        { message_id: logMessage.id },
+        { id: res.id }
+      );
+      res.message_id = logMessage.id;
+    }
 
     Logger.debug(`Report ${res.id} created successfully`);
     return res;

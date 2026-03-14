@@ -144,40 +144,60 @@ export class ModerationService {
     }
 
     /**
+     * Get the human-readable label for a ban reason value
+     * @param type - The type of target (User, Server, Question)
+     * @param value - The raw ban reason value (e.g. "hate_speech")
+     * @returns The label string, or the raw value if not found
+     */
+    getBanReasonLabel(type: TargetType, value: string): string {
+        const reasons = banReasons[type] as { label: string; value: string }[];
+        const label = reasons.find(r => r.value === value)?.label ?? value;
+        return label.replace(/^\d+ - /, '');
+    }
+
+    /**
      * Clear a report (mark as resolved without action)
      * @param reportId - ID of the report to clear
      * @param moderatorId - ID of the moderator clearing the report
      * @returns Updated report object
      */
-    async clearReport(reportId: number, moderatorId: string): Promise<Report> {
-        Logger.log(`Clearing report ${reportId} by moderator ${moderatorId}`);
+    async clearReport(reportId: number, moderatorId: string): Promise<void> {
+        await Logger.log(`Clearing report ${reportId} by moderator ${moderatorId}`);
         
         try {
-            // Update the report status to cleared
-            const res = await this.db.update(
-                'moderation',
-                'reports',
-                {
-                    status: ReportStatus.CLEARED,
-                    moderator_id: moderatorId
-                },
-                { id: reportId }
-            );
-            console.log(res)
-            if(res.changedRows == 0) {
-                Logger.error("Unexpectedly failed to clear report")
-                throw new Error("Unexpectedly failed to clear Report");
+
+            const activeReport = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+            if (!activeReport) {
+                throw new Error(`Report with ID ${reportId} not found`);
             }
 
-            const report = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+            const reportsToClear = await this.findActioningReports(activeReport.offender_id);
 
-            if (!report) {
-                throw new Error(`Report with ID ${reportId} not found after update`);
+            for(const report of reportsToClear) {
+                // Update the report status to cleared
+                const res = await this.db.update(
+                    'moderation',
+                    'reports',
+                    {
+                        status: ReportStatus.CLEARED,
+                        moderator_id: moderatorId
+                    },
+                    { id: report.id }
+                );
+                console.log(res)
+                if(res.changedRows == 0) {
+                    Logger.error("Unexpectedly failed to clear report")
+                    throw new Error("Unexpectedly failed to clear Report");
+                }
+
+                const updatedReport = await this.db.get<Report>('moderation', 'reports', { id: report.id });
+                if (!updatedReport) {
+                    throw new Error(`Report with ID ${report.id} not found after update`);
+                }
+                await Logger.updateReportLog(updatedReport);
             }
 
             Logger.debug(`Report ${reportId} cleared successfully`);
-            return report;
-            
         } catch (error) {
             Logger.error(`Failed to clear report ${reportId}: ${error}`);
             throw error;
@@ -191,7 +211,7 @@ export class ModerationService {
      * @returns Updated report object
      */
     async actioningReport(reportId: number, moderatorId: string): Promise<Report> {
-        Logger.log(`Marking report ${reportId} as actioning by moderator ${moderatorId}`);
+        await Logger.log(`Marking report ${reportId} as actioning by moderator ${moderatorId}`);
         
         try {
             // Update the report status to actioning
@@ -238,18 +258,61 @@ export class ModerationService {
     }
 
     /**
+     * Get a report by ID
+     * @param reportId - ID of the report
+     * @returns The report, or null if not found
+     */
+    async getReport(reportId: number): Promise<Report | null> {
+        return await this.db.get<Report>('moderation', 'reports', { id: reportId });
+    }
+
+    /**
      * Mark a report as actioned
      * @param reportId - ID of the report
      * @param moderatorId - ID of the moderator
      */
     async actionedReport(reportId: number, moderatorId: string): Promise<void> {
-        await this.db.update(
-            'moderation',
-            'reports',
-            { status: ReportStatus.ACTIONED, moderator_id: moderatorId },
-            { id: reportId }
-        );
-        Logger.debug(`Report ${reportId} marked as actioned by ${moderatorId}`);
+        await Logger.log(`Marking report ${reportId} as actioned by moderator ${moderatorId}`);
+        
+        try {
+            const activeReport = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+            if (!activeReport) {
+                throw new Error(`Report with ID ${reportId} not found`);
+            }
+
+            const reportsToAction = await this.findActioningReports(activeReport.offender_id);
+
+            for (const report of reportsToAction) {
+                // Update the report status to actioned
+                const res = await this.db.update(
+                    'moderation',
+                    'reports',
+                    {
+                        status: ReportStatus.ACTIONED,
+                        moderator_id: moderatorId
+                    },
+                    { id: report.id }
+                    
+                );
+
+                console.log(res);
+                if (res.changedRows == 0) {
+                    Logger.error('Unexpectedly failed to mark report as actioned');
+                    throw new Error('Unexpectedly failed to mark report as actioned');
+                }
+
+                const updatedReport = await this.db.get<Report>('moderation', 'reports', { id: report.id });
+                if (!updatedReport) {
+                    throw new Error(`Report with ID ${report.id} not found after update`);
+                }
+                await Logger.updateReportLog(updatedReport);
+            }
+
+            Logger.debug(`Report ${reportId} marked as actioned successfully`);
+        } catch (error) {
+            Logger.error(`Failed to mark report ${reportId} as actioned: ${error}`);
+            throw error;
+        }
     }
 
     /**
