@@ -33,6 +33,13 @@ const acceptRulesButton: Handler<BotButtonInteraction> = {
             return;
         }
 
+        // Block if server is banned
+        const banReason = await serverService.isServerBanned(guildId);
+        if (banReason) {
+            await interaction.ephemeralReply(`❌ This server is banned from using the bot. Reason: ${banReason}`);
+            return;
+        }
+
         // Mark rules as accepted and grant can_create permission
         await serverService.acceptRules(guildId);
 

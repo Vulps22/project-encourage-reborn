@@ -1,6 +1,6 @@
 import { ModerationService } from '../ModerationService';
 import { DatabaseService, MutationResult } from '../DatabaseService';
-import { Question } from '../../interface';
+import { Question, Report, ReportStatus } from '../../interface';
 import { QuestionType, TargetType } from '../../types';
 import { Logger } from '../../utils';
 
@@ -17,8 +17,10 @@ jest.mock('../../utils/Logger', () => ({
     Logger: {
         log: jest.fn(),
         debug: jest.fn(),
+        error: jest.fn(),
         logTo: jest.fn(),
-        logQuestion: jest.fn().mockResolvedValue({ id: 'msg-123' }) // Return mock message object
+        logQuestion: jest.fn().mockResolvedValue({ id: 'msg-123' }),
+        updateReportLog: jest.fn().mockResolvedValue(null)
     }
 }));
 
@@ -76,7 +78,7 @@ describe('ModerationService', () => {
             count: jest.fn(),
             insert: jest.fn(),
             delete: jest.fn(),
-            query: jest.fn(),
+            query: jest.fn().mockResolvedValue([]),
             execute: jest.fn(),
             transaction: jest.fn(),
             testConnection: jest.fn(),
@@ -178,7 +180,7 @@ describe('ModerationService', () => {
                 {
                     is_banned: true,
                     is_approved: false,
-                    banned_by: '123456789012345678',
+                    banned_by: BigInt('123456789012345678'),
                     ban_reason: 'Inappropriate content',
                     datetime_banned: expect.any(Date)
                 },
@@ -244,6 +246,227 @@ describe('ModerationService', () => {
             expect(questionReasons).not.toEqual(userReasons);
             expect(questionReasons).not.toEqual(serverReasons);
             expect(userReasons).not.toEqual(serverReasons);
+        });
+    });
+
+    describe('banServer', () => {
+        it('should successfully ban a server', async () => {
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 } as MutationResult);
+
+            await moderationService.banServer('123456789012345678', '987654321012345678', 'Spam');
+
+            expect(mockDb.update).toHaveBeenCalledWith(
+                'server',
+                'servers',
+                {
+                    can_create: false,
+                    is_banned: true,
+                    banned_by: '987654321012345678',
+                    ban_reason: 'Spam',
+                    datetime_banned: expect.any(Date)
+                },
+                { id: BigInt('123456789012345678') }
+            );
+            expect(Logger.debug).toHaveBeenCalledWith('Server 123456789012345678 banned successfully');
+        });
+
+        it('should throw if server not found', async () => {
+            mockDb.update.mockResolvedValue({ affectedRows: 0, changedRows: 0 } as MutationResult);
+
+            await expect(moderationService.banServer('999', '123', 'reason'))
+                .rejects.toThrow('Server with ID 999 not found');
+        });
+    });
+
+    describe('getReport', () => {
+        const mockReport = { id: 1, offender_id: '42', status: ReportStatus.PENDING } as Report;
+
+        it('should return report by ID', async () => {
+            mockDb.get.mockResolvedValue(mockReport);
+
+            const result = await moderationService.getReport(1);
+
+            expect(mockDb.get).toHaveBeenCalledWith('moderation', 'reports', { id: 1 });
+            expect(result).toEqual(mockReport);
+        });
+
+        it('should return null if not found', async () => {
+            mockDb.get.mockResolvedValue(null);
+
+            const result = await moderationService.getReport(999);
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('findActioningReports', () => {
+        it('should return pending and actioning reports for an offender', async () => {
+            const mockReports = [{ id: 1 }, { id: 2 }] as Report[];
+            mockDb.query.mockResolvedValue(mockReports);
+
+            const result = await moderationService.findActioningReports('42');
+
+            expect(mockDb.query).toHaveBeenCalledWith(
+                expect.stringContaining('SELECT * FROM'),
+                ['42', ReportStatus.PENDING, ReportStatus.ACTIONING]
+            );
+            expect(result).toEqual(mockReports);
+        });
+
+        it('should return empty array when no open reports exist', async () => {
+            mockDb.query.mockResolvedValue([]);
+
+            const result = await moderationService.findActioningReports('99');
+
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe('actioningReport', () => {
+        const mockReport = { id: 1, offender_id: '42', status: ReportStatus.ACTIONING } as Report;
+
+        it('should mark report as actioning and return updated report', async () => {
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 } as MutationResult);
+            mockDb.get.mockResolvedValue(mockReport);
+
+            const result = await moderationService.actioningReport(1, '123456789012345678');
+
+            expect(mockDb.update).toHaveBeenCalledWith(
+                'moderation',
+                'reports',
+                { status: ReportStatus.ACTIONING, moderator_id: '123456789012345678' },
+                { id: 1 }
+            );
+            expect(result).toEqual(mockReport);
+            expect(Logger.debug).toHaveBeenCalledWith('Report 1 marked as actioning successfully');
+        });
+
+        it('should throw if changedRows is 0', async () => {
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 0 } as MutationResult);
+
+            await expect(moderationService.actioningReport(999, '123456789012345678'))
+                .rejects.toThrow('Unexpectedly failed to mark report as actioning');
+
+            expect(Logger.error).toHaveBeenCalledWith('Unexpectedly failed to mark report as actioning');
+        });
+
+        it('should throw if report not found after update', async () => {
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 } as MutationResult);
+            mockDb.get.mockResolvedValue(null);
+
+            await expect(moderationService.actioningReport(1, '123456789012345678'))
+                .rejects.toThrow('Report with ID 1 not found after update');
+        });
+    });
+
+    describe('actionedReport', () => {
+        const mockActiveReport = { id: 1, offender_id: '42', status: ReportStatus.ACTIONING } as Report;
+        const mockActionedReport = { ...mockActiveReport, status: ReportStatus.ACTIONED } as Report;
+
+        it('should action all related reports and update their logs', async () => {
+            const relatedReports = [{ id: 1 }, { id: 2 }] as Report[];
+            mockDb.get.mockResolvedValueOnce(mockActiveReport);
+            mockDb.query.mockResolvedValueOnce(relatedReports);
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 } as MutationResult);
+            mockDb.get.mockResolvedValue(mockActionedReport);
+
+            await moderationService.actionedReport(1, '123456789012345678');
+
+            expect(mockDb.update).toHaveBeenCalledTimes(2);
+            expect(Logger.updateReportLog).toHaveBeenCalledTimes(2);
+            expect(Logger.debug).toHaveBeenCalledWith('Report 1 marked as actioned successfully');
+        });
+
+        it('should throw if initial report not found', async () => {
+            mockDb.get.mockResolvedValueOnce(null);
+
+            await expect(moderationService.actionedReport(999, '123456789012345678'))
+                .rejects.toThrow('Report with ID 999 not found');
+        });
+
+        it('should throw if update changedRows is 0', async () => {
+            mockDb.get.mockResolvedValueOnce(mockActiveReport);
+            mockDb.query.mockResolvedValueOnce([mockActiveReport]);
+            mockDb.update.mockResolvedValueOnce({ affectedRows: 1, changedRows: 0 } as MutationResult);
+
+            await expect(moderationService.actionedReport(1, '123456789012345678'))
+                .rejects.toThrow('Unexpectedly failed to mark report as actioned');
+
+            expect(Logger.error).toHaveBeenCalledWith('Unexpectedly failed to mark report as actioned');
+        });
+
+        it('should succeed with no updates when no related reports found', async () => {
+            mockDb.get.mockResolvedValueOnce(mockActiveReport);
+            mockDb.query.mockResolvedValueOnce([]);
+
+            await moderationService.actionedReport(1, '123456789012345678');
+
+            expect(mockDb.update).not.toHaveBeenCalled();
+            expect(Logger.updateReportLog).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('clearReport', () => {
+        const mockActiveReport = { id: 1, offender_id: '42', status: ReportStatus.PENDING } as Report;
+        const mockClearedReport = { ...mockActiveReport, status: ReportStatus.CLEARED } as Report;
+
+        it('should clear all related reports and update their logs', async () => {
+            const relatedReports = [{ id: 1 }, { id: 2 }] as Report[];
+            mockDb.get.mockResolvedValueOnce(mockActiveReport);
+            mockDb.query.mockResolvedValueOnce(relatedReports);
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 } as MutationResult);
+            mockDb.get.mockResolvedValue(mockClearedReport);
+
+            await moderationService.clearReport(1, '123456789012345678');
+
+            expect(mockDb.update).toHaveBeenCalledTimes(2);
+            expect(Logger.updateReportLog).toHaveBeenCalledTimes(2);
+            expect(Logger.debug).toHaveBeenCalledWith('Report 1 cleared successfully');
+        });
+
+        it('should throw if report not found', async () => {
+            mockDb.get.mockResolvedValueOnce(null);
+
+            await expect(moderationService.clearReport(999, '123456789012345678'))
+                .rejects.toThrow('Report with ID 999 not found');
+        });
+
+        it('should throw and log error if update fails', async () => {
+            mockDb.get.mockResolvedValueOnce(mockActiveReport);
+            mockDb.query.mockResolvedValueOnce([mockActiveReport]);
+            mockDb.update.mockResolvedValueOnce({ affectedRows: 1, changedRows: 0 } as MutationResult);
+
+            await expect(moderationService.clearReport(1, '123456789012345678'))
+                .rejects.toThrow('Unexpectedly failed to clear Report');
+
+            expect(Logger.error).toHaveBeenCalledWith('Unexpectedly failed to clear report');
+        });
+    });
+
+    describe('resetReport', () => {
+        const mockResetReport = { id: 1, status: ReportStatus.PENDING, moderator_id: null } as Report;
+
+        it('should reset report to pending and return it', async () => {
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 } as MutationResult);
+            mockDb.get.mockResolvedValue(mockResetReport);
+
+            const result = await moderationService.resetReport(1);
+
+            expect(mockDb.update).toHaveBeenCalledWith(
+                'moderation',
+                'reports',
+                { status: ReportStatus.PENDING, moderator_id: null },
+                { id: 1 }
+            );
+            expect(result).toEqual(mockResetReport);
+        });
+
+        it('should throw if report not found after reset', async () => {
+            mockDb.update.mockResolvedValue({ affectedRows: 1, changedRows: 1 } as MutationResult);
+            mockDb.get.mockResolvedValue(null);
+
+            await expect(moderationService.resetReport(999))
+                .rejects.toThrow('Report with ID 999 not found after reset');
         });
     });
 });

@@ -3,7 +3,6 @@ import { BotButtonInteraction } from '../../../../structures';
 import { moderationService, questionService } from '../../../../services';
 import { Logger } from '../../../../utils';
 import { TargetType } from '../../../../types';
-import { NullChannelError } from '../../../../errors/NullChannelError';
 import { QuestionNotFoundError } from '../../../../errors/QuestionNotFoundError';
 
 // Mock the services and Logger
@@ -26,6 +25,11 @@ const mockModerationService = moderationService as jest.Mocked<typeof moderation
 const mockQuestionService = questionService as jest.Mocked<typeof questionService>;
 const mockLogger = Logger as jest.Mocked<typeof Logger>;
 
+(global as any).config = {
+    TRUTHS_LOG_CHANNEL_ID: 'truths-channel-id',
+    DARES_LOG_CHANNEL_ID: 'dares-channel-id',
+};
+
 describe('banQuestion button handler', () => {
     let mockButtonInteraction: jest.Mocked<BotButtonInteraction>;
 
@@ -44,7 +48,10 @@ describe('banQuestion button handler', () => {
             baseId: 'moderation_banQuestion',
             action: 'banQuestion',
             params: new Map([['id', '123']]),
-            ephemeralReply: jest.fn().mockResolvedValue(undefined)
+            ephemeralReply: jest.fn().mockResolvedValue(undefined),
+            message: {
+                awaitMessageComponent: jest.fn().mockResolvedValue({}),
+            }
         } as any;
 
         // Set up params.get to return proper values for both calls
@@ -62,18 +69,6 @@ describe('banQuestion button handler', () => {
         expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
         expect(mockModerationService.getBanReasons).not.toHaveBeenCalled();
         expect(mockQuestionService.getQuestionById).not.toHaveBeenCalled();
-    });
-
-    it('should handle null interaction channel', async () => {
-        const mockInteractionNoChannel = {
-            ...mockButtonInteraction,
-            channel: null
-        };
-
-        await expect(banQuestionButton.execute(mockInteractionNoChannel as any))
-            .rejects.toThrow(NullChannelError);
-
-        expect(mockInteractionNoChannel.ephemeralReply).toHaveBeenCalledWith('❌ Interaction channel is null');
     });
 
     it('should show ban reasons when no reason provided', async () => {
@@ -96,7 +91,7 @@ describe('banQuestion button handler', () => {
 
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
         expect(mockModerationService.getBanReasons).toHaveBeenCalledWith(TargetType.Question);
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'channel-123', mockReasons);
+        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id', mockReasons);
         expect(mockButtonInteraction.ephemeralReply).not.toHaveBeenCalled();
     });
 
@@ -114,7 +109,7 @@ describe('banQuestion button handler', () => {
     it('should handle different question IDs correctly', async () => {
         const mockQuestion = { id: 999, type: 'dare', question: 'Test dare?' };
         const mockReasons = [{ label: 'Test', value: 'test' }];
-        
+
         mockButtonInteraction.params.get = jest.fn()
             .mockReturnValueOnce('999') // First call for 'id'
             .mockReturnValueOnce(null); // Second call for 'reason'
@@ -125,7 +120,7 @@ describe('banQuestion button handler', () => {
         await banQuestionButton.execute(mockButtonInteraction);
 
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(999);
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'channel-123', mockReasons);
+        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'dares-channel-id', mockReasons);
     });
 
     it('should handle when question ID is provided as reason parameter', async () => {
@@ -140,6 +135,23 @@ describe('banQuestion button handler', () => {
 
         expect(mockButtonInteraction.params.get).toHaveBeenCalledWith('id');
         expect(mockButtonInteraction.params.get).toHaveBeenCalledWith('reason');
+    });
+
+    it('should revert question log on 60s timeout', async () => {
+        const mockQuestion = { id: 123, type: 'truth', question: 'Test question?' };
+        const mockReasons = [{ label: 'Test', value: 'test' }];
+
+        mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
+        mockModerationService.getBanReasons.mockReturnValue(mockReasons as any);
+        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockButtonInteraction.message.awaitMessageComponent = jest.fn().mockRejectedValue(new Error('timeout'));
+
+        await banQuestionButton.execute(mockButtonInteraction);
+        await new Promise(resolve => setImmediate(resolve));
+
+        // updateQuestionLog called twice: once with reasons (show dropdown), once without (revert)
+        expect(mockLogger.updateQuestionLog).toHaveBeenCalledTimes(2);
+        expect(mockLogger.updateQuestionLog).toHaveBeenLastCalledWith(mockQuestion, 'truths-channel-id');
     });
 
     it('should have correct button handler structure', () => {

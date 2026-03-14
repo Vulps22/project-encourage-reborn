@@ -1,11 +1,14 @@
 
-CREATE TABLE IF NOT EXISTS "server"."servers" ("id" BIGINT NOT NULL,
+CREATE TABLE IF NOT EXISTS "server"."servers" (
+  "id" BIGINT NOT NULL,
   "name" TEXT,
-  "owner" BIGINT NOT NULL,
+  "user_id" BIGINT NOT NULL,
   "has_accepted" BOOLEAN NOT NULL DEFAULT FALSE,
   "can_create" BOOLEAN NOT NULL DEFAULT FALSE,
   "is_banned" BOOLEAN NOT NULL DEFAULT FALSE,
   "ban_reason" TEXT,
+  "banned_by" BIGINT DEFAULT NULL,
+  "datetime_banned" TIMESTAMP DEFAULT NULL,
   "date_created" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "date_updated" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "dare_success_xp" INTEGER NOT NULL DEFAULT '50',
@@ -27,16 +30,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS "id" ON "server"."servers"("id");
 CREATE INDEX IF NOT EXISTS "id_idx" ON "server"."servers"("id");
 
 -- Performance indexes
-CREATE INDEX IF NOT EXISTS "idx_owner" ON "server"."servers"("owner");
+CREATE INDEX IF NOT EXISTS "idx_user_id" ON "server"."servers"("user_id");
 CREATE INDEX IF NOT EXISTS "idx_entitled" ON "server"."servers"("is_entitled");
 CREATE INDEX IF NOT EXISTS "idx_deleted" ON "server"."servers"("is_deleted");
 
 COMMENT ON TABLE "server"."servers" IS 'Stores Discord server configuration and settings';
 COMMENT ON COLUMN "server"."servers"."name" IS 'Discord server name';
+COMMENT ON COLUMN "server"."servers"."user_id" IS 'Discord user ID of the server owner';
 COMMENT ON COLUMN "server"."servers"."has_accepted" IS 'Whether owner has accepted bot terms/rules';
 COMMENT ON COLUMN "server"."servers"."can_create" IS 'Whether server can create new truth/dare questions (requires rules acceptance)';
 COMMENT ON COLUMN "server"."servers"."is_banned" IS 'Whether server is banned from using the bot';
 COMMENT ON COLUMN "server"."servers"."ban_reason" IS 'Reason for server ban';
+COMMENT ON COLUMN "server"."servers"."banned_by" IS 'Discord user ID of the moderator who banned the server';
+COMMENT ON COLUMN "server"."servers"."datetime_banned" IS 'When the server was banned';
 COMMENT ON COLUMN "server"."servers"."dare_success_xp" IS 'XP awarded for successfully completing a dare';
 COMMENT ON COLUMN "server"."servers"."dare_fail_xp" IS 'XP awarded for failing a dare';
 COMMENT ON COLUMN "server"."servers"."truth_success_xp" IS 'XP awarded for successfully completing a truth';

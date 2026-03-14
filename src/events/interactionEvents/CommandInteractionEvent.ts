@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
 import { BotCommandInteraction } from "../../structures";
 import { Logger } from "../../utils";
 import { InteractionEvent } from "./InteractionEvent";
@@ -15,7 +15,7 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
 
         const botInteraction = new BotCommandInteraction(interaction, executionId);
 
-        if(command.isAdministrator && !botInteraction.isAdministrator()) {
+        if (command.isAdministrator && !botInteraction.isAdministrator()) {
             await botInteraction.sendReply('❌ You do not have permission to use this command.');
             await Logger.updateExecution(executionId, 'Failed: Permission denied');
             return;
@@ -29,11 +29,25 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
             console.error('Command execution error:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
             await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
-            
+
             // Try to send error message to user if interaction hasn't been responded to
             if (!interaction.replied && !interaction.deferred) {
                 await botInteraction.sendReply('❌ An error occurred while processing your command.');
             }
+        }
+    }
+
+    async autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+        const command = global.commands.get(interaction.commandName);
+        if (!command) {
+            Logger.error(`No command found for name: ${interaction.commandName} to Autocomplete`);
+            return;
+        }
+
+        try {
+            await command.autoComplete(interaction);
+        } catch (error) {
+            console.error('Autocomplete error:', error);
         }
     }
 }

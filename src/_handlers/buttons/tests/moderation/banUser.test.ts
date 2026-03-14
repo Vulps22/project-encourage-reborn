@@ -23,6 +23,11 @@ describe('banUserButton', () => {
             replied: false,
             reply: jest.fn().mockResolvedValue(undefined),
             editReply: jest.fn().mockResolvedValue(undefined),
+            update: jest.fn().mockResolvedValue(undefined),
+            message: {
+                awaitMessageComponent: jest.fn().mockResolvedValue({}),
+                edit: jest.fn().mockResolvedValue(undefined)
+            }
         };
 
         botInteraction = new BotButtonInteraction(
@@ -68,7 +73,21 @@ describe('banUserButton', () => {
         expect(UserProfileBuilder.prototype.getUserProfile).toHaveBeenCalledWith('123456789');
         expect(moderationService.getBanReasons).toHaveBeenCalledWith(TargetType.User);
         expect(userProfileView).toHaveBeenCalledWith(mockProfile, mockReasons);
-        expect(mockInteraction.reply).toHaveBeenCalled();
+        expect(mockInteraction.update).toHaveBeenCalled();
+    });
+
+    it('should revert to button view on 60s timeout', async () => {
+        const mockProfile = { id: '123456789', isBanned: false };
+        (UserProfileBuilder.prototype.getUserProfile as jest.Mock).mockResolvedValue(mockProfile);
+        (moderationService.getBanReasons as jest.Mock).mockReturnValue([]);
+        (userProfileView as jest.Mock).mockResolvedValue({ components: [] });
+        mockInteraction.message.awaitMessageComponent = jest.fn().mockRejectedValue(new Error('timeout'));
+
+        await banUserButton.execute(botInteraction);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(userProfileView).toHaveBeenCalledWith(mockProfile);
+        expect(mockInteraction.message.edit).toHaveBeenCalled();
     });
 
     it('should handle missing user ID', async () => {

@@ -1,7 +1,7 @@
 import { Interaction, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
-import { userTrackingService } from '../services';
-import { EventHandler } from '../types';
+import { moderationService, serverService, userService, userTrackingService } from '../services';
+import { EventHandler, TargetType } from '../types';
 import { Logger } from '../utils';
 import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';
@@ -44,6 +44,34 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       return;
     }
 
+
+    if(interaction.isAutocomplete()) {
+      if(await serverService.isServerBanned(interaction.guildId || '')) {
+        await interaction.respond([{ name: 'This server is banned from using the bot.', value: '' }]);
+        return;
+      }
+      void new CommandInteractionEvent().autocomplete?.(interaction);
+      return;
+    }
+
+    const banReason = await serverService.isServerBanned(interaction.guildId || '');
+
+    if (banReason) {
+      await interaction.reply({
+        content: `This server is banned from using the bot. Reason: ${moderationService.getBanReasonLabel(TargetType.Server, banReason)}`
+      })
+      return;
+    }
+
+    const userBanReason = await userService.isUserBanned(interaction.user.id);
+    if (userBanReason) {
+      await interaction.reply({
+        content: `You are banned from using this bot. Reason: ${moderationService.getBanReasonLabel(TargetType.User, userBanReason)}`,
+        flags: MessageFlags.Ephemeral
+      });
+      return;
+    }
+
     if (interaction.isChatInputCommand()) {
       void new CommandInteractionEvent().execute(interaction, executionId);
       return;
@@ -61,6 +89,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       void new ChannelSelectInteractionEvent().execute(interaction, executionId);
       return;
     }
+
   },
 };
 

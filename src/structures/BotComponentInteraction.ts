@@ -37,6 +37,7 @@ export abstract class BotComponentInteraction extends BotRepliableInteraction {
       updateOptions.content = content;
     }
 
-    return this._interaction.update(updateOptions);
+    return this.update(updateOptions);
   }
+
 }

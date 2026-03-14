@@ -2,6 +2,7 @@ import { Snowflake } from 'discord.js';
 import { DatabaseService } from './DatabaseService';
 import { Logger } from '../utils';
 import { Server } from '../interface';
+import { Config } from '../config';
 
 /**
  * ServerService - Handles server data operations
@@ -26,7 +27,7 @@ export class ServerService {
       is_banned: true,
       ban_reason: reason
     }, {
-      owner: BigInt(userId),
+      user_id: BigInt(userId),
       is_banned: false // Only ban servers that aren't already banned
     });
 
@@ -46,7 +47,7 @@ export class ServerService {
       is_banned: false,
       ban_reason: null
     }, {
-      owner: BigInt(userId),
+      user_id: BigInt(userId),
       is_banned: true // Only unban servers that are currently banned
     });
 
@@ -60,7 +61,21 @@ export class ServerService {
    * @returns Number of servers owned
    */
   async getUserOwnedServerCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('server', 'servers', { owner: BigInt(userId) });
+    return await this.db.count('server', 'servers', { user_id: BigInt(userId) });
+  }
+
+  async getServerUserCount(serverId: Snowflake): Promise<number> {
+    return await this.db.count('server', 'server_users', { server_id: BigInt(serverId) });
+  }
+
+  async getServerBannedUserCount(serverId: Snowflake): Promise<number> {
+    const result = await this.db.query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM "server"."server_users" su
+       JOIN "user"."users" u ON su.user_id = u.id
+       WHERE su.server_id = $1 AND u.is_banned = true`,
+      [BigInt(serverId)]
+    );
+    return parseInt(result[0]?.count || '0');
   }
 
   /**
@@ -87,7 +102,7 @@ export class ServerService {
     await this.db.insert('server', 'servers', {
       id: BigInt(serverId),
       name: serverName || null,
-      owner: BigInt(ownerId),
+      user_id: BigInt(ownerId),
       has_accepted: false,
       can_create: false,
       is_banned: false,
@@ -117,6 +132,15 @@ export class ServerService {
   }
 
   /**
+   * Get server by ID
+   * @param serverId Discord server ID
+   * @returns Server or null if not found
+   */
+  async getServerByID(serverId: Snowflake): Promise<Server | null> {
+    return await this.getServerSettings(serverId);
+  }
+
+  /**
    * Get server settings
    * @param serverId Discord server ID
    * @returns Server settings or null if not found
@@ -130,11 +154,13 @@ export class ServerService {
     return {
       id: String(row.id),
       name: row.name,
-      owner: String(row.owner),
+      user_id: String(row.user_id),
       has_accepted: row.has_accepted,
       can_create: row.can_create,
       is_banned: row.is_banned,
       ban_reason: row.ban_reason,
+      banned_by: row.banned_by ? String(row.banned_by) : null,
+      datetime_banned: row.datetime_banned ? new Date(row.datetime_banned) : null,
       date_created: new Date(row.date_created),
       date_updated: new Date(row.date_updated),
       dare_success_xp: row.dare_success_xp,
@@ -164,7 +190,7 @@ export class ServerService {
     const dbSettings: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(settings)) {
-      if (key === 'id' || key === 'owner') {
+      if (key === 'id' || key === 'user_id') {
         continue; // Don't allow updating ID or owner
       }
 
@@ -205,5 +231,26 @@ export class ServerService {
   async setAnnouncementChannel(serverId: Snowflake, channelId: Snowflake): Promise<void> {
     Logger.debug(`Setting announcement channel for server ${serverId} to ${channelId}`);
     await this.updateServerSettings(serverId, { announcement_channel: channelId });
+  }
+
+  /**
+   * Check if a server is banned
+   * @param serverId Discord server ID
+   * @returns True if server is banned, false otherwise
+   */
+  async isServerBanned(serverId: Snowflake): Promise<string | false> {
+    if(serverId == Config.OFFICIAL_GUILD_ID as Snowflake) return false; // Never ban the official server
+    const server = await this.getServerSettings(serverId);
+    return server && server.is_banned ? server.ban_reason || 'No reason provided' : false;
+  }
+
+  /**
+   * Check if a server can create questions
+   * @param serverId Discord server ID
+   * @returns True if server can create questions, false otherwise
+   */
+  async canCreate(serverId: Snowflake): Promise<boolean> {
+    const server = await this.getServerSettings(serverId);
+    return !!(server && server.can_create && !server.is_banned);
   }
 }

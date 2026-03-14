@@ -72,9 +72,28 @@ export class QuestionService {
   }
 
   async getUserBannedQuestionCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('question', 'questions', { 
+    return await this.db.count('question', 'questions', {
       user_id: BigInt(userId),
-      is_banned: true 
+      is_banned: true
+    });
+  }
+
+  async getServerQuestionCount(serverId: Snowflake): Promise<number> {
+    return await this.db.count('question', 'questions', { server_id: BigInt(serverId) });
+  }
+
+  async getServerApprovedQuestionCount(serverId: Snowflake): Promise<number> {
+    return await this.db.count('question', 'questions', {
+      server_id: BigInt(serverId),
+      is_approved: true,
+      is_banned: false
+    });
+  }
+
+  async getServerBannedQuestionCount(serverId: Snowflake): Promise<number> {
+    return await this.db.count('question', 'questions', {
+      server_id: BigInt(serverId),
+      is_banned: true
     });
   }
 

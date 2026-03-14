@@ -1,6 +1,7 @@
 import { Handler, Logger } from "../../../utils";
 import { moderationService, questionService } from "../../../services";
 import { BotButtonInteraction } from "../../../structures";
+import { QuestionType } from "../../../types";
 
 const approveQuestionButton: Handler<BotButtonInteraction> = {
     name: "approveQuestion",
@@ -14,7 +15,6 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
 
         try {
             await moderationService.approveQuestion(questionId, interaction.user.id);
-            if(!interaction.channel) throw new Error("Interaction channel is null when approving question");
 
             const question = await questionService.getQuestionById(Number(questionId)); // Ensure question exists
             if (!question) {
@@ -23,7 +23,10 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
                 return;
             }
 
-            await Logger.updateQuestionLog(question, interaction.channel.id);
+            const logChannelId = question.type === QuestionType.Truth
+                ? global.config.TRUTHS_LOG_CHANNEL_ID
+                : global.config.DARES_LOG_CHANNEL_ID;
+            await Logger.updateQuestionLog(question, logChannelId);
             await interaction.sendReply('✅ Question approved successfully!');
 
         } catch (error) {

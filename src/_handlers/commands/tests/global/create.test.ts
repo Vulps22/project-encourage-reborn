@@ -1,5 +1,5 @@
 import { BotCommandInteraction } from '../../../../structures';
-import { questionService } from '../../../../services';
+import { questionService, serverService } from '../../../../services';
 import { confirmNewQuestionEmbed } from '../../../../views';
 import create from '../../global/create';
 import { QuestionType } from '../../../../types';
@@ -13,6 +13,9 @@ jest.mock('../../../../services', () => ({
   },
   moderationService: {
     sendToApprovalQueue: jest.fn(),
+  },
+  serverService: {
+    canCreate: jest.fn().mockResolvedValue(true),
   },
 }));
 
@@ -29,6 +32,7 @@ describe('create command', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (serverService.canCreate as jest.Mock).mockResolvedValue(true);
 
     mockDeferReply = jest.fn().mockResolvedValue(undefined);
     mockEditReply = jest.fn().mockResolvedValue(undefined);
@@ -102,6 +106,17 @@ describe('create command', () => {
       await create.execute(mockInteraction as BotCommandInteraction);
 
       expect(mockDeferReply).toHaveBeenCalledWith({ flags: MessageFlags.Ephemeral });
+    });
+
+    it('should fail if server cannot create questions', async () => {
+      (serverService.canCreate as jest.Mock).mockResolvedValue(false);
+
+      await create.execute(mockInteraction as BotCommandInteraction);
+
+      expect(questionService.createQuestion).not.toHaveBeenCalled();
+      expect(mockEditReply).toHaveBeenCalledWith({
+        content: '❌ This server is not allowed to create questions. It has either been blocked or has not accepted the rules yet.',
+      });
     });
 
     it('should fail if not in a guild', async () => {

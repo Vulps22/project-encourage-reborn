@@ -15,7 +15,7 @@ BEGIN
     ON CONFLICT ("id") DO NOTHING;
 
     -- Insert server if not exists (requires name and owner)
-    INSERT INTO "server"."servers" ("id", "owner")
+    INSERT INTO "server"."servers" ("id", "user_id")
     VALUES (p_server_id, p_server_owner)
     ON CONFLICT ("id") DO NOTHING;
 

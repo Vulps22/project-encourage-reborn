@@ -1,5 +1,5 @@
 import { MessageFlags } from 'discord.js';
-import { questionService, moderationService } from '../../../services';
+import { questionService, moderationService, serverService } from '../../../services';
 import { BotCommandInteraction } from '../../../structures';
 import { QuestionType } from '../../../types/QuestionType';
 import { Command, Logger } from '../../../utils';
@@ -21,6 +21,13 @@ const create = new Command('create', 'Submit a custom truth or dare question')
     if (!interaction.guildId) {
       await interaction.editReply({
         content: '❌ This command can only be used in a server.',
+      });
+      return;
+    }
+
+    if (!await serverService.canCreate(interaction.guildId)) {
+      await interaction.editReply({
+        content: '❌ This server is not allowed to create questions. It has either been blocked or has not accepted the rules yet.',
       });
       return;
     }
