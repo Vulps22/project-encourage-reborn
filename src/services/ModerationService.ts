@@ -218,12 +218,31 @@ export class ModerationService {
 
             Logger.debug(`Report ${reportId} marked as actioning successfully`);
             return report;
-            
+
         } catch (error) {
             Logger.error(`Failed to mark report ${reportId} as actioning: ${error}`);
             throw error;
         }
     }
 
+    /**
+     * Reset a report back to pending (e.g. when action dropdown times out)
+     * @param reportId - ID of the report to reset
+     * @returns Updated report object
+     */
+    async resetReport(reportId: number): Promise<Report> {
+        Logger.debug(`Resetting report ${reportId} to pending`);
 
+        await this.db.update(
+            'moderation',
+            'reports',
+            { status: ReportStatus.PENDING, moderator_id: null },
+            { id: reportId }
+        );
+
+        const report = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+        if (!report) throw new Error(`Report with ID ${reportId} not found after reset`);
+
+        return report;
+    }
 }
