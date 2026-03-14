@@ -1,3 +1,4 @@
+import { MessageFlags } from 'discord.js';
 import { Logger } from '../../utils';
 
 jest.mock('../../utils', () => ({
@@ -14,6 +15,9 @@ jest.mock('../../services', () => ({
   },
   serverService: {
     isServerBanned: jest.fn().mockResolvedValue(false),
+  },
+  userService: {
+    isUserBanned: jest.fn().mockResolvedValue(false),
   },
 }));
 
@@ -49,6 +53,7 @@ describe('interactionCreate event', () => {
       isChannelSelectMenu: jest.fn().mockReturnValue(false),
       isRepliable: jest.fn().mockReturnValue(true),
       guildId: '987654321',
+      user: { id: '111222333' },
       reply: jest.fn()
     } as any;
 
@@ -66,6 +71,7 @@ describe('interactionCreate event', () => {
       isChannelSelectMenu: jest.fn().mockReturnValue(false),
       isRepliable: jest.fn().mockReturnValue(true),
       guildId: '987654321',
+      user: { id: '111222333' },
       reply: jest.fn()
     } as any;
 
@@ -86,6 +92,7 @@ describe('interactionCreate event', () => {
       isChannelSelectMenu: jest.fn().mockReturnValue(false),
       isRepliable: jest.fn().mockReturnValue(true),
       guildId: '987654321',
+      user: { id: '111222333' },
       reply: jest.fn().mockResolvedValue(undefined)
     } as any;
 
@@ -93,6 +100,31 @@ describe('interactionCreate event', () => {
 
     expect(mockInteraction.reply).toHaveBeenCalledWith({
       content: 'This server is banned from using the bot. Reason: Hate Speech'
+    });
+    expect(mockCommandInteractionEventExecute).not.toHaveBeenCalled();
+  });
+
+  it('should block interactions from banned users', async () => {
+    const { userService } = require('../../services');
+    (userService.isUserBanned as jest.Mock).mockResolvedValue('Harassment');
+
+    const mockInteraction = {
+      isChatInputCommand: jest.fn().mockReturnValue(true),
+      isButton: jest.fn().mockReturnValue(false),
+      isAutocomplete: jest.fn().mockReturnValue(false),
+      isStringSelectMenu: jest.fn().mockReturnValue(false),
+      isChannelSelectMenu: jest.fn().mockReturnValue(false),
+      isRepliable: jest.fn().mockReturnValue(true),
+      guildId: '987654321',
+      user: { id: '111222333' },
+      reply: jest.fn().mockResolvedValue(undefined)
+    } as any;
+
+    await interactionCreate.execute(mockInteraction);
+
+    expect(mockInteraction.reply).toHaveBeenCalledWith({
+      content: 'You are banned from using this bot. Reason: Harassment',
+      flags: MessageFlags.Ephemeral
     });
     expect(mockCommandInteractionEventExecute).not.toHaveBeenCalled();
   });

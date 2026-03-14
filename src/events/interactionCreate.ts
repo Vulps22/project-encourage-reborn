@@ -1,6 +1,6 @@
 import { Interaction, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
-import { serverService, userTrackingService } from '../services';
+import { serverService, userService, userTrackingService } from '../services';
 import { EventHandler } from '../types';
 import { Logger } from '../utils';
 import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
@@ -60,6 +60,15 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       await interaction.reply({
         content: `This server is banned from using the bot. Reason: ${banReason}`
       })
+      return;
+    }
+
+    const userBanReason = await userService.isUserBanned(interaction.user.id);
+    if (userBanReason) {
+      await interaction.reply({
+        content: `You are banned from using this bot. Reason: ${userBanReason}`,
+        flags: MessageFlags.Ephemeral
+      });
       return;
     }
 
