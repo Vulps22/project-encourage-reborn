@@ -25,11 +25,17 @@ const actionReportButton: Handler<BotButtonInteraction> = {
             const updatedReport = await moderationService.actioningReport(reportId, interaction.user.id);
 
             const banReasonList = moderationService.getBanReasons(updatedReport.type);
-            console.log(banReasonList);
-            // Update the message with new report view
             const view = await ReportView(updatedReport, banReasonList as []);
-            console.log(view);
             await interaction.updateComponentMessage(null, view);
+
+            interaction.message.awaitMessageComponent({
+                filter: i => i.customId.includes('BanReasonSelected'),
+                time: 60_000
+            }).catch(async () => {
+                const resetReport = await moderationService.resetReport(reportId);
+                const revertedView = await ReportView(resetReport, null);
+                await interaction.message.edit(revertedView as any);
+            });
 
         } catch (error) {
             await interaction.ephemeralFollowUp(`❌ Failed to mark report as actioning: ${error instanceof Error ? error.message : 'Unknown error'}`);

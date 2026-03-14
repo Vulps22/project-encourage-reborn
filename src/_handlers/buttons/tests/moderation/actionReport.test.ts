@@ -40,6 +40,10 @@ describe('actionReportButton', () => {
             update: jest.fn().mockResolvedValue(undefined),
             deferUpdate: jest.fn().mockResolvedValue(undefined),
             followUp: jest.fn().mockResolvedValue(undefined),
+            message: {
+                awaitMessageComponent: jest.fn().mockResolvedValue(undefined),
+                edit: jest.fn().mockResolvedValue(undefined),
+            },
         };
 
         botInteraction = new BotButtonInteraction(
@@ -49,6 +53,7 @@ describe('actionReportButton', () => {
 
         (moderationService.actioningReport as jest.Mock).mockResolvedValue(mockReport);
         (moderationService.getBanReasons as jest.Mock).mockReturnValue(mockBanReasons);
+        (moderationService.resetReport as jest.Mock).mockResolvedValue({ ...mockReport, status: ReportStatus.PENDING });
         (ReportView as jest.Mock).mockResolvedValue({ components: [] });
     });
 
@@ -76,6 +81,21 @@ describe('actionReportButton', () => {
         expect(mockInteraction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: '❌ Invalid report ID.' })
         );
+    });
+
+    it('should reset report and revert view on 60s timeout', async () => {
+        const resetReport = { ...mockReport, status: ReportStatus.PENDING, moderator_id: null };
+        (moderationService.resetReport as jest.Mock).mockResolvedValue(resetReport);
+        mockInteraction.message.awaitMessageComponent.mockRejectedValue(new Error('timeout'));
+
+        await actionReportButton.execute(botInteraction);
+
+        // Wait for the catch to fire
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(moderationService.resetReport).toHaveBeenCalledWith(1);
+        expect(ReportView).toHaveBeenCalledWith(resetReport, null);
+        expect(mockInteraction.message.edit).toHaveBeenCalled();
     });
 
     it('should handle service error with ephemeral follow-up', async () => {
