@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS "reports" (
   "sender_id" BIGINT NOT NULL,
   "offender_id" BIGINT NOT NULL,
   "server_id" BIGINT NOT NULL,
+  "message_id" BIGINT DEFAULT NULL,
   "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("id")
@@ -40,6 +41,7 @@ CREATE INDEX IF NOT EXISTS "idx_status" ON "reports"("status");
 CREATE INDEX IF NOT EXISTS "idx_offender" ON "reports"("offender_id");
 CREATE INDEX IF NOT EXISTS "idx_server" ON "reports"("server_id");
 CREATE INDEX IF NOT EXISTS "idx_created" ON "reports"("created_at");
+CREATE INDEX IF NOT EXISTS "idx_message_id" ON "reports"("message_id");
  
 COMMENT ON TABLE "reports" IS 'Stores user reports for inappropriate questions or behavior';
 COMMENT ON COLUMN "reports"."id" IS 'Unique identifier for the report';

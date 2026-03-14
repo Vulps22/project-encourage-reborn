@@ -17,6 +17,7 @@ export interface Report {
     sender_id: string;
     offender_id: string;
     server_id: string;
+    message_id?: string | null;
     created_at?: Date;
     updated_at?: Date;
 }
