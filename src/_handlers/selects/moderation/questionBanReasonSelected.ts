@@ -1,6 +1,7 @@
 import { moderationService, questionService, reportService } from "../../../services";
 import { BotSelectMenuInteraction } from "../../../structures";
 import { Handler, Logger } from "../../../utils";
+import { QuestionType } from "../../../types";
 
 const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "questionBanReasonSelected",
@@ -21,8 +22,6 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
         try {
             await moderationService.banQuestion(questionId, interaction.user.id, selectedReason);
-            if (!interaction.channel) throw new Error("Interaction channel is null when banning question");
-
             const question = await questionService.getQuestionById(Number(questionId));
             if (!question) {
                 await interaction.ephemeralReply('❌ Question not found');
@@ -30,7 +29,10 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
                 return;
             }
 
-            await Logger.updateQuestionLog(question, interaction.channel.id);
+            const logChannelId = question.type === QuestionType.Truth
+                ? global.config.TRUTHS_LOG_CHANNEL_ID
+                : global.config.DARES_LOG_CHANNEL_ID;
+            await Logger.updateQuestionLog(question, logChannelId);
 
             const reports = await moderationService.findActioningReports(questionId);
             for (const report of reports) {
