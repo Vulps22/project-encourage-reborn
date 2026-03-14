@@ -4,7 +4,6 @@ import { Question, Report } from '../interface';
 import { ServerProfile } from '../interface/ServerProfileInterface';
 import { Config } from '../config';
 
-
 /**
  * Logger - Static utility for logging bot execution to Discord
  * 
@@ -390,6 +389,62 @@ export class Logger {
 
     // Return the first non-null message from the shards
     return results.find(result => result !== null) as Message || null;
+  }
+
+  static async updateReportLog(report: Report, reasons: {}[] | null = null): Promise<Message | null> {
+    this.debug(`Updating report log for report ID ${report.id}`);
+    if (!report.message_id) {
+      return null;
+    }
+
+    const results = await global.client.shard!.broadcastEval(
+      async (c, context) => {
+        const ch = c.channels.cache.get(context.channelId);
+        if (ch?.isTextBased()) {
+          try {
+            const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
+            if (!existingMessage) {
+              return { success: false, error: 'Message not found', message: null };
+            }
+
+            const path = await import('path');
+            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'reportView.js');
+            const { ReportView } = await import(viewPath);
+
+            // Reconstruct dates from serialized strings
+            const reportData = {
+              ...context.report,
+              created_at: context.report.created_at ? new Date(context.report.created_at) : undefined,
+              updated_at: context.report.updated_at ? new Date(context.report.updated_at) : undefined
+            };
+
+            const view = await ReportView(reportData, context.reasons);
+            const updatedMessage = await existingMessage.edit(view as any);
+            return { success: true, error: null, message: updatedMessage };
+          } catch (err) {
+            console.error('Failed to update report log:', err);
+            return { success: false, error: String(err), message: null };
+          }
+        }
+        return { success: false, error: 'Channel not found or not text-based', message: null };
+      },
+      {
+        context: {
+          channelId: Config.REPORT_CHANNEL_ID,
+          report: report,
+          messageId: report.message_id,
+          reasons: reasons
+        }
+      }
+    );
+
+    const errorResult = results.find(r => r && !r.success);
+    if (errorResult) {
+      this.error(`Failed to update report log: ${errorResult.error}`);
+    }
+
+    const successResult = results.find(result => result && result.success);
+    return (successResult ? successResult.message : null) as Message | null;
   }
 
   /**
