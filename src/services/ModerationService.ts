@@ -226,6 +226,34 @@ export class ModerationService {
     }
 
     /**
+     * Find an ACTIONING report for a given offender, if any
+     * @param offenderId - ID of the offender (question ID, user ID, or server ID)
+     * @returns Report or null
+     */
+    async findActioningReport(offenderId: string): Promise<Report | null> {
+        const report = await this.db.get<Report>('moderation', 'reports', {
+            offender_id: offenderId,
+            status: ReportStatus.ACTIONING
+        });
+        return report || null;
+    }
+
+    /**
+     * Mark a report as actioned
+     * @param reportId - ID of the report
+     * @param moderatorId - ID of the moderator
+     */
+    async actionedReport(reportId: number, moderatorId: string): Promise<void> {
+        await this.db.update(
+            'moderation',
+            'reports',
+            { status: ReportStatus.ACTIONED, moderator_id: moderatorId },
+            { id: reportId }
+        );
+        Logger.debug(`Report ${reportId} marked as actioned by ${moderatorId}`);
+    }
+
+    /**
      * Reset a report back to pending (e.g. when action dropdown times out)
      * @param reportId - ID of the report to reset
      * @returns Updated report object
