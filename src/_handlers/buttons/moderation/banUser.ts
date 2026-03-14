@@ -25,7 +25,15 @@ const banUserButton: Handler<BotButtonInteraction> = {
         // Get ban reasons and update message with dropdown
         const reasons = moderationService.getBanReasons(TargetType.User);
         const view = await userProfileView(profile, reasons);
-        await interaction.sendReply(null, view);
+        await interaction.updateComponentMessage(null, view);
+
+        interaction.message.awaitMessageComponent({
+            filter: i => i.customId.startsWith(`moderation_userBanReasonSelected`),
+            time: 60_000
+        }).catch(async () => {
+            const revertedView = await userProfileView(profile);
+            await interaction.message.edit(revertedView as any);
+        });
     }
 };
 

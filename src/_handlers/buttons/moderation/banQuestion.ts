@@ -24,6 +24,14 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
 
         if(!reason) {
             await showBanReasons(Number(questionId), interaction.channel.id);
+
+            interaction.message.awaitMessageComponent({
+                filter: i => i.customId.startsWith(`moderation_questionBanReasonSelected`),
+                time: 60_000
+            }).catch(async () => {
+                const question = await questionService.getQuestionById(Number(questionId));
+                if (question) await Logger.updateQuestionLog(question, interaction.channel!.id);
+            });
         }
 
     }
