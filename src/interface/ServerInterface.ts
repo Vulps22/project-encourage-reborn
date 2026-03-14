@@ -11,6 +11,8 @@ export interface Server {
   can_create: boolean;
   is_banned: boolean;
   ban_reason: string | null;
+  banned_by: Snowflake | null;
+  datetime_banned: Date | null;
   date_created: Date;
   date_updated: Date;
   dare_success_xp: number;
