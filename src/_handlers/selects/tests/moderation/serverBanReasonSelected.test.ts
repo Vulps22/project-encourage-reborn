@@ -6,7 +6,12 @@ import { ServerProfileBuilder } from '../../../../builders/ServerProfileBuilder'
 
 jest.mock('../../../../services', () => ({
     moderationService: {
-        banServer: jest.fn()
+        banServer: jest.fn(),
+        findActioningReport: jest.fn().mockResolvedValue(null),
+        actionedReport: jest.fn().mockResolvedValue(undefined),
+    },
+    reportService: {
+        notifyReporter: jest.fn().mockResolvedValue(undefined),
     }
 }));
 

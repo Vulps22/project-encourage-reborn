@@ -1,4 +1,4 @@
-import { moderationService } from "../../../services";
+import { moderationService, reportService } from "../../../services";
 import { BotSelectMenuInteraction } from "../../../structures";
 import { Handler, Logger } from "../../../utils";
 import { ServerProfileBuilder } from "../../../builders/ServerProfileBuilder";
@@ -31,6 +31,16 @@ const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             }
 
             await Logger.updateServerLog(profile);
+
+            const report = await moderationService.findActioningReport(serverId);
+            if (report?.id) {
+                await moderationService.actionedReport(report.id, interaction.user.id);
+                await reportService.notifyReporter(
+                    report,
+                    `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`
+                );
+            }
+
             await interaction.ephemeralReply('✅ Server banned successfully!');
 
         } catch (error) {

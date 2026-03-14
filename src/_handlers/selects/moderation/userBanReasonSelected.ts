@@ -1,7 +1,7 @@
 import { UserProfileBuilder } from "../../../builders/UserProfileBuilder";
 import { BotSelectMenuInteraction } from "../../../structures";
 import { Handler, Logger } from "../../../utils";
-import { questionService, serverService, userService } from "../../../services";
+import { moderationService, questionService, reportService, serverService, userService } from "../../../services";
 import { userProfileView } from "../../../views";
 
 const userBanReasonSelected: Handler<BotSelectMenuInteraction> = {
@@ -50,6 +50,15 @@ async function banUser(userId: string, reason: string, interaction: BotSelectMen
 
         const view = await userProfileView(profile);
         await interaction.updateComponentMessage(null, view);
+
+        const report = await moderationService.findActioningReport(userId);
+        if (report?.id) {
+            await moderationService.actionedReport(report.id, interaction.user.id);
+            await reportService.notifyReporter(
+                report,
+                `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`
+            );
+        }
 
     } catch (error) {
         Logger.error(`Error banning user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`);

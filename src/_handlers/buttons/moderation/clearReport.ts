@@ -1,4 +1,4 @@
-import { moderationService } from '../../../services';
+import { moderationService, reportService } from '../../../services';
 import { BotButtonInteraction } from '../../../structures';
 import { Handler } from '../../../utils';
 import { ReportView } from '../../../views/moderation/reportView';
@@ -24,9 +24,12 @@ const clearReportButton: Handler<BotButtonInteraction> = {
             // Clear the report in database
             const updatedReport = await moderationService.clearReport(reportId, interaction.user.id);
 
-            // Update the message with new report view
+            await reportService.notifyReporter(
+                updatedReport,
+                `Your report (#${updatedReport.id}) has been reviewed. No action was taken.`
+            );
+
             const view = await ReportView(updatedReport, null);
-            console.log(view);
             await interaction.updateComponentMessage(null, view);
 
         } catch (error) {

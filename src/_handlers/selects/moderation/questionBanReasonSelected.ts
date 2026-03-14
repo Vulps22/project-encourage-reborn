@@ -1,4 +1,4 @@
-import { moderationService, questionService } from "../../../services";
+import { moderationService, questionService, reportService } from "../../../services";
 import { BotSelectMenuInteraction } from "../../../structures";
 import { Handler, Logger } from "../../../utils";
 
@@ -31,6 +31,16 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             }
 
             await Logger.updateQuestionLog(question, interaction.channel.id);
+
+            const report = await moderationService.findActioningReport(questionId);
+            if (report?.id) {
+                await moderationService.actionedReport(report.id, interaction.user.id);
+                await reportService.notifyReporter(
+                    report,
+                    `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`
+                );
+            }
+
             await interaction.ephemeralReply('✅ Question banned successfully!');
 
         } catch (error) {

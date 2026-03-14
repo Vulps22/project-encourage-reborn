@@ -5,10 +5,15 @@ import { Logger } from '../../../../utils';
 
 jest.mock('../../../../services', () => ({
     moderationService: {
-        banQuestion: jest.fn()
+        banQuestion: jest.fn(),
+        findActioningReport: jest.fn().mockResolvedValue(null),
+        actionedReport: jest.fn().mockResolvedValue(undefined),
     },
     questionService: {
         getQuestionById: jest.fn()
+    },
+    reportService: {
+        notifyReporter: jest.fn().mockResolvedValue(undefined),
     }
 }));
 
