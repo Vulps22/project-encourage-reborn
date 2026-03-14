@@ -124,7 +124,7 @@ export class UserService {
 
   async getUserBannedServerCount(userId: Snowflake): Promise<number> {
     const result = await this.db.query<{ count: string }>(
-      `SELECT COUNT(*) FROM "server"."servers" WHERE "owner" = $1 AND "is_banned" = true`,
+      `SELECT COUNT(*) FROM "server"."servers" WHERE "user_id" = $1 AND "is_banned" = true`,
       [BigInt(userId)]
     );
     return parseInt(result[0]?.count || '0');

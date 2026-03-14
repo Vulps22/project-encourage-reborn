@@ -108,6 +108,33 @@ export class ModerationService {
         }
     }
 
+    async banServer(serverId: string, moderatorId: string, reason: string): Promise<void> {
+        Logger.debug(`Banning server ${serverId} by moderator ${moderatorId} with reason: ${reason}`);
+        try {
+            const result = await this.db.update(
+                'server',
+                'servers',
+                {
+                    can_create: false,
+                    is_banned: true,
+                    banned_by: moderatorId,
+                    ban_reason: reason,
+                    datetime_banned: new Date()
+                },
+                { id: BigInt(serverId) }
+            );
+
+            if(result.affectedRows === 0) {
+                throw new Error(`Server with ID ${serverId} not found`);
+            }
+
+            Logger.debug(`Server ${serverId} banned successfully`);
+        } catch (error) {
+            Logger.debug(`Failed to ban server ${serverId}: ${error}`);
+            throw error;
+        }
+    }
+
     /**
      * Get ban reasons for a specific target type
      * @param type - The type of target (User, Server, Question)
