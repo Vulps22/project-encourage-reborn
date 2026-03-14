@@ -1,7 +1,6 @@
 import { moderationService } from '../../../services';
 import { BotButtonInteraction } from '../../../structures';
-import { Handler } from '../../../utils';
-import { ReportView } from '../../../views/moderation/reportView';
+import { Handler, Logger } from '../../../utils';
 
 /**
  * Mark a report as actioning - indicates that action is being taken
@@ -25,16 +24,14 @@ const actionReportButton: Handler<BotButtonInteraction> = {
             const updatedReport = await moderationService.actioningReport(reportId, interaction.user.id);
 
             const banReasonList = moderationService.getBanReasons(updatedReport.type);
-            const view = await ReportView(updatedReport, banReasonList as []);
-            await interaction.updateComponentMessage(null, view);
+            await Logger.updateReportLog(updatedReport, banReasonList);
 
             interaction.message.awaitMessageComponent({
                 filter: i => i.customId.includes('BanReasonSelected'),
                 time: 60_000
             }).catch(async () => {
                 const resetReport = await moderationService.resetReport(reportId);
-                const revertedView = await ReportView(resetReport, null);
-                await interaction.message.edit(revertedView as any);
+                await Logger.updateReportLog(resetReport);
             });
 
         } catch (error) {

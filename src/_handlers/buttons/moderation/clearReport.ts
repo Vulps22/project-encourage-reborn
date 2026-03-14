@@ -1,7 +1,6 @@
 import { moderationService, reportService } from '../../../services';
 import { BotButtonInteraction } from '../../../structures';
 import { Handler } from '../../../utils';
-import { ReportView } from '../../../views/moderation/reportView';
 
 /**
  * Clear a report - marks it as resolved without taking action
@@ -22,15 +21,18 @@ const clearReportButton: Handler<BotButtonInteraction> = {
 
         try {
             // Clear the report in database
-            const updatedReport = await moderationService.clearReport(reportId, interaction.user.id);
+            await moderationService.clearReport(reportId, interaction.user.id);
+
+            // Fetch the cleared report to get details for notification
+            const clearedReport = await moderationService.getReport(reportId);
+            if (!clearedReport) {
+                throw new Error('Report not found after clearing');
+            }
 
             await reportService.notifyReporter(
-                updatedReport,
-                `Your report (#${updatedReport.id}) has been reviewed. No action was taken.`
+                clearedReport,
+                `Your report (#${clearedReport.id}) has been reviewed. No action was taken.`
             );
-
-            const view = await ReportView(updatedReport, null);
-            await interaction.updateComponentMessage(null, view);
 
         } catch (error) {
             await interaction.ephemeralFollowUp(`❌ Failed to clear report: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -20,12 +20,14 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             return;
         }
 
+        await interaction.deferUpdate();
+
         try {
             await moderationService.banQuestion(questionId, interaction.user.id, selectedReason);
             const question = await questionService.getQuestionById(Number(questionId));
             if (!question) {
-                await interaction.ephemeralReply('❌ Question not found');
                 Logger.error(`Question with ID ${questionId} not found during banning for message ${interaction.message.id}`);
+                await interaction.ephemeralFollowUp('❌ Question not found');
                 return;
             }
 
@@ -43,11 +45,9 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
                 );
             }
 
-            await interaction.ephemeralReply('✅ Question banned successfully!');
-
         } catch (error) {
             console.error('Error banning question:', error);
-            await interaction.ephemeralReply('❌ Failed to ban question. Please try again.');
+            await interaction.ephemeralFollowUp('❌ Failed to ban question. Please try again.');
         }
     }
 };

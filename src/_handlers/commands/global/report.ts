@@ -58,7 +58,7 @@ const report = new Command('report', 'Report Inappropriate Content')
                 break;
             case 'server':
                 reportType = TargetType.Server;
-                content = await getServer(parseInt(interaction.options.getString('id') || '0'));
+                content = await getServer(interaction.guildId!);
                 break;
             default:
                 await interaction.ephemeralReply('❌ Invalid report type specified.');
@@ -70,9 +70,13 @@ const report = new Command('report', 'Report Inappropriate Content')
             return;
         }
 
+        const offenderId = subcommand === 'server'
+            ? interaction.guildId!
+            : interaction.options.getString('id')!;
+
         await reportService.createReport(
             interaction.user.id,
-            interaction.options.getString('id')!,
+            offenderId,
             reportType,
             interaction.guildId!,
             interaction.options.getString('reason') || 'No reason provided'
@@ -91,10 +95,9 @@ async function getQuestion(id: number): Promise<false | Question> {
     return question;
 }
 
-async function getServer(id: number): Promise<false | Server> {
-    const idString = id.toString();
-    if (id < 1 || idString.length < 17 || idString.length > 19) return false;
-    let server = await db.get<Server>('server', 'servers', { id: BigInt(idString) });
+async function getServer(guildId: string): Promise<false | Server> {
+    if (!guildId || guildId.length < 17 || guildId.length > 19) return false;
+    let server = await db.get<Server>('server', 'servers', { id: BigInt(guildId) });
     if (!server) return false;
     return server;
 }
