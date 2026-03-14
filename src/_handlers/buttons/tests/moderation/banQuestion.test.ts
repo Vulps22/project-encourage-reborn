@@ -44,7 +44,10 @@ describe('banQuestion button handler', () => {
             baseId: 'moderation_banQuestion',
             action: 'banQuestion',
             params: new Map([['id', '123']]),
-            ephemeralReply: jest.fn().mockResolvedValue(undefined)
+            ephemeralReply: jest.fn().mockResolvedValue(undefined),
+            message: {
+                awaitMessageComponent: jest.fn().mockResolvedValue({}),
+            }
         } as any;
 
         // Set up params.get to return proper values for both calls
@@ -140,6 +143,23 @@ describe('banQuestion button handler', () => {
 
         expect(mockButtonInteraction.params.get).toHaveBeenCalledWith('id');
         expect(mockButtonInteraction.params.get).toHaveBeenCalledWith('reason');
+    });
+
+    it('should revert question log on 60s timeout', async () => {
+        const mockQuestion = { id: 123, type: 'truth', question: 'Test question?' };
+        const mockReasons = [{ label: 'Test', value: 'test' }];
+
+        mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
+        mockModerationService.getBanReasons.mockReturnValue(mockReasons as any);
+        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockButtonInteraction.message.awaitMessageComponent = jest.fn().mockRejectedValue(new Error('timeout'));
+
+        await banQuestionButton.execute(mockButtonInteraction);
+        await new Promise(resolve => setImmediate(resolve));
+
+        // updateQuestionLog called twice: once with reasons (show dropdown), once without (revert)
+        expect(mockLogger.updateQuestionLog).toHaveBeenCalledTimes(2);
+        expect(mockLogger.updateQuestionLog).toHaveBeenLastCalledWith(mockQuestion, 'channel-123');
     });
 
     it('should have correct button handler structure', () => {
