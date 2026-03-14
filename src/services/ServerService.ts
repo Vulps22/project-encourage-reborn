@@ -2,6 +2,7 @@ import { Snowflake } from 'discord.js';
 import { DatabaseService } from './DatabaseService';
 import { Logger } from '../utils';
 import { Server } from '../interface';
+import { Config } from '../config';
 
 /**
  * ServerService - Handles server data operations
@@ -230,5 +231,26 @@ export class ServerService {
   async setAnnouncementChannel(serverId: Snowflake, channelId: Snowflake): Promise<void> {
     Logger.debug(`Setting announcement channel for server ${serverId} to ${channelId}`);
     await this.updateServerSettings(serverId, { announcement_channel: channelId });
+  }
+
+  /**
+   * Check if a server is banned
+   * @param serverId Discord server ID
+   * @returns True if server is banned, false otherwise
+   */
+  async isServerBanned(serverId: Snowflake): Promise<string | false> {
+    if(serverId == Config.OFFICIAL_GUILD_ID as Snowflake) return false; // Never ban the official server
+    const server = await this.getServerSettings(serverId);
+    return server && server.is_banned ? server.ban_reason || 'No reason provided' : false;
+  }
+
+  /**
+   * Check if a server can create questions
+   * @param serverId Discord server ID
+   * @returns True if server can create questions, false otherwise
+   */
+  async canCreate(serverId: Snowflake): Promise<boolean> {
+    const server = await this.getServerSettings(serverId);
+    return !!(server && server.can_create && !server.is_banned);
   }
 }

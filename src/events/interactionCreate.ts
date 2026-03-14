@@ -1,6 +1,6 @@
 import { Interaction, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
-import { userTrackingService } from '../services';
+import { serverService, userTrackingService } from '../services';
 import { EventHandler } from '../types';
 import { Logger } from '../utils';
 import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
@@ -44,13 +44,27 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       return;
     }
 
-    if (interaction.isChatInputCommand()) {
-      void new CommandInteractionEvent().execute(interaction, executionId);
+
+    if(interaction.isAutocomplete()) {
+      if(await serverService.isServerBanned(interaction.guildId || '')) {
+        await interaction.respond([{ name: 'This server is banned from using the bot.', value: '' }]);
+        return;
+      }
+      void new CommandInteractionEvent().autocomplete?.(interaction);
       return;
     }
 
-    if(interaction.isAutocomplete()) {
-      void new CommandInteractionEvent().autocomplete?.(interaction);
+    const banReason = await serverService.isServerBanned(interaction.guildId || '');
+
+    if (banReason) {
+      await interaction.reply({
+        content: `This server is banned from using the bot. Reason: ${banReason}`
+      })
+      return;
+    }
+
+    if (interaction.isChatInputCommand()) {
+      void new CommandInteractionEvent().execute(interaction, executionId);
       return;
     }
 
