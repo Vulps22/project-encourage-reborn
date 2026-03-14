@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS "server"."servers" (
   "can_create" BOOLEAN NOT NULL DEFAULT FALSE,
   "is_banned" BOOLEAN NOT NULL DEFAULT FALSE,
   "ban_reason" TEXT,
+  "banned_by" BIGINT DEFAULT NULL,
+  "datetime_banned" TIMESTAMP DEFAULT NULL,
   "date_created" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "date_updated" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "dare_success_xp" INTEGER NOT NULL DEFAULT '50',
@@ -39,6 +41,8 @@ COMMENT ON COLUMN "server"."servers"."has_accepted" IS 'Whether owner has accept
 COMMENT ON COLUMN "server"."servers"."can_create" IS 'Whether server can create new truth/dare questions (requires rules acceptance)';
 COMMENT ON COLUMN "server"."servers"."is_banned" IS 'Whether server is banned from using the bot';
 COMMENT ON COLUMN "server"."servers"."ban_reason" IS 'Reason for server ban';
+COMMENT ON COLUMN "server"."servers"."banned_by" IS 'Discord user ID of the moderator who banned the server';
+COMMENT ON COLUMN "server"."servers"."datetime_banned" IS 'When the server was banned';
 COMMENT ON COLUMN "server"."servers"."dare_success_xp" IS 'XP awarded for successfully completing a dare';
 COMMENT ON COLUMN "server"."servers"."dare_fail_xp" IS 'XP awarded for failing a dare';
 COMMENT ON COLUMN "server"."servers"."truth_success_xp" IS 'XP awarded for successfully completing a truth';
