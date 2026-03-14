@@ -72,7 +72,7 @@ async function newQuestionView(question: Question, banReasons: [] | null = null)
 
     const reasonList = new StringSelectMenuBuilder()
         .addOptions(banReasons || [])
-        .setCustomId(`moderation_banReasonSelected_id:${question.id}`)
+        .setCustomId(`moderation_questionBanReasonSelected_id:${question.id}`)
         .setPlaceholder('Select a reason for banning')
         .setMinValues(1)
         .setMaxValues(1);

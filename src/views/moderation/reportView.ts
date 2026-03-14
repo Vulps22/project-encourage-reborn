@@ -36,9 +36,15 @@ async function ReportView(report: Report, banReasons: [] | null ): Promise<Unive
     const buttonRow = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(clearButton, actionButton, viewOffenderButton);
 
+        const selectHandlerName = report.type === 'server'
+            ? 'serverBanReasonSelected'
+            : report.type === 'user'
+                ? 'userBanReasonSelected'
+                : 'questionBanReasonSelected';
+
         const reasonList = new StringSelectMenuBuilder()
         .addOptions(banReasons || [])
-        .setCustomId(`moderation_banReasonSelected_id:${report.offender_id}|type:${report.type}`)
+        .setCustomId(`moderation_${selectHandlerName}_id:${report.offender_id}`)
         .setPlaceholder('Select a reason for banning')
         .setMinValues(1)
         .setMaxValues(1);
