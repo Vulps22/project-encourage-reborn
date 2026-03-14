@@ -126,7 +126,7 @@ describe('questionBanReasonSelected select menu handler', () => {
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
         expect(mockSelectInteraction.deferUpdate).toHaveBeenCalled();
-        expect(console.error).toHaveBeenCalledWith('Error banning question:', testError);
+        expect(mockLogger.error).toHaveBeenCalledWith(`Error banning question: ${testError}`);
         expect(mockSelectInteraction.ephemeralFollowUp).toHaveBeenCalledWith('❌ Failed to ban question. Please try again.');
     });
 
