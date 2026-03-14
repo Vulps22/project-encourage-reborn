@@ -226,14 +226,14 @@ export class ModerationService {
     }
 
     /**
-     * Find all ACTIONING reports for a given offender
+     * Find all open (PENDING or ACTIONING) reports for a given offender
      * @param offenderId - ID of the offender (question ID, user ID, or server ID)
      * @returns Array of reports
      */
     async findActioningReports(offenderId: string): Promise<Report[]> {
         return await this.db.query<Report>(
-            `SELECT * FROM "moderation"."reports" WHERE offender_id = $1 AND status = $2`,
-            [offenderId, ReportStatus.ACTIONING]
+            `SELECT * FROM "moderation"."reports" WHERE offender_id = $1 AND status IN ($2, $3)`,
+            [offenderId, ReportStatus.PENDING, ReportStatus.ACTIONING]
         );
     }
 
