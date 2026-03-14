@@ -4,7 +4,6 @@ import { Logger } from '../utils';
 import { QuestionType, TargetType } from '../types';
 import { Message, Snowflake } from 'discord.js';
 import { banReasons } from '../config';
-import { db } from '.';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class ModerationService {
@@ -170,7 +169,7 @@ export class ModerationService {
                 throw new Error("Unexpectedly failed to clear Report");
             }
 
-            const report = await db.get<Report>('moderation', 'reports', { id: reportId });
+            const report = await this.db.get<Report>('moderation', 'reports', { id: reportId });
 
             if (!report) {
                 throw new Error(`Report with ID ${reportId} not found after update`);
@@ -211,7 +210,7 @@ export class ModerationService {
                 throw new Error("Unexpectedly failed to mark report as actioning");
             }
 
-            const report = await db.get<Report>('moderation', 'reports', { id: reportId });
+            const report = await this.db.get<Report>('moderation', 'reports', { id: reportId });
 
             if (!report) {
                 throw new Error(`Report with ID ${reportId} not found after update`);
