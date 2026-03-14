@@ -58,7 +58,9 @@ describe('questionBanReasonSelected select menu handler', () => {
             values: ['Inappropriate content'],
             params: new Map([['id', '123']]),
             ephemeralReply: jest.fn().mockResolvedValue(undefined),
-            sendReply: jest.fn().mockResolvedValue(undefined)
+            ephemeralFollowUp: jest.fn().mockResolvedValue(undefined),
+            deferUpdate: jest.fn().mockResolvedValue(undefined),
+            sendReply: jest.fn().mockResolvedValue(undefined),
         } as any;
 
         mockSelectInteraction.params.get = jest.fn().mockReturnValue('123');
@@ -69,7 +71,7 @@ describe('questionBanReasonSelected select menu handler', () => {
         expect(typeof questionBanReasonSelected.execute).toBe('function');
     });
 
-    it('should ban question and reply ephemerally on success', async () => {
+    it('should defer update and ban question silently on success', async () => {
         const mockQuestion = { id: 123, message_id: 'msg-789', type: 'truth' };
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
@@ -77,11 +79,12 @@ describe('questionBanReasonSelected select menu handler', () => {
 
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
+        expect(mockSelectInteraction.deferUpdate).toHaveBeenCalled();
         expect(mockModerationService.banQuestion).toHaveBeenCalledWith('123', '123456789012345678', 'Inappropriate content');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
         expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id');
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('✅ Question banned successfully!');
-        expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
+        expect(mockSelectInteraction.ephemeralReply).not.toHaveBeenCalled();
+        expect(mockSelectInteraction.ephemeralFollowUp).not.toHaveBeenCalled();
     });
 
     it('should reply ephemerally with error when question ID is missing', async () => {
@@ -89,6 +92,7 @@ describe('questionBanReasonSelected select menu handler', () => {
 
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
+        expect(mockSelectInteraction.deferUpdate).not.toHaveBeenCalled();
         expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
         expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
         expect(mockLogger.error).toHaveBeenCalledWith('Question ID not found when executing questionBanReasonSelected');
@@ -99,30 +103,31 @@ describe('questionBanReasonSelected select menu handler', () => {
 
         await questionBanReasonSelected.execute(mockInteractionEmptyValues as any);
 
+        expect(mockSelectInteraction.deferUpdate).not.toHaveBeenCalled();
         expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
         expect(mockInteractionEmptyValues.ephemeralReply).toHaveBeenCalledWith('❌ No reason selected');
     });
 
-    it('should reply ephemerally with error when question not found after banning', async () => {
+    it('should send ephemeral follow-up when question not found after banning', async () => {
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue(null);
 
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
+        expect(mockSelectInteraction.deferUpdate).toHaveBeenCalled();
         expect(mockLogger.error).toHaveBeenCalledWith('Question with ID 123 not found during banning for message message-456');
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Question not found');
-        expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
+        expect(mockSelectInteraction.ephemeralFollowUp).toHaveBeenCalledWith('❌ Question not found');
     });
 
-    it('should reply ephemerally with error on service failure', async () => {
+    it('should send ephemeral follow-up on service failure', async () => {
         const testError = new Error('Database connection failed');
         mockModerationService.banQuestion.mockRejectedValue(testError);
 
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
+        expect(mockSelectInteraction.deferUpdate).toHaveBeenCalled();
         expect(console.error).toHaveBeenCalledWith('Error banning question:', testError);
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Failed to ban question. Please try again.');
-        expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
+        expect(mockSelectInteraction.ephemeralFollowUp).toHaveBeenCalledWith('❌ Failed to ban question. Please try again.');
     });
 
     it('should use first value from values array', async () => {

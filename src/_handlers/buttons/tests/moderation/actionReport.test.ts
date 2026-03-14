@@ -2,12 +2,18 @@ import { ButtonInteraction } from 'discord.js';
 import { BotButtonInteraction } from '../../../../structures';
 import actionReportButton from '../../moderation/actionReport';
 import { moderationService } from '../../../../services';
-import { ReportView } from '../../../../views/moderation/reportView';
+import { Logger } from '../../../../utils';
 import { ReportStatus } from '../../../../interface';
 import { TargetType } from '../../../../types';
 
 jest.mock('../../../../services');
-jest.mock('../../../../views/moderation/reportView');
+jest.mock('../../../../utils', () => ({
+    Logger: {
+        updateReportLog: jest.fn().mockResolvedValue(null),
+        debug: jest.fn(),
+        error: jest.fn(),
+    }
+}));
 
 describe('actionReportButton', () => {
     let mockInteraction: any;
@@ -53,8 +59,7 @@ describe('actionReportButton', () => {
 
         (moderationService.actioningReport as jest.Mock).mockResolvedValue(mockReport);
         (moderationService.getBanReasons as jest.Mock).mockReturnValue(mockBanReasons);
-        (moderationService.resetReport as jest.Mock).mockResolvedValue({ ...mockReport, status: ReportStatus.PENDING });
-        (ReportView as jest.Mock).mockResolvedValue({ components: [] });
+        (moderationService.resetReport as jest.Mock).mockResolvedValue({ ...mockReport, status: ReportStatus.PENDING, moderator_id: null });
     });
 
     it('should have correct name and params', () => {
@@ -62,13 +67,12 @@ describe('actionReportButton', () => {
         expect(actionReportButton.params).toEqual({ id: 'string' });
     });
 
-    it('should action report and update view with ban reasons', async () => {
+    it('should action report and update report log with ban reasons', async () => {
         await actionReportButton.execute(botInteraction);
 
         expect(moderationService.actioningReport).toHaveBeenCalledWith(1, '444555666');
         expect(moderationService.getBanReasons).toHaveBeenCalledWith(mockReport.type);
-        expect(ReportView).toHaveBeenCalledWith(mockReport, mockBanReasons);
-        expect(mockInteraction.update).toHaveBeenCalled();
+        expect(Logger.updateReportLog).toHaveBeenCalledWith(mockReport, mockBanReasons);
     });
 
     it('should handle invalid report ID', async () => {
@@ -83,7 +87,7 @@ describe('actionReportButton', () => {
         );
     });
 
-    it('should reset report and revert view on 60s timeout', async () => {
+    it('should reset report and update report log on 60s timeout', async () => {
         const resetReport = { ...mockReport, status: ReportStatus.PENDING, moderator_id: null };
         (moderationService.resetReport as jest.Mock).mockResolvedValue(resetReport);
         mockInteraction.message.awaitMessageComponent.mockRejectedValue(new Error('timeout'));
@@ -94,8 +98,7 @@ describe('actionReportButton', () => {
         await new Promise(resolve => setTimeout(resolve, 0));
 
         expect(moderationService.resetReport).toHaveBeenCalledWith(1);
-        expect(ReportView).toHaveBeenCalledWith(resetReport, null);
-        expect(mockInteraction.message.edit).toHaveBeenCalled();
+        expect(Logger.updateReportLog).toHaveBeenCalledWith(resetReport);
     });
 
     it('should handle service error with ephemeral follow-up', async () => {

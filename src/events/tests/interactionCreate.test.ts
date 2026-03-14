@@ -19,6 +19,9 @@ jest.mock('../../services', () => ({
   userService: {
     isUserBanned: jest.fn().mockResolvedValue(false),
   },
+  moderationService: {
+    getBanReasonLabel: jest.fn((_type: unknown, value: string) => value),
+  },
 }));
 
 const mockCommandInteractionEventExecute = jest.fn();
@@ -42,6 +45,10 @@ describe('interactionCreate event', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (Logger.logInteractionReceived as jest.Mock).mockResolvedValue('execution-id-123');
+    const { serverService, userService, moderationService } = require('../../services');
+    (serverService.isServerBanned as jest.Mock).mockResolvedValue(false);
+    (userService.isUserBanned as jest.Mock).mockResolvedValue(false);
+    (moderationService.getBanReasonLabel as jest.Mock).mockImplementation((_type: unknown, value: string) => value);
   });
 
   it('should call command handler for chat input commands', async () => {

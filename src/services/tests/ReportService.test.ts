@@ -69,4 +69,37 @@ describe('ReportService', () => {
       );
     });
   });
+
+  describe('notifyReporter', () => {
+    beforeEach(() => {
+      (global as any).client = {
+        users: { fetch: jest.fn() }
+      };
+    });
+
+    it('should send a DM to the reporter', async () => {
+      const mockSend = jest.fn().mockResolvedValue(undefined);
+      (global as any).client.users.fetch.mockResolvedValue({ send: mockSend });
+
+      const mockReport = { id: 1, sender_id: '111222333' };
+      await reportService.notifyReporter(mockReport as any, 'Your report has been reviewed.');
+
+      expect((global as any).client.users.fetch).toHaveBeenCalledWith('111222333');
+      expect(mockSend).toHaveBeenCalledWith('Your report has been reviewed.');
+      expect(Logger.debug).toHaveBeenCalledWith('Notified reporter 111222333 for report 1');
+    });
+
+    it('should fail silently if user cannot be notified', async () => {
+      (global as any).client.users.fetch.mockRejectedValue(new Error('Cannot send messages to this user'));
+
+      const mockReport = { id: 1, sender_id: '111222333' };
+      await expect(
+        reportService.notifyReporter(mockReport as any, 'Your report has been reviewed.')
+      ).resolves.not.toThrow();
+
+      expect(Logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Could not notify reporter 111222333 for report 1')
+      );
+    });
+  });
 });

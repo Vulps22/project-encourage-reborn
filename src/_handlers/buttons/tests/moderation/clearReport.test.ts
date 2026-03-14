@@ -1,13 +1,11 @@
 import { ButtonInteraction } from 'discord.js';
 import { BotButtonInteraction } from '../../../../structures';
 import clearReportButton from '../../moderation/clearReport';
-import { moderationService } from '../../../../services';
-import { ReportView } from '../../../../views/moderation/reportView';
+import { moderationService, reportService } from '../../../../services';
 import { ReportStatus } from '../../../../interface';
 import { TargetType } from '../../../../types';
 
 jest.mock('../../../../services');
-jest.mock('../../../../views/moderation/reportView');
 
 describe('clearReportButton', () => {
     let mockInteraction: any;
@@ -45,8 +43,9 @@ describe('clearReportButton', () => {
             'exec-123'
         );
 
-        (moderationService.clearReport as jest.Mock).mockResolvedValue(mockReport);
-        (ReportView as jest.Mock).mockResolvedValue({ components: [] });
+        (moderationService.clearReport as jest.Mock).mockResolvedValue(undefined);
+        (moderationService.getReport as jest.Mock).mockResolvedValue(mockReport);
+        (reportService.notifyReporter as jest.Mock).mockResolvedValue(undefined);
     });
 
     it('should have correct name and params', () => {
@@ -54,12 +53,16 @@ describe('clearReportButton', () => {
         expect(clearReportButton.params).toEqual({ id: 'string' });
     });
 
-    it('should clear report and update component message', async () => {
+    it('should defer update, clear report, and notify reporter', async () => {
         await clearReportButton.execute(botInteraction);
 
+        expect(mockInteraction.deferUpdate).toHaveBeenCalled();
         expect(moderationService.clearReport).toHaveBeenCalledWith(1, '444555666');
-        expect(ReportView).toHaveBeenCalledWith(mockReport, null);
-        expect(mockInteraction.update).toHaveBeenCalled();
+        expect(moderationService.getReport).toHaveBeenCalledWith(1);
+        expect(reportService.notifyReporter).toHaveBeenCalledWith(
+            mockReport,
+            `Your report (#1) has been reviewed. No action was taken.`
+        );
     });
 
     it('should handle invalid report ID', async () => {
@@ -74,13 +77,23 @@ describe('clearReportButton', () => {
         );
     });
 
-    it('should handle service error with ephemeral follow-up', async () => {
-        (moderationService.clearReport as jest.Mock).mockRejectedValue(new Error('Report not found'));
+    it('should send ephemeral follow-up if report not found after clearing', async () => {
+        (moderationService.getReport as jest.Mock).mockResolvedValue(null);
 
         await clearReportButton.execute(botInteraction);
 
         expect(mockInteraction.followUp).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '❌ Failed to clear report: Report not found' })
+            expect.objectContaining({ content: '❌ Failed to clear report: Report not found after clearing' })
+        );
+    });
+
+    it('should handle service error with ephemeral follow-up', async () => {
+        (moderationService.clearReport as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+        await clearReportButton.execute(botInteraction);
+
+        expect(mockInteraction.followUp).toHaveBeenCalledWith(
+            expect.objectContaining({ content: '❌ Failed to clear report: DB error' })
         );
     });
 });

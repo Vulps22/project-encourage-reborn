@@ -19,11 +19,11 @@ describe('banReasons configuration', () => {
 
         it('should contain expected question ban reasons', () => {
             const expectedReasons = [
-                'Dangerous Or Illegal Content',
-                'Breaches Discord T&C or Community Guidelines',
-                'Not In English',
-                'Mentions A Specific Person',
-                'Incorrect Category Of Question'
+                'dangerous_illegal',
+                'violates_guidelines',
+                'not_english',
+                'mentions_person',
+                'wrong_category'
             ];
 
             expectedReasons.forEach(reason => {
@@ -51,9 +51,9 @@ describe('banReasons configuration', () => {
 
         it('should contain expected server ban reasons', () => {
             const expectedReasons = [
-                'Breaches Discord T&C or Community Guidelines',
-                'Server label suggests members could be under 18',
-                'Server Activity suggests members could be under 18'
+                'violates_guidelines',
+                'underage_label',
+                'underage_activity'
             ];
 
             expectedReasons.forEach(reason => {
@@ -81,9 +81,9 @@ describe('banReasons configuration', () => {
 
         it('should contain expected user ban reasons', () => {
             const expectedReasons = [
-                'Breaches Discord T&C or Community Guidelines',
-                'Suspected Under 18 User',
-                'Activity suggests user could be under 18'
+                'violates_guidelines',
+                'suspected_underage',
+                'activity_underage'
             ];
 
             expectedReasons.forEach(reason => {
@@ -130,19 +130,19 @@ describe('banReasons configuration', () => {
         });
 
         it('should have some overlapping reasons between types', () => {
-            // All types should have Discord T&C breach reason
-            const discordTCReason = 'Breaches Discord T&C or Community Guidelines';
-            
-            expect(questionBanReasonList.some(r => r.value === discordTCReason)).toBe(true);
-            expect(serverBanReasonList.some(r => r.value === discordTCReason)).toBe(true);
-            expect(userBanReasonList.some(r => r.value === discordTCReason)).toBe(true);
+            // All types should have a guidelines violation reason
+            const guidelinesReason = 'violates_guidelines';
+
+            expect(questionBanReasonList.some(r => r.value === guidelinesReason)).toBe(true);
+            expect(serverBanReasonList.some(r => r.value === guidelinesReason)).toBe(true);
+            expect(userBanReasonList.some(r => r.value === guidelinesReason)).toBe(true);
         });
 
         it('should have question-specific reasons', () => {
             const questionSpecificReasons = [
-                'Not A Question',
-                'Giver Dare',
-                'Poor Spelling Or Grammar - Feel Free to Resubmit with proper Spelling and Grammer'
+                'not_question',
+                'giver_dare',
+                'poor_grammar'
             ];
 
             questionSpecificReasons.forEach(reason => {
