@@ -88,7 +88,7 @@ export class ModerationService {
                 {
                     is_approved: false,
                     is_banned: true,
-                    banned_by: moderatorId,
+                    banned_by: BigInt(moderatorId),
                     ban_reason: reason,
                     datetime_banned: new Date()
                 },
@@ -184,7 +184,6 @@ export class ModerationService {
                     },
                     { id: report.id }
                 );
-                console.log(res)
                 if(res.changedRows == 0) {
                     Logger.error("Unexpectedly failed to clear report")
                     throw new Error("Unexpectedly failed to clear Report");
@@ -224,7 +223,6 @@ export class ModerationService {
                 },
                 { id: reportId }
             );
-            console.log(res)
             if(res.changedRows == 0) {
                 Logger.error("Unexpectedly failed to mark report as actioning")
                 throw new Error("Unexpectedly failed to mark report as actioning");
@@ -295,7 +293,6 @@ export class ModerationService {
                     
                 );
 
-                console.log(res);
                 if (res.changedRows == 0) {
                     Logger.error('Unexpectedly failed to mark report as actioned');
                     throw new Error('Unexpectedly failed to mark report as actioned');
