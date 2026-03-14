@@ -7,6 +7,7 @@ import acceptRulesButton from '../../setup/acceptRules';
 jest.mock('../../../../services', () => ({
   serverService: {
     acceptRules: jest.fn(),
+    isServerBanned: jest.fn().mockResolvedValue(false),
   },
 }));
 
@@ -78,6 +79,18 @@ describe('acceptRules button', () => {
     expect(serverService.acceptRules).not.toHaveBeenCalled();
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
       '❌ This can only be used in a server.'
+    );
+  });
+
+  it('should reject if server is banned', async () => {
+    (serverService.isServerBanned as jest.Mock).mockResolvedValue('Hate Speech');
+    botInteraction.ephemeralReply = jest.fn().mockResolvedValue(undefined);
+
+    await acceptRulesButton.execute(botInteraction);
+
+    expect(serverService.acceptRules).not.toHaveBeenCalled();
+    expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
+      '❌ This server is banned from using the bot. Reason: Hate Speech'
     );
   });
 
