@@ -6,7 +6,7 @@ import { Logger } from '../../../../utils';
 jest.mock('../../../../services', () => ({
     moderationService: {
         banQuestion: jest.fn(),
-        findActioningReport: jest.fn().mockResolvedValue(null),
+        findActioningReports: jest.fn().mockResolvedValue([]),
         actionedReport: jest.fn().mockResolvedValue(undefined),
     },
     questionService: {
@@ -43,6 +43,8 @@ describe('questionBanReasonSelected select menu handler', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+
+        mockModerationService.findActioningReports.mockResolvedValue([]);
 
         mockSelectInteraction = {
             user: { id: '123456789012345678' },
@@ -147,5 +149,23 @@ describe('questionBanReasonSelected select menu handler', () => {
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
         expect(mockModerationService.banQuestion).toHaveBeenCalledWith('123', '999888777666555444', 'Inappropriate content');
+    });
+
+    it('should notify all reporters when multiple ACTIONING reports exist', async () => {
+        const mockReports = [
+            { id: 10, sender_id: 'reporter-1' },
+            { id: 11, sender_id: 'reporter-2' },
+        ];
+        const mockQuestion = { id: 123, message_id: 'msg-789' };
+        mockModerationService.banQuestion.mockResolvedValue(undefined);
+        mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
+        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        (mockModerationService as any).findActioningReports.mockResolvedValue(mockReports);
+
+        await questionBanReasonSelected.execute(mockSelectInteraction);
+
+        expect(mockModerationService.actionedReport).toHaveBeenCalledTimes(2);
+        expect(mockModerationService.actionedReport).toHaveBeenCalledWith(10, '123456789012345678');
+        expect(mockModerationService.actionedReport).toHaveBeenCalledWith(11, '123456789012345678');
     });
 });

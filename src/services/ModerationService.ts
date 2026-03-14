@@ -226,16 +226,15 @@ export class ModerationService {
     }
 
     /**
-     * Find an ACTIONING report for a given offender, if any
+     * Find all ACTIONING reports for a given offender
      * @param offenderId - ID of the offender (question ID, user ID, or server ID)
-     * @returns Report or null
+     * @returns Array of reports
      */
-    async findActioningReport(offenderId: string): Promise<Report | null> {
-        const report = await this.db.get<Report>('moderation', 'reports', {
-            offender_id: offenderId,
-            status: ReportStatus.ACTIONING
-        });
-        return report || null;
+    async findActioningReports(offenderId: string): Promise<Report[]> {
+        return await this.db.query<Report>(
+            `SELECT * FROM "moderation"."reports" WHERE offender_id = $1 AND status = $2`,
+            [offenderId, ReportStatus.ACTIONING]
+        );
     }
 
     /**

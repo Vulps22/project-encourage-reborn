@@ -1,7 +1,7 @@
 import { StringSelectMenuInteraction } from 'discord.js';
 import { BotSelectMenuInteraction } from '../../../../structures';
 import userBanReasonSelected from '../../moderation/userBanReasonSelected';
-import { questionService, serverService, userService } from '../../../../services';
+import { moderationService, questionService, reportService, serverService, userService } from '../../../../services';
 import { UserProfileBuilder } from '../../../../builders/UserProfileBuilder';
 import { userProfileView } from '../../../../views';
 import { Logger } from '../../../../utils';
@@ -18,6 +18,10 @@ describe('userBanReasonSelected', () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
+        (moderationService.findActioningReports as jest.Mock).mockResolvedValue([]);
+        (moderationService.actionedReport as jest.Mock).mockResolvedValue(undefined);
+        (reportService.notifyReporter as jest.Mock).mockResolvedValue(undefined);
+
         mockInteraction = {
             customId: 'moderation_userBanReasonSelected_id:123456789',
             user: { id: '999888777666555444' },
@@ -26,6 +30,7 @@ describe('userBanReasonSelected', () => {
             replied: false,
             reply: jest.fn().mockResolvedValue(undefined),
             editReply: jest.fn().mockResolvedValue(undefined),
+            update: jest.fn().mockResolvedValue(undefined),
         };
 
         botInteraction = new BotSelectMenuInteraction(
@@ -70,7 +75,7 @@ describe('userBanReasonSelected', () => {
         expect(serverService.banUserServers).toHaveBeenCalledWith('123456789', 'Spam');
         expect(UserProfileBuilder.prototype.getUserProfile).toHaveBeenCalledWith('123456789');
         expect(userProfileView).toHaveBeenCalledWith(mockProfile);
-        expect(mockInteraction.reply).toHaveBeenCalled();
+        expect(mockInteraction.update).toHaveBeenCalled();
     });
 
     it('should handle missing user ID', async () => {
@@ -119,5 +124,27 @@ describe('userBanReasonSelected', () => {
         await userBanReasonSelected.execute(botInteraction);
 
         expect(Logger.error).toHaveBeenCalledWith('Error banning user 123456789: Database error');
+    });
+
+    it('should notify all reporters when multiple ACTIONING reports exist', async () => {
+        const mockReports = [
+            { id: 30, sender_id: 'reporter-1' },
+            { id: 31, sender_id: 'reporter-2' },
+        ];
+        const mockProfile = { id: '123456789', isBanned: true };
+
+        (userService.banUser as jest.Mock).mockResolvedValue(undefined);
+        (questionService.banAllUserQuestions as jest.Mock).mockResolvedValue(0);
+        (serverService.banUserServers as jest.Mock).mockResolvedValue(0);
+        (UserProfileBuilder.prototype.getUserProfile as jest.Mock).mockResolvedValue(mockProfile);
+        (userProfileView as jest.Mock).mockResolvedValue({ components: [] });
+        (moderationService.findActioningReports as jest.Mock).mockResolvedValue(mockReports);
+
+        await userBanReasonSelected.execute(botInteraction);
+
+        expect(moderationService.actionedReport).toHaveBeenCalledTimes(2);
+        expect(moderationService.actionedReport).toHaveBeenCalledWith(30, '999888777666555444');
+        expect(moderationService.actionedReport).toHaveBeenCalledWith(31, '999888777666555444');
+        expect(reportService.notifyReporter).toHaveBeenCalledTimes(2);
     });
 });

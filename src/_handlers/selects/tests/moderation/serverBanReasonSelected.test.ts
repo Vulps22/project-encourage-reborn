@@ -7,7 +7,7 @@ import { ServerProfileBuilder } from '../../../../builders/ServerProfileBuilder'
 jest.mock('../../../../services', () => ({
     moderationService: {
         banServer: jest.fn(),
-        findActioningReport: jest.fn().mockResolvedValue(null),
+        findActioningReports: jest.fn().mockResolvedValue([]),
         actionedReport: jest.fn().mockResolvedValue(undefined),
     },
     reportService: {
@@ -48,6 +48,8 @@ describe('serverBanReasonSelected select menu handler', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+
+        mockModerationService.findActioningReports.mockResolvedValue([]);
 
         mockGetServerProfile = jest.fn();
         MockServerProfileBuilder.mockImplementation(() => ({
@@ -147,5 +149,22 @@ describe('serverBanReasonSelected select menu handler', () => {
         await serverBanReasonSelected.execute(mockSelectInteraction);
 
         expect(mockModerationService.banServer).toHaveBeenCalledWith('987654321098765432', '999888777666555444', 'Hate Speech');
+    });
+
+    it('should notify all reporters when multiple ACTIONING reports exist', async () => {
+        const mockReports = [
+            { id: 20, sender_id: 'reporter-1' },
+            { id: 21, sender_id: 'reporter-2' },
+        ];
+        mockModerationService.banServer.mockResolvedValue(undefined);
+        mockGetServerProfile.mockResolvedValue({ id: '987654321098765432' });
+        mockLogger.updateServerLog.mockResolvedValue({} as any);
+        (mockModerationService as any).findActioningReports.mockResolvedValue(mockReports);
+
+        await serverBanReasonSelected.execute(mockSelectInteraction);
+
+        expect(mockModerationService.actionedReport).toHaveBeenCalledTimes(2);
+        expect(mockModerationService.actionedReport).toHaveBeenCalledWith(20, '123456789012345678');
+        expect(mockModerationService.actionedReport).toHaveBeenCalledWith(21, '123456789012345678');
     });
 });

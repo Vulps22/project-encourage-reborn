@@ -51,9 +51,9 @@ async function banUser(userId: string, reason: string, interaction: BotSelectMen
         const view = await userProfileView(profile);
         await interaction.updateComponentMessage(null, view);
 
-        const report = await moderationService.findActioningReport(userId);
-        if (report?.id) {
-            await moderationService.actionedReport(report.id, interaction.user.id);
+        const reports = await moderationService.findActioningReports(userId);
+        for (const report of reports) {
+            await moderationService.actionedReport(report.id!, interaction.user.id);
             await reportService.notifyReporter(
                 report,
                 `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`

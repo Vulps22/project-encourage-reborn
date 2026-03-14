@@ -32,9 +32,9 @@ const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
             await Logger.updateServerLog(profile);
 
-            const report = await moderationService.findActioningReport(serverId);
-            if (report?.id) {
-                await moderationService.actionedReport(report.id, interaction.user.id);
+            const reports = await moderationService.findActioningReports(serverId);
+            for (const report of reports) {
+                await moderationService.actionedReport(report.id!, interaction.user.id);
                 await reportService.notifyReporter(
                     report,
                     `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`

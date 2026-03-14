@@ -32,9 +32,9 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
             await Logger.updateQuestionLog(question, interaction.channel.id);
 
-            const report = await moderationService.findActioningReport(questionId);
-            if (report?.id) {
-                await moderationService.actionedReport(report.id, interaction.user.id);
+            const reports = await moderationService.findActioningReports(questionId);
+            for (const report of reports) {
+                await moderationService.actionedReport(report.id!, interaction.user.id);
                 await reportService.notifyReporter(
                     report,
                     `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`
