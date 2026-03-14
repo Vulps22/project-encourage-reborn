@@ -118,6 +118,16 @@ export class UserService {
     Logger.debug(`User ${userId} unbanned successfully`);
   }
 
+  /**
+   * Check if a user is banned
+   * @param userId Discord user ID
+   * @returns Ban reason string if banned, false otherwise
+   */
+  async isUserBanned(userId: Snowflake): Promise<string | false> {
+    const user = await this.getUser(userId);
+    return user && user.is_banned ? user.ban_reason || 'No reason provided' : false;
+  }
+
   async getUserServerCount(userId: Snowflake): Promise<number> {
     return await this.db.count('server', 'server_users', { user_id: BigInt(userId) });
   }

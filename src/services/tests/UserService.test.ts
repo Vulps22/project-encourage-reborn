@@ -186,6 +186,40 @@ describe('UserService', () => {
     });
   });
 
+  describe('isUserBanned', () => {
+    it('should return ban reason if user is banned', async () => {
+      mockDb.get.mockResolvedValue({ id: BigInt('123456789012345678'), is_banned: true, ban_reason: 'Harassment' });
+
+      const result = await userService.isUserBanned('123456789012345678');
+
+      expect(result).toBe('Harassment');
+    });
+
+    it('should return default reason if banned with no reason', async () => {
+      mockDb.get.mockResolvedValue({ id: BigInt('123456789012345678'), is_banned: true, ban_reason: null });
+
+      const result = await userService.isUserBanned('123456789012345678');
+
+      expect(result).toBe('No reason provided');
+    });
+
+    it('should return false if user is not banned', async () => {
+      mockDb.get.mockResolvedValue({ id: BigInt('123456789012345678'), is_banned: false, ban_reason: null });
+
+      const result = await userService.isUserBanned('123456789012345678');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false if user does not exist', async () => {
+      mockDb.get.mockResolvedValue(null);
+
+      const result = await userService.isUserBanned('123456789012345678');
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('getUserServerCount', () => {
     it('should return count of servers user is in', async () => {
       mockDb.count.mockResolvedValue(5);
