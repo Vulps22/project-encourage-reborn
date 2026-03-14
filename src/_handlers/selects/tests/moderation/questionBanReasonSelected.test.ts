@@ -1,0 +1,146 @@
+import questionBanReasonSelected from '../../moderation/questionBanReasonSelected';
+import { BotSelectMenuInteraction } from '../../../../structures';
+import { moderationService, questionService } from '../../../../services';
+import { Logger } from '../../../../utils';
+
+jest.mock('../../../../services', () => ({
+    moderationService: {
+        banQuestion: jest.fn()
+    },
+    questionService: {
+        getQuestionById: jest.fn()
+    }
+}));
+
+jest.mock('../../../../utils', () => ({
+    Logger: {
+        updateQuestionLog: jest.fn(),
+        error: jest.fn()
+    }
+}));
+
+const mockModerationService = moderationService as jest.Mocked<typeof moderationService>;
+const mockQuestionService = questionService as jest.Mocked<typeof questionService>;
+const mockLogger = Logger as jest.Mocked<typeof Logger>;
+
+describe('questionBanReasonSelected select menu handler', () => {
+    let mockSelectInteraction: jest.Mocked<BotSelectMenuInteraction>;
+    let originalConsoleError: any;
+
+    beforeAll(() => {
+        originalConsoleError = console.error;
+        console.error = jest.fn();
+    });
+
+    afterAll(() => {
+        console.error = originalConsoleError;
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+
+        mockSelectInteraction = {
+            user: { id: '123456789012345678' },
+            channel: { id: 'channel-123' },
+            message: { id: 'message-456' },
+            values: ['Inappropriate content'],
+            params: new Map([['id', '123']]),
+            ephemeralReply: jest.fn().mockResolvedValue(undefined),
+            sendReply: jest.fn().mockResolvedValue(undefined)
+        } as any;
+
+        mockSelectInteraction.params.get = jest.fn().mockReturnValue('123');
+    });
+
+    it('should have correct handler structure', () => {
+        expect(questionBanReasonSelected.name).toBe('questionBanReasonSelected');
+        expect(typeof questionBanReasonSelected.execute).toBe('function');
+    });
+
+    it('should ban question and reply ephemerally on success', async () => {
+        const mockQuestion = { id: 123, message_id: 'msg-789' };
+        mockModerationService.banQuestion.mockResolvedValue(undefined);
+        mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
+        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+
+        await questionBanReasonSelected.execute(mockSelectInteraction);
+
+        expect(mockModerationService.banQuestion).toHaveBeenCalledWith('123', '123456789012345678', 'Inappropriate content');
+        expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
+        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'channel-123');
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('✅ Question banned successfully!');
+        expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
+    });
+
+    it('should reply ephemerally with error when question ID is missing', async () => {
+        mockSelectInteraction.params.get = jest.fn().mockReturnValue(undefined);
+
+        await questionBanReasonSelected.execute(mockSelectInteraction);
+
+        expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
+        expect(mockLogger.error).toHaveBeenCalledWith('Question ID not found when executing questionBanReasonSelected');
+    });
+
+    it('should reply ephemerally with error when no reason selected', async () => {
+        const mockInteractionEmptyValues = { ...mockSelectInteraction, values: [] };
+
+        await questionBanReasonSelected.execute(mockInteractionEmptyValues as any);
+
+        expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
+        expect(mockInteractionEmptyValues.ephemeralReply).toHaveBeenCalledWith('❌ No reason selected');
+    });
+
+    it('should reply ephemerally with error when question not found after banning', async () => {
+        mockModerationService.banQuestion.mockResolvedValue(undefined);
+        mockQuestionService.getQuestionById.mockResolvedValue(null);
+
+        await questionBanReasonSelected.execute(mockSelectInteraction);
+
+        expect(mockLogger.error).toHaveBeenCalledWith('Question with ID 123 not found during banning for message message-456');
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Question not found');
+        expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
+    });
+
+    it('should reply ephemerally with error when null channel', async () => {
+        const mockInteractionNoChannel = { ...mockSelectInteraction, channel: null };
+        mockModerationService.banQuestion.mockResolvedValue(undefined);
+
+        await questionBanReasonSelected.execute(mockInteractionNoChannel as any);
+
+        expect(mockInteractionNoChannel.ephemeralReply).toHaveBeenCalledWith('❌ Failed to ban question. Please try again.');
+    });
+
+    it('should reply ephemerally with error on service failure', async () => {
+        const testError = new Error('Database connection failed');
+        mockModerationService.banQuestion.mockRejectedValue(testError);
+
+        await questionBanReasonSelected.execute(mockSelectInteraction);
+
+        expect(console.error).toHaveBeenCalledWith('Error banning question:', testError);
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Failed to ban question. Please try again.');
+        expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
+    });
+
+    it('should use first value from values array', async () => {
+        const mockInteractionMultiValues = { ...mockSelectInteraction, values: ['First reason', 'Second reason'] };
+        mockModerationService.banQuestion.mockResolvedValue(undefined);
+        mockQuestionService.getQuestionById.mockResolvedValue({ id: 123 } as any);
+        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+
+        await questionBanReasonSelected.execute(mockInteractionMultiValues as any);
+
+        expect(mockModerationService.banQuestion).toHaveBeenCalledWith('123', '123456789012345678', 'First reason');
+    });
+
+    it('should pass correct moderator ID from interaction user', async () => {
+        mockSelectInteraction.user.id = '999888777666555444';
+        mockModerationService.banQuestion.mockResolvedValue(undefined);
+        mockQuestionService.getQuestionById.mockResolvedValue({ id: 123 } as any);
+        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+
+        await questionBanReasonSelected.execute(mockSelectInteraction);
+
+        expect(mockModerationService.banQuestion).toHaveBeenCalledWith('123', '999888777666555444', 'Inappropriate content');
+    });
+});
