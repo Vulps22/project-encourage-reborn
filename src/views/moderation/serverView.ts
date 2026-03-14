@@ -36,14 +36,17 @@ async function serverView(server: ServerProfile, banReasons: [] | null = null): 
     const banButton = new ButtonBuilder()
         .setCustomId(`moderation_banServer_id:${server.id}`)
         .setLabel('Ban Server')
-        .setStyle(ButtonStyle.Danger)
-        .setDisabled(server.is_banned);
+        .setStyle(ButtonStyle.Danger);
 
     const unbanButton = new ButtonBuilder()
         .setCustomId(`moderation_unbanServer_id:${server.id}`)
         .setLabel('Unban Server')
-        .setStyle(ButtonStyle.Success)
-        .setDisabled(!server.is_banned);
+        .setStyle(ButtonStyle.Success);
+
+    const viewOffenderButton = new ButtonBuilder()
+        .setCustomId(`moderation_viewOffender_id:${server.user_id}`)
+        .setLabel('View Offender')
+        .setStyle(ButtonStyle.Secondary);
 
     const reasonList = new StringSelectMenuBuilder()
         .addOptions(banReasons || [])
@@ -71,8 +74,9 @@ async function serverView(server: ServerProfile, banReasons: [] | null = null): 
             .addComponents(reasonList);
         container.addActionRowComponents(selectMenuRow);
     } else {
+        const actionButton = server.is_banned ? unbanButton : banButton;
         const buttonRow = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(banButton, unbanButton);
+            .addComponents(actionButton, viewOffenderButton);
         container.addActionRowComponents(buttonRow);
     }
 
