@@ -4,6 +4,8 @@ import { Logger } from '../utils';
 import { Report, ReportStatus } from '../interface';
 import { TargetType } from '../types';
 
+declare const global: { client: import('discord.js').Client };
+
 export class ReportService {
   constructor(private db: DatabaseService) {}
 
@@ -42,5 +44,21 @@ export class ReportService {
 
     Logger.debug(`Report ${res.id} created successfully`);
     return res;
+  }
+
+  /**
+   * Notify the reporter of a report via DM
+   * Fails silently if the user has DMs disabled or shares no server with the bot
+   * @param report - The report to notify about
+   * @param message - The message to send to the reporter
+   */
+  async notifyReporter(report: Report, message: string): Promise<void> {
+    try {
+      const user = await global.client.users.fetch(report.sender_id);
+      await user.send(message);
+      Logger.debug(`Notified reporter ${report.sender_id} for report ${report.id}`);
+    } catch (error) {
+      Logger.debug(`Could not notify reporter ${report.sender_id} for report ${report.id}: ${error}`);
+    }
   }
 }
