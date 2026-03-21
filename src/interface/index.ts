@@ -5,3 +5,6 @@ export { ServerProfile } from './ServerProfileInterface';
 export { TrackingCacheEntry } from './TrackingCacheEntry';
 export { User } from './UserInterface';
 export { UserProfile } from './UserProfileInterface';
+export { UserQuestion } from './UserQuestionInterface';
+export { Vote, VoteType } from './VoteInterface';
+export { VoteStatus } from './VoteStatusInterface';
