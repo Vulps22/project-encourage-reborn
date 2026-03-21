@@ -4,7 +4,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, Message
 import { Question } from "../../interface";
 import { UniversalMessage } from "../../types";
 
-function questionEmbed(question: Question): UniversalMessage {
+function questionEmbed(question: Question, doneCount = 0, failedCount = 0): UniversalMessage {
     // Main title showing the type (Truth/Dare) in a section with report accessory button
     const title = new TextDisplayBuilder()
         .setContent(`## **${question.type.charAt(0).toUpperCase() + question.type.slice(1)}!**`);
@@ -24,7 +24,7 @@ function questionEmbed(question: Question): UniversalMessage {
 
     // Voting status footer
     const votingInfo = new TextDisplayBuilder()
-        .setContent(`\n**Votes:** 0 Done | 0 Failed`);
+        .setContent(`\n**Votes:** ${doneCount} Done | ${failedCount} Failed`);
 
     // Footer with metadata
     const footer = new TextDisplayBuilder()
