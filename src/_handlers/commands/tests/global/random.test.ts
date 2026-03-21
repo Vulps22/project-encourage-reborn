@@ -10,6 +10,9 @@ jest.mock('../../../../services', () => ({
   questionService: {
     getRandomQuestion: jest.fn(),
   },
+  votingService: {
+    createVoteTracking: jest.fn().mockResolvedValue({}),
+  },
 }));
 
 jest.mock('../../../../views', () => ({
@@ -28,9 +31,11 @@ describe('random command', () => {
       reply: jest.fn().mockResolvedValue(undefined),
       editReply: jest.fn().mockResolvedValue(undefined),
       deferReply: jest.fn().mockResolvedValue(undefined),
-      user: { id: '123456789' },
+      fetchReply: jest.fn().mockResolvedValue({ id: 'mock-message-id' }),
+      user: { id: '123456789', username: 'testuser' },
       guildId: '987654321',
       channelId: '111222333',
+      channel: { id: '111222333' },
       options: {
         getString: jest.fn(),
       },
