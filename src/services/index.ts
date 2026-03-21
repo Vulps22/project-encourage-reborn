@@ -6,6 +6,7 @@ import { ReportService } from './ReportService';
 import { ServerService } from './ServerService';
 import { UserService } from './UserService';
 import { UserTrackingService } from './UserTrackingService';
+import { VotingService } from './VotingService';
 
 export { DatabaseService } from './DatabaseService';
 export { ModerationService } from './ModerationService';
@@ -14,6 +15,7 @@ export { ReportService } from './ReportService';
 export { ServerService } from './ServerService';
 export { UserService } from './UserService';
 export { UserTrackingService } from './UserTrackingService';
+export { VotingService } from './VotingService';
 export type { 
   QueryResult, 
   MutationResult, 
@@ -38,3 +40,4 @@ export const reportService = new ReportService(db);
 export const serverService = new ServerService(db);
 export const userService = new UserService(db);
 export const userTrackingService = new UserTrackingService(db);
+export const votingService = new VotingService(db);
