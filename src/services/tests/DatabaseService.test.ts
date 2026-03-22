@@ -310,12 +310,13 @@ describe('DatabaseService', () => {
       );
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'UPDATE "user"."users" SET "name" = $1 WHERE "id" = $2',
+        'UPDATE "user"."users" SET "name" = $1 WHERE "id" = $2 RETURNING *',
         ['Updated Name', 1]
       );
       expect(result).toEqual({
         affectedRows: 1,
         changedRows: 1,
+        rows: [],
       });
     });
 
@@ -330,7 +331,7 @@ describe('DatabaseService', () => {
       );
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        'UPDATE "user"."users" SET "name" = $1, "email" = $2 WHERE "id" = $3',
+        'UPDATE "user"."users" SET "name" = $1, "email" = $2 WHERE "id" = $3 RETURNING *',
         ['New Name', 'new@example.com', 1]
       );
     });
@@ -634,7 +635,7 @@ describe('DatabaseService', () => {
       mockPool.query.mockRejectedValue(dbError);
 
       await expect(dbService.update('user', 'users', { name: 'John' }, { id: 123 }))
-        .rejects.toThrow(/Failed to update records in user\.users: column "invalid_column" does not exist\nQuery: UPDATE "user"\."users" SET "name" = \$1 WHERE "id" = \$2\nValues: \["John",123\]/);
+        .rejects.toThrow(/Failed to update records in user\.users: column "invalid_column" does not exist\nQuery: UPDATE "user"\."users" SET "name" = \$1 WHERE "id" = \$2 RETURNING \*\nValues: \["John",123\]/);
     });
 
     it('should include basic error message for insert method', async () => {

@@ -258,9 +258,9 @@ export class DatabaseService {
   data: Record<string, any>,
   conditions: Record<string, any>
 ): Promise<MutationResult> {
-  let query = '';  // Declare here
-  const values: any[] = [];  // Declare here
-  
+  let query = '';
+  const values: any[] = [];
+
   try {
     this.validateTableName(schema);
     this.validateTableName(table);
@@ -293,13 +293,14 @@ export class DatabaseService {
       })
       .join(' AND ');
 
-    query = `UPDATE "${schema}"."${table}" SET ${setClause} WHERE ${whereClause}`;
+    query = `UPDATE "${schema}"."${table}" SET ${setClause} WHERE ${whereClause} RETURNING *`;
     const client = this.transactionClient || this.pool;
     const result = await client.query(query, values);
 
     return {
       affectedRows: result.rowCount || 0,
       changedRows: result.rowCount || 0,
+      rows: result.rows,
     };
   } catch (error) {
     throw new Error(`Failed to update records in ${schema}.${table}: ${this.getErrorMessage(error)}\nQuery: ${query}\nValues: ${JSON.stringify(values)}`);
