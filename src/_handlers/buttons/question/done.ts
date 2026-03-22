@@ -1,42 +1,51 @@
 import { BotButtonInteraction } from '../../../structures';
-import { Handler } from '../../../utils';
-import { Logger } from '../../../utils';
-import { questionService, votingService } from '../../../services';
-import { questionEmbed } from '../../../views';
+import { Handler, Logger } from '../../../utils';
+import { challengeService, configurationService, questionService, votingService } from '../../../services';
+import { challengeEmbed } from '../../../views';
 
 const done: Handler<BotButtonInteraction> = {
     name: 'done',
     async execute(interaction: BotButtonInteraction): Promise<void> {
-        const messageId = interaction.message.id;
+        const messageId = interaction.messageId;
         const userId = interaction.user.id;
 
         try {
-            const updated = await votingService.recordVote(messageId, userId, 'done');
+            const challenge = await challengeService.getChallengeByMessageId(messageId);
+            if (!challenge) {
+                await interaction.ephemeralReply('❌ Could not find tracking data for this challenge.');
+                return;
+            }
 
-            const question = await questionService.getQuestionById(updated.question_id);
+            const challengeId = challenge.id;
+
+            if (await votingService.hasUserVoted(challengeId, userId)) {
+                await interaction.ephemeralReply('❌ You have already voted on this question.');
+                return;
+            }
+
+            const challengeVote = await votingService.getVoteCount(challengeId);
+            if (challengeVote.final_result !== null) {
+                await interaction.ephemeralReply('❌ This challenge has already been locked.');
+                return;
+            }
+
+            await votingService.recordVote(challengeId, userId, 'done');
+            let updated = await votingService.incrementCount(challengeId, 'done');
+            const threshold = await configurationService.getVoteThreshold();
+
+            if (updated.done_count >= threshold) {
+                updated = await votingService.finalizeChallenge(challengeId, 'done');
+            }
+
+            const question = await questionService.getQuestionById(challenge.question_id);
             if (question) {
-                const updatedEmbed = questionEmbed(question, updated.done_count, updated.failed_count);
-                await interaction.updateComponentMessage(null, updatedEmbed);
+                await interaction.updateComponentMessage(null, challengeEmbed(question, challenge, updated));
             }
 
-            await interaction.ephemeralReply('✅ Voted DONE!');
+            await interaction.ephemeralFollowUp('✅ Voted DONE!');
         } catch (error) {
-            if (error instanceof Error) {
-                if (error.message === 'ALREADY_VOTED') {
-                    await interaction.ephemeralReply('❌ You have already voted on this question.');
-                    return;
-                }
-                else if (error.message === 'QUESTION_FINALIZED') {
-                    await interaction.ephemeralReply('❌ This question has already been locked.');
-                    return;
-                }
-                else if (error.message === 'NO_TRACKING') {
-                    await interaction.ephemeralReply('❌ Could not find tracking data for this question.');
-                    return;
-                }
-            }
-            Logger.error(`Done handler error for message ${messageId}: ${error}`);
-            await interaction.ephemeralReply('❌ Something went wrong. Please try again.');
+            Logger.error(`Done handler error for message ${messageId}: ${error instanceof Error ? error.message : String(error)}`);
+            await interaction.ephemeralFollowUp('❌ Something went wrong. Please try again.');
         }
     }
 };
