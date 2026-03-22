@@ -56,4 +56,17 @@ export class ChallengeService {
   async getChallengeByMessageId(messageId: Snowflake): Promise<Challenge | null> {
     return this.db.get<Challenge>('challenge', 'challenges', { message_id: messageId });
   }
+
+  /**
+   * Mark a challenge as skipped.
+   */
+  async skip(challengeId: number): Promise<Challenge> {
+    const result = await this.db.update(
+      'challenge', 'challenges',
+      { skipped: true },
+      { id: challengeId }
+    );
+
+    return result.rows![0] as Challenge;
+  }
 }
