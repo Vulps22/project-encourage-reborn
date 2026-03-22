@@ -9,3 +9,5 @@ export { TrackingCacheEntry } from './TrackingCacheEntry';
 export { User } from './UserInterface';
 export { UserProfile } from './UserProfileInterface';
 export { Vote, VoteType } from './VoteInterface';
+export { Storable } from './StorableInterface';
+export { InventoryItem } from './InventoryInterface';
