@@ -3,7 +3,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 import { UniversalMessage } from "../../types";
 
-function rulesView(): UniversalMessage {
+function rulesView(showButtons: boolean = true): UniversalMessage {
     const title = new TextDisplayBuilder()
         .setContent(`## **Avoiding Bans**`);
 
@@ -124,7 +124,7 @@ function rulesView(): UniversalMessage {
 
     const message: UniversalMessage = {
         flags: MessageFlags.IsComponentsV2,
-        components: [container, buttonRow],
+        components: showButtons ? [container, buttonRow] : [container],
     };
 
     return message;
