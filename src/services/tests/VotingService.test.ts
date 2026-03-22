@@ -134,6 +134,14 @@ describe('VotingService', () => {
             await expect(service.incrementCount(1, 'done')).rejects.toThrow('NO_TRACKING');
             expect(mockDb.update).not.toHaveBeenCalled();
         });
+
+        it('should throw when update returns no rows', async () => {
+            const cv = makeChallengeVote({ done_count: 1 });
+            (mockDb.get as jest.Mock).mockResolvedValue(cv);
+            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0, rows: [] });
+
+            await expect(service.incrementCount(1, 'done')).rejects.toThrow('Failed to increment done count for challenge 1');
+        });
     });
 
     describe('getVoteCount', () => {
@@ -155,28 +163,38 @@ describe('VotingService', () => {
     });
 
     describe('finalizeChallenge', () => {
-        it('should update final_result and finalised_datetime', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1 });
+        it('should update final_result and return the updated ChallengeVote', async () => {
+            const updated = makeChallengeVote({ final_result: 'done', finalised_datetime: new Date() });
+            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1, rows: [updated] });
 
-            await service.finalizeChallenge(1, 'done');
+            const result = await service.finalizeChallenge(1, 'done');
 
             expect(mockDb.update).toHaveBeenCalledWith(
                 'vote', 'challenge_votes',
                 expect.objectContaining({ final_result: 'done' }),
                 { challenge_id: 1 }
             );
+            expect(result).toEqual(updated);
         });
 
         it('should finalize as failed', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1 });
+            const updated = makeChallengeVote({ final_result: 'failed', finalised_datetime: new Date() });
+            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1, rows: [updated] });
 
-            await service.finalizeChallenge(1, 'failed');
+            const result = await service.finalizeChallenge(1, 'failed');
 
             expect(mockDb.update).toHaveBeenCalledWith(
                 'vote', 'challenge_votes',
                 expect.objectContaining({ final_result: 'failed' }),
                 { challenge_id: 1 }
             );
+            expect(result).toEqual(updated);
+        });
+
+        it('should throw when update returns no rows', async () => {
+            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0, rows: [] });
+
+            await expect(service.finalizeChallenge(1, 'done')).rejects.toThrow('Failed to finalize challenge 1');
         });
     });
 });
