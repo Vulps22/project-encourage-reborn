@@ -9,6 +9,8 @@ import { ServerService } from './ServerService';
 import { UserService } from './UserService';
 import { UserTrackingService } from './UserTrackingService';
 import { VotingService } from './VotingService';
+import { StorableService } from './StorableService';
+import { InventoryService } from './InventoryService';
 
 export { ChallengeService } from './ChallengeService';
 export { ConfigurationService } from './ConfigurationService';
@@ -20,6 +22,8 @@ export { ServerService } from './ServerService';
 export { UserService } from './UserService';
 export { UserTrackingService } from './UserTrackingService';
 export { VotingService } from './VotingService';
+export { StorableService } from './StorableService';
+export { InventoryService } from './InventoryService';
 export type {
   QueryResult,
   MutationResult,
@@ -47,3 +51,5 @@ export const serverService = new ServerService(db);
 export const userService = new UserService(db);
 export const userTrackingService = new UserTrackingService(db);
 export const votingService = new VotingService(db);
+export const storableService = new StorableService(db);
+export const inventoryService = new InventoryService(db);
