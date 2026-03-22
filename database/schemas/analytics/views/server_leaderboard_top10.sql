@@ -1,6 +1,6 @@
-CREATE OR REPLACE VIEW "server_leaderboard_top10" AS 
+CREATE OR REPLACE VIEW "server_leaderboard_top10" AS
 WITH "RankedUsers" AS (
-  SELECT 
+  SELECT
     "su"."server_id" AS "server_id",
     "su"."user_id" AS "id",
     "u"."username" AS "username",
@@ -11,16 +11,17 @@ WITH "RankedUsers" AS (
   JOIN "user"."users" "u" ON "u"."id" = "su"."user_id"
 ),
 "QuestionCounts" AS (
-  SELECT 
-    "uq"."user_id" AS "user_id",
-    "uq"."server_id" AS "server_id",
-    SUM(CASE WHEN ("uq"."type" = 'dare' AND "uq"."done_count" >= 2) THEN 1 ELSE 0 END) AS "dares_done",
-    SUM(CASE WHEN ("uq"."type" = 'truth' AND "uq"."done_count" >= 2) THEN 1 ELSE 0 END) AS "truths_done"
-  FROM "user"."user_questions" "uq"
-  WHERE "uq"."datetime_created" >= (CURRENT_TIMESTAMP - INTERVAL '90 days')
-  GROUP BY "uq"."user_id", "uq"."server_id"
+  SELECT
+    "c"."user_id" AS "user_id",
+    "c"."server_id" AS "server_id",
+    SUM(CASE WHEN ("c"."type" = 'dare' AND "cv"."final_result" = 'done') THEN 1 ELSE 0 END) AS "dares_done",
+    SUM(CASE WHEN ("c"."type" = 'truth' AND "cv"."final_result" = 'done') THEN 1 ELSE 0 END) AS "truths_done"
+  FROM "challenge"."challenges" "c"
+  JOIN "vote"."challenge_votes" "cv" ON "cv"."challenge_id" = "c"."id"
+  WHERE "c"."datetime_created" >= (CURRENT_TIMESTAMP - INTERVAL '90 days')
+  GROUP BY "c"."user_id", "c"."server_id"
 )
-SELECT 
+SELECT
   "ru"."server_id" AS "server_id",
   "ru"."id" AS "id",
   "ru"."username" AS "username",
