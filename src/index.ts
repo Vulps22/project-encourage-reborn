@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { DatabaseService } from './services/DatabaseService';
 import { Logger } from './utils/Logger';
+import { startVoteWebhook } from './webhook/VoteWebhook';
 
 // Load environment variables
 dotenv.config();
@@ -74,6 +75,16 @@ async function startBot(): Promise<void> {
 
     // Spawn shards
     await manager.spawn();
+}
+
+// Start vote webhook if configured
+const webhookPort = process.env.WEBHOOK_PORT ? parseInt(process.env.WEBHOOK_PORT) : 3000;
+const webhookAuth = process.env.TOPGG_WEBHOOK_AUTH;
+
+if (webhookAuth) {
+    startVoteWebhook(webhookPort, webhookAuth);
+} else {
+    console.warn('TOPGG_WEBHOOK_AUTH not set — vote webhook will not start');
 }
 
 // Start the bot
