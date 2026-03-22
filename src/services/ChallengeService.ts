@@ -67,6 +67,10 @@ export class ChallengeService {
       { id: challengeId }
     );
 
-    return result.rows![0] as Challenge;
+    if (!result.rows || result.rows.length === 0) {
+      throw new Error(`Failed to skip challenge ${challengeId}`);
+    }
+
+    return result.rows[0] as Challenge;
   }
 }

@@ -68,7 +68,11 @@ export class VotingService {
       { challenge_id: challengeId }
     );
 
-    return result.rows![0] as ChallengeVote;
+    if (!result.rows || result.rows.length === 0) {
+      throw new Error(`Failed to increment ${voteType} count for challenge ${challengeId}`);
+    }
+
+    return result.rows[0] as ChallengeVote;
   }
 
   /**
@@ -98,6 +102,10 @@ export class VotingService {
       { challenge_id: challengeId }
     );
 
-    return res.rows![0] as ChallengeVote;
+    if (!res.rows || res.rows.length === 0) {
+      throw new Error(`Failed to finalize challenge ${challengeId}`);
+    }
+
+    return res.rows[0] as ChallengeVote;
   }
 }
