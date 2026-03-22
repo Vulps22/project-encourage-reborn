@@ -27,6 +27,7 @@ export class BotButtonInteraction extends BotComponentInteraction {
   get baseId() { return this._baseId; }
   get action() { return this._action; }
   get params() { return this._params; }
+  get messageId(): string { return this._interaction.message.id; }
 
   // --- PRIVATE HELPER ---
   private _parseCustomId(customId: string): { baseId: string; action: string; params: Map<string, string> } {
