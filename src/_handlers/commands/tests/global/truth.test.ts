@@ -1,8 +1,8 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { questionService } from '../../../../services';
+import { challengeService, questionService, votingService } from '../../../../services';
 import { BotCommandInteraction } from '../../../../structures';
 import { QuestionType } from '../../../../types';
-import { questionEmbed } from '../../../../views';
+import { challengeEmbed } from '../../../../views';
 import truth from '../../global/truth';
 
 // Mock services and views
@@ -10,13 +10,17 @@ jest.mock('../../../../services', () => ({
   questionService: {
     getRandomQuestion: jest.fn(),
   },
+  challengeService: {
+    createChallenge: jest.fn().mockResolvedValue({ id: 1 }),
+    setMessageId: jest.fn().mockResolvedValue(undefined),
+  },
   votingService: {
-    createVoteTracking: jest.fn().mockResolvedValue({}),
+    addChallenge: jest.fn().mockResolvedValue({ challenge_id: 1, done_count: 0, failed_count: 0, final_result: null, finalised_datetime: null }),
   },
 }));
 
 jest.mock('../../../../views', () => ({
-  questionEmbed: jest.fn(),
+  challengeEmbed: jest.fn(),
 }));
 
 describe('truth command', () => {
@@ -25,6 +29,10 @@ describe('truth command', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    (challengeService.createChallenge as jest.Mock).mockResolvedValue({ id: 1 });
+    (challengeService.setMessageId as jest.Mock).mockResolvedValue(undefined);
+    (votingService.addChallenge as jest.Mock).mockResolvedValue({ challenge_id: 1, done_count: 0, failed_count: 0, final_result: null, finalised_datetime: null });
 
     mockInteraction = {
       reply: jest.fn().mockResolvedValue(undefined),
@@ -72,7 +80,7 @@ describe('truth command', () => {
     };
 
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(mockQuestion);
-    (questionEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
+    (challengeEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
 
     // Mock sendReply method
     botInteraction.sendReply = jest.fn().mockResolvedValue(undefined);
@@ -81,7 +89,7 @@ describe('truth command', () => {
 
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
-    expect(questionEmbed).toHaveBeenCalledWith(mockQuestion);
+    expect(challengeEmbed).toHaveBeenCalled();
     expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockEmbedMessage);
   });
 
