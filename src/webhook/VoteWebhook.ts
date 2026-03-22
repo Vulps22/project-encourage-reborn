@@ -9,7 +9,7 @@ interface TopGGVotePayload {
     query?: string;
 }
 
-export function startVoteWebhook(port: number, authToken: string): void {
+export function createVoteWebhookApp(authToken: string): express.Application {
     const app = express();
 
     app.use(express.json());
@@ -25,12 +25,18 @@ export function startVoteWebhook(port: number, authToken: string): void {
 
         const payload = req.body as TopGGVotePayload;
 
-        void Logger.log(`[VoteWebhook] Vote received — user: ${payload.user}, type: ${payload.type}, isWeekend: ${payload.isWeekend}`);
+        Logger.log(`[VoteWebhook] Vote received — user: ${payload.user}, type: ${payload.type}, isWeekend: ${payload.isWeekend}`);
 
         res.status(200).send('OK');
     });
 
+    return app;
+}
+
+export function startVoteWebhook(port: number, authToken: string): void {
+    const app = createVoteWebhookApp(authToken);
+
     app.listen(port, () => {
-        void Logger.log(`[VoteWebhook] Listening on port ${port}`);
+        Logger.log(`[VoteWebhook] Listening on port ${port}`);
     });
 }
