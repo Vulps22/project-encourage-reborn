@@ -252,6 +252,55 @@ export class DatabaseService {
     }
   }
 
+  /**
+   * Upsert a record — insert or update on conflict
+   * @param schema Schema name
+   * @param table Table name
+   * @param data Record data as key-value pairs
+   * @param conflictColumns Columns that define uniqueness (ON CONFLICT target)
+   * @returns Mutation result
+   */
+  async upsert(
+    schema: string,
+    table: string,
+    data: Record<string, any>,
+    conflictColumns: string[]
+  ): Promise<MutationResult> {
+    try {
+      this.validateTableName(schema);
+      this.validateTableName(table);
+
+      if (Object.keys(data).length === 0) throw new Error('Upsert data cannot be empty');
+      if (conflictColumns.length === 0) throw new Error('Upsert conflictColumns cannot be empty');
+
+      const columns = Object.keys(data);
+      columns.forEach(col => this.validateColumnName(col));
+      conflictColumns.forEach(col => this.validateColumnName(col));
+
+      const values = Object.values(data);
+      let paramIndex = 1;
+      const placeholders = values.map(() => `$${paramIndex++}`).join(', ');
+      const columnNames = columns.map(col => `"${col}"`).join(', ');
+      const conflictTarget = conflictColumns.map(col => `"${col}"`).join(', ');
+      const updateClause = columns
+        .filter(col => !conflictColumns.includes(col))
+        .map(col => `"${col}" = EXCLUDED."${col}"`)
+        .join(', ');
+
+      const query = `INSERT INTO "${schema}"."${table}" (${columnNames}) VALUES (${placeholders}) ON CONFLICT (${conflictTarget}) DO UPDATE SET ${updateClause} RETURNING *`;
+      const client = this.transactionClient || this.pool;
+      const result = await client.query(query, values);
+
+      return {
+        affectedRows: result.rowCount || 0,
+        insertId: result.rows[0]?.id,
+        rows: result.rows,
+      };
+    } catch (error) {
+      throw new Error(`Failed to upsert record into ${schema}.${table}: ${this.getErrorMessage(error)}`);
+    }
+  }
+
   async update(
   schema: string,
   table: string,
