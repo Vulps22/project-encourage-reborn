@@ -1,8 +1,8 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { questionService } from '../../../../services';
+import { challengeService, questionService, votingService } from '../../../../services';
 import { BotCommandInteraction } from '../../../../structures';
 import { QuestionType } from '../../../../types';
-import { questionEmbed } from '../../../../views';
+import { challengeEmbed } from '../../../../views';
 import random from '../../global/random';
 
 // Mock services and views
@@ -10,10 +10,17 @@ jest.mock('../../../../services', () => ({
   questionService: {
     getRandomQuestion: jest.fn(),
   },
+  challengeService: {
+    createChallenge: jest.fn().mockResolvedValue({ id: 1 }),
+    setMessageId: jest.fn().mockResolvedValue(undefined),
+  },
+  votingService: {
+    addChallenge: jest.fn().mockResolvedValue({ challenge_id: 1, done_count: 0, failed_count: 0, final_result: null, finalised_datetime: null }),
+  },
 }));
 
 jest.mock('../../../../views', () => ({
-  questionEmbed: jest.fn(),
+  challengeEmbed: jest.fn(),
 }));
 
 describe('random command', () => {
@@ -24,13 +31,19 @@ describe('random command', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    (challengeService.createChallenge as jest.Mock).mockResolvedValue({ id: 1 });
+    (challengeService.setMessageId as jest.Mock).mockResolvedValue(undefined);
+    (votingService.addChallenge as jest.Mock).mockResolvedValue({ challenge_id: 1, done_count: 0, failed_count: 0, final_result: null, finalised_datetime: null });
+
     mockInteraction = {
       reply: jest.fn().mockResolvedValue(undefined),
       editReply: jest.fn().mockResolvedValue(undefined),
       deferReply: jest.fn().mockResolvedValue(undefined),
-      user: { id: '123456789' },
+      fetchReply: jest.fn().mockResolvedValue({ id: 'mock-message-id' }),
+      user: { id: '123456789', username: 'testuser' },
       guildId: '987654321',
       channelId: '111222333',
+      channel: { id: '111222333' },
       options: {
         getString: jest.fn(),
       },
@@ -78,7 +91,7 @@ describe('random command', () => {
     mathRandomSpy.mockReturnValue(0.3);
 
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(mockQuestion);
-    (questionEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
+    (challengeEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
 
     // Mock sendReply method
     botInteraction.sendReply = jest.fn().mockResolvedValue(undefined);
@@ -87,7 +100,7 @@ describe('random command', () => {
 
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
-    expect(questionEmbed).toHaveBeenCalledWith(mockQuestion);
+    expect(challengeEmbed).toHaveBeenCalled();
     expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockEmbedMessage);
   });
 
@@ -120,7 +133,7 @@ describe('random command', () => {
     mathRandomSpy.mockReturnValue(0.7);
 
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(mockQuestion);
-    (questionEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
+    (challengeEmbed as jest.Mock).mockReturnValue(mockEmbedMessage);
 
     // Mock sendReply method
     botInteraction.sendReply = jest.fn().mockResolvedValue(undefined);
@@ -129,7 +142,7 @@ describe('random command', () => {
 
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Dare);
-    expect(questionEmbed).toHaveBeenCalledWith(mockQuestion);
+    expect(challengeEmbed).toHaveBeenCalled();
     expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockEmbedMessage);
   });
 

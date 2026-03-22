@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, ButtonInteraction, InteractionEditReplyOptions, InteractionReplyOptions, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, ButtonInteraction, InteractionEditReplyOptions, InteractionReplyOptions, Message, MessageFlags } from 'discord.js';
 import { BotInteraction } from './BotInteraction';
 import { UniversalMessage } from '../types/UniversalMessage';
 import { AnySelectMenuInteraction } from '../types';
@@ -55,14 +55,18 @@ export abstract class BotRepliableInteraction extends BotInteraction {
     return this.sendReply(content, finalOptions);
   }
 
-  async followUp(content: string | null, options: UniversalMessage = {}): Promise<void> {
-    this._interaction.followUp({ ...options, content } as InteractionReplyOptions);
+  async followUp(content: string | null, options: UniversalMessage = {}): Promise<Message<boolean>> {
+    return await this._interaction.followUp({ ...options, content } as InteractionReplyOptions);
   }
 
-  async ephemeralFollowUp(content: string | null = null, options: UniversalMessage = {}): Promise<void> {
+  async ephemeralFollowUp(content: string | null = null, options: UniversalMessage = {}): Promise<Message<boolean>> {
     const existingFlags = Number(options.flags) || 0;
     const combinedFlags = existingFlags | MessageFlags.Ephemeral;
     const finalOptions = { ...options, flags: combinedFlags };
     return this.followUp(content, finalOptions);
+  }
+
+  fetchReply(): Promise<Message<boolean>> {
+    return this._interaction.fetchReply();
   }
 }

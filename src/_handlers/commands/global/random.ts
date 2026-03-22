@@ -1,8 +1,8 @@
-import { questionService } from '../../../services';
+import { challengeService, questionService, votingService } from '../../../services';
 import { BotCommandInteraction } from '../../../structures';
 import { QuestionType } from '../../../types';
 import { Command } from '../../../utils';
-import { questionEmbed } from '../../../views';
+import { challengeEmbed } from '../../../views';
 
 const random = new Command('random', 'Get a random truth or dare question')
   .setNSFW(true)
@@ -10,9 +10,7 @@ const random = new Command('random', 'Get a random truth or dare question')
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
     await interaction.deferReply();
 
-    // 50/50 random selection
     const selectedType = Math.random() < 0.5 ? QuestionType.Truth : QuestionType.Dare;
-
     const question = await questionService.getRandomQuestion(selectedType);
 
     if (!question) {
@@ -22,8 +20,21 @@ const random = new Command('random', 'Get a random truth or dare question')
       return;
     }
 
-    const message = questionEmbed(question);
+    const challenge = await challengeService.createChallenge(
+      interaction.user.id,
+      question.id,
+      interaction.guildId!,
+      interaction.channel?.id ?? null,
+      interaction.user.username,
+      question.type
+    );
+
+    const votes = await votingService.addChallenge(challenge.id);
+    const message = challengeEmbed(question, challenge, votes);
     await interaction.sendReply(null, message);
+
+    const sentMessage = await interaction.fetchReply();
+    await challengeService.setMessageId(challenge.id, sentMessage.id);
   });
 
 export default random;

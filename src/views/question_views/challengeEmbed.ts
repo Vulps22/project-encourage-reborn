@@ -1,10 +1,10 @@
 /** A ComponentV2 message for displaying a Truth or Dare question with voting buttons */
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { Question } from "../../interface";
-import { UniversalMessage } from "../../types";
+import { Challenge, ChallengeVote, Question } from "../../interface";
+import { UniversalMessage, VoteResult } from "../../types";
 
-function questionEmbed(question: Question): UniversalMessage {
+function challengeEmbed(question: Question, challenge: Challenge, vote: ChallengeVote): UniversalMessage {
     // Main title showing the type (Truth/Dare) in a section with report accessory button
     const title = new TextDisplayBuilder()
         .setContent(`## **${question.type.charAt(0).toUpperCase() + question.type.slice(1)}!**`);
@@ -24,11 +24,11 @@ function questionEmbed(question: Question): UniversalMessage {
 
     // Voting status footer
     const votingInfo = new TextDisplayBuilder()
-        .setContent(`\n**Votes:** 0 Done | 0 Failed`);
+        .setContent(vote.final_result === VoteResult.Skipped ? `\n**Result:** Skipped` : `\n**Votes:** ${vote.done_count} Done | ${vote.failed_count} Failed`);
 
     // Footer with metadata
     const footer = new TextDisplayBuilder()
-        .setContent(`Requested by <@${question.user_id}> | Created By Somebody | #${question.id}`);
+        .setContent(`Requested by <@${challenge.user_id}> | Created By Somebody | #${question.id}`);
 
     // Create the container with all components
     const container = new ContainerBuilder()
@@ -42,16 +42,19 @@ function questionEmbed(question: Question): UniversalMessage {
     const doneButton = new ButtonBuilder()
         .setCustomId(`question_done_id:${question.id}`)
         .setLabel('DONE')
+        .setDisabled(vote.final_result !== null)
         .setStyle(ButtonStyle.Success);
 
     const failedButton = new ButtonBuilder()
         .setCustomId(`question_failed_id:${question.id}`)
         .setLabel('FAILED')
+        .setDisabled(vote.final_result !== null)
         .setStyle(ButtonStyle.Danger);
 
     const skipButton = new ButtonBuilder()
         .setCustomId(`question_skip_id:${question.id}`)
         .setLabel('SKIP')
+        .setDisabled(vote.final_result !== null)
         .setStyle(ButtonStyle.Secondary);
 
     // Add buttons to action row
@@ -66,4 +69,4 @@ function questionEmbed(question: Question): UniversalMessage {
     return message;
 }
 
-export { questionEmbed };
+export { challengeEmbed };

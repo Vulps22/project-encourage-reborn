@@ -303,6 +303,27 @@ async function freshInstall() {
       }
     }
 
+    // Seed dev data
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\nSeeding development data...');
+      await client.query(`
+        INSERT INTO "server"."servers" (
+          "id", "name", "user_id", "has_accepted", "can_create", "is_banned",
+          "ban_reason", "banned_by", "datetime_banned", "date_created", "date_updated",
+          "dare_success_xp", "dare_fail_xp", "truth_success_xp", "truth_fail_xp",
+          "message_xp", "level_up_channel", "announcement_channel", "is_entitled",
+          "entitlement_end_date", "message_id", "is_deleted", "datetime_deleted"
+        ) VALUES (
+          1079206786021732412, '', 914368203482890240, true, true, false,
+          NULL, NULL, NULL, '2026-03-21 20:55:20.854366', '2026-03-21 20:55:20.854366',
+          50, 25, 40, 40,
+          0, NULL, NULL, false,
+          NULL, NULL, false, NULL
+        ) ON CONFLICT ("id") DO NOTHING;
+      `);
+      console.log('✓ Development data seeded');
+    }
+
     console.log('\n✓ Fresh installation completed successfully!');
   } catch (error) {
     console.error('\n✗ Fresh installation failed:');
