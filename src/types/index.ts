@@ -5,3 +5,4 @@ export { EventHandler } from './EventHandler';
 export { QuestionType } from './QuestionType';
 export { TargetType } from './TargetType';
 export { UniversalMessage } from './UniversalMessage';
+export { VoteResult } from './VoteResult';

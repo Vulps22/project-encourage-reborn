@@ -2,7 +2,7 @@
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 import { Challenge, ChallengeVote, Question } from "../../interface";
-import { UniversalMessage } from "../../types";
+import { UniversalMessage, VoteResult } from "../../types";
 
 function challengeEmbed(question: Question, challenge: Challenge, vote: ChallengeVote): UniversalMessage {
     // Main title showing the type (Truth/Dare) in a section with report accessory button
@@ -24,7 +24,7 @@ function challengeEmbed(question: Question, challenge: Challenge, vote: Challeng
 
     // Voting status footer
     const votingInfo = new TextDisplayBuilder()
-        .setContent(`\n**Votes:** ${vote.done_count} Done | ${vote.failed_count} Failed`);
+        .setContent(vote.final_result === VoteResult.Skipped ? `\n**Result:** Skipped` : `\n**Votes:** ${vote.done_count} Done | ${vote.failed_count} Failed`);
 
     // Footer with metadata
     const footer = new TextDisplayBuilder()
