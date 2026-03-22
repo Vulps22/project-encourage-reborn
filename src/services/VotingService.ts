@@ -1,129 +1,103 @@
 import { Snowflake } from 'discord.js';
 import { DatabaseService } from './DatabaseService';
 import { Logger } from '../utils';
-import { UserQuestion, VoteStatus, VoteType } from '../interface';
-import { QuestionType } from '../types';
-
-const VOTE_THRESHOLD = 3; // TODO: load from config.required_votes
+import { ChallengeVote, Vote, VoteType } from '../interface';
 
 export class VotingService {
   constructor(private db: DatabaseService) {}
 
   /**
-   * Create a user_questions row when a question embed is posted.
-   * Called by truth/dare/random commands immediately after sending the message.
+   * Initialise vote tracking for a challenge. Returns the created ChallengeVote.
    */
-  async createVoteTracking(
-    messageId: Snowflake,
-    userId: Snowflake,
-    questionId: number,
-    serverId: Snowflake,
-    channelId: Snowflake | null,
-    username: string,
-    type: QuestionType
-  ): Promise<UserQuestion> {
-    Logger.debug(`Creating vote tracking for message ${messageId}`);
+  async addChallenge(challengeId: number): Promise<ChallengeVote> {
+    Logger.debug(`Adding challenge ${challengeId} to vote tracking`);
 
-    const result = await this.db.insert('user', 'user_questions', {
-      message_id: messageId,
-      user_id: userId,
-      question_id: questionId,
-      server_id: serverId,
-      channel_id: channelId ?? null,
-      username,
-      type,
+    const result = await this.db.insert('vote', 'challenge_votes', {
+      challenge_id: challengeId,
     });
 
     if (!result.rows || result.rows.length === 0) {
-      throw new Error(`Failed to create vote tracking for message ${messageId}`);
+      throw new Error(`Failed to initialise vote tracking for challenge ${challengeId}`);
     }
 
-    Logger.debug(`Vote tracking created for message ${messageId}`);
-    return result.rows[0] as UserQuestion;
+    return result.rows[0] as ChallengeVote;
   }
 
   /**
-   * Check whether a specific user has already voted on a message.
+   * Check whether a specific user has already voted on a challenge.
    */
-  async hasUserVoted(messageId: Snowflake, userId: Snowflake): Promise<boolean> {
-    const vote = await this.db.get(
-      'user', 'user_vote',
-      { message_id: messageId, user_id: userId }
+  async hasUserVoted(challengeId: number, userId: Snowflake): Promise<boolean> {
+    const vote = await this.db.get<Vote>(
+      'vote', 'user_votes',
+      { challenge_id: challengeId, user_id: userId }
     );
     return vote !== null;
   }
 
   /**
-   * Record a done/failed vote from a user.
-   * Inserts into user_vote and increments the corresponding counter on user_questions.
-   *
-   * @throws Error with message 'ALREADY_VOTED' if user has already voted
-   * @throws Error with message 'NO_TRACKING' if no user_questions row exists
-   * @throws Error with message 'QUESTION_FINALIZED' if question already has a final result
+   * Insert a vote record for a user.
    */
-  async recordVote(
-    messageId: Snowflake,
-    userId: Snowflake,
-    voteType: VoteType
-  ): Promise<UserQuestion> {
-    Logger.debug(`Recording ${voteType} vote from user ${userId} on message ${messageId}`);
+  async recordVote(challengeId: number, userId: Snowflake, voteType: VoteType): Promise<void> {
+    Logger.debug(`Recording ${voteType} vote from user ${userId} on challenge ${challengeId}`);
 
-    const alreadyVoted = await this.hasUserVoted(messageId, userId);
-    if (alreadyVoted) {
-      throw new Error('ALREADY_VOTED');
-    }
-
-    const userQuestion = await this.db.get<UserQuestion>(
-      'user', 'user_questions', { message_id: messageId }
-    );
-    if (!userQuestion) {
-      throw new Error('NO_TRACKING');
-    }
-    if (userQuestion.final_result !== null) {
-      throw new Error('QUESTION_FINALIZED');
-    }
-
-    await this.db.insert('user', 'user_vote', {
-      message_id: messageId,
+    await this.db.insert('vote', 'user_votes', {
+      challenge_id: challengeId,
       user_id: userId,
       vote_type: voteType,
     });
-
-    const countField = voteType === 'done' ? 'done_count' : 'failed_count';
-    const newCount = Number(userQuestion[countField as keyof UserQuestion]) + 1;
-    await this.db.update(
-      'user', 'user_questions',
-      { [countField]: newCount },
-      { message_id: messageId }
-    );
-
-    const updated = await this.db.get<UserQuestion>(
-      'user', 'user_questions', { message_id: messageId }
-    );
-
-    Logger.debug(`Vote recorded. Updated counts for message ${messageId}`);
-    return updated!;
   }
 
   /**
-   * Returns current vote counts and finalization status for a message.
-   *
-   * @throws Error with message 'NO_TRACKING' if no user_questions row exists
+   * Increment the done_count or failed_count on challenge_votes.
    */
-  async getVoteStatus(messageId: Snowflake): Promise<VoteStatus> {
-    const userQuestion = await this.db.get<UserQuestion>(
-      'user', 'user_questions', { message_id: messageId }
+  async incrementCount(challengeId: number, voteType: VoteType): Promise<ChallengeVote> {
+    const current = await this.db.get<ChallengeVote>(
+      'vote', 'challenge_votes', { challenge_id: challengeId }
     );
-    if (!userQuestion) {
+
+    if (!current) {
       throw new Error('NO_TRACKING');
     }
 
-    return {
-      doneCount: userQuestion.done_count,
-      failedCount: userQuestion.failed_count,
-      threshold: VOTE_THRESHOLD,
-      isFinalized: userQuestion.final_result !== null,
-      finalResult: userQuestion.final_result,
-    };
+    const field = voteType === 'done' ? 'done_count' : 'failed_count';
+    const newCount = current[field] + 1;
+
+    const result = await this.db.update(
+      'vote', 'challenge_votes',
+      { [field]: newCount },
+      { challenge_id: challengeId }
+    );
+
+    return result.rows![0] as ChallengeVote;
+  }
+
+  /**
+   * Return the current vote counts for a challenge.
+   */
+  async getVoteCount(challengeId: number): Promise<ChallengeVote> {
+    const record = await this.db.get<ChallengeVote>(
+      'vote', 'challenge_votes', { challenge_id: challengeId }
+    );
+
+    if (!record) {
+      throw new Error('NO_TRACKING');
+    }
+
+    return record;
+  }
+
+  /**
+   * Set the final result on challenge_votes.
+   */
+  async finalizeChallenge(challengeId: number, result: 'done' | 'failed' | 'skipped'): Promise<ChallengeVote> {
+    Logger.debug(`Finalizing challenge ${challengeId} as ${result}`);
+
+    const res = await this.db.update(
+      'vote', 'challenge_votes',
+      { final_result: result, finalised_datetime: new Date() },
+      { challenge_id: challengeId }
+    );
+
+    return res.rows![0] as ChallengeVote;
   }
 }
