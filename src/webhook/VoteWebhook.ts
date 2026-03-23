@@ -47,7 +47,7 @@ export function createVoteWebhookApp(authToken: string): express.Application {
         }
 
         const skips = await inventoryService.get(payload.user, Storable.Skip);
-        if (skips && skips.qty > 10) {
+        if (skips && skips.qty >= 10) {
             Logger.log(`[VoteWebhook] User ${payload.user} has already received the maximum number of skips.`);
             res.status(200).send('OK');
             return;
