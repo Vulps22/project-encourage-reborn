@@ -518,6 +518,7 @@ export class DatabaseService {
    * @returns Error message string
    */
   private getErrorMessage(error: unknown): string {
+    console.log('Error details:', error);
     if (error instanceof Error) {
       return error.message;
     }
