@@ -90,11 +90,10 @@ describe('InventoryService', () => {
             expect(result).toEqual(item);
         });
 
-        it('should throw when no inventory row exists', async () => {
+        it('should return false when no inventory row exists', async () => {
             (mockDb.execute as jest.Mock).mockResolvedValue({ affectedRows: 0, rows: [] });
 
-            await expect(service.consume('123', Storable.Skip, 1))
-                .rejects.toThrow('User 123 has no inventory entry for skip');
+            await expect(service.consume('123', Storable.Skip, 1)).resolves.toBe(false);
         });
     });
 });

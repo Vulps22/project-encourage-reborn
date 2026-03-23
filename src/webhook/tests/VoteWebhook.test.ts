@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { createVoteWebhookApp } from '../VoteWebhook';
 import { Logger } from '../../utils';
-import { inventoryService } from '../../services';
+import { inventoryService, userService } from '../../services';
 import { Storable } from '../../types';
 
 jest.mock('../../utils', () => ({
@@ -12,6 +12,9 @@ jest.mock('../../utils', () => ({
 }));
 
 jest.mock('../../services', () => ({
+    userService: {
+        getUser: jest.fn(),
+    },
     inventoryService: {
         get: jest.fn(),
         add: jest.fn(),
@@ -26,6 +29,7 @@ describe('VoteWebhook', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        (userService.getUser as jest.Mock).mockResolvedValue({ id: '123' });
     });
 
     describe('POST /webhook/vote', () => {
@@ -65,6 +69,18 @@ describe('VoteWebhook', () => {
             expect(res.status).toBe(200);
             expect(inventoryService.add).not.toHaveBeenCalled();
             expect(Logger.log).toHaveBeenCalledWith(expect.stringContaining('Test vote received'));
+        });
+
+        it('should return 200 and skip the add when user is not registered', async () => {
+            (userService.getUser as jest.Mock).mockResolvedValue(null);
+
+            const res = await request(app)
+                .post('/webhook/vote')
+                .set('Authorization', AUTH_TOKEN)
+                .send(VALID_PAYLOAD);
+
+            expect(res.status).toBe(200);
+            expect(inventoryService.add).not.toHaveBeenCalled();
         });
 
         it('should return 200 and add a skip for an upvote', async () => {
