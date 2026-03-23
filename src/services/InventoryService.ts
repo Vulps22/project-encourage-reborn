@@ -22,14 +22,15 @@ export class InventoryService {
     return result.rows![0] as InventoryItem;
   }
 
-  async consume(userId: Snowflake, storableId: Storable, amount: number): Promise<InventoryItem> {
+  async consume(userId: Snowflake, storableId: Storable, amount: number): Promise<InventoryItem | false> {
     const result = await this.db.execute(
-      `UPDATE "user"."inventory" SET "qty" = "qty" - $1 WHERE "user_id" = $2 AND "storable_id" = $3 RETURNING *`,
+      `UPDATE "user"."inventory" SET "qty" = "qty" - $1 WHERE "user_id" = $2 AND "storable_id" = $3 AND "qty" >= $1 RETURNING *`,
       [amount, userId, storableId]
     );
 
     if (!result.rows || result.rows.length === 0) {
-      throw new Error(`User ${userId} has no inventory entry for ${storableId}`);
+      console.log(`User ${userId} does not have enough of storable ${storableId} to consume ${amount}. Returning false.`);
+      return false;
     }
 
     return result.rows[0] as InventoryItem;
