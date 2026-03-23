@@ -1,6 +1,8 @@
 import request from 'supertest';
 import { createVoteWebhookApp } from '../VoteWebhook';
 import { Logger } from '../../utils';
+import { inventoryService } from '../../services';
+import { Storable } from '../../types';
 
 jest.mock('../../utils', () => ({
     Logger: {
@@ -9,7 +11,15 @@ jest.mock('../../utils', () => ({
     },
 }));
 
+jest.mock('../../services', () => ({
+    inventoryService: {
+        get: jest.fn(),
+        add: jest.fn(),
+    },
+}));
+
 const AUTH_TOKEN = 'test-token';
+const VALID_PAYLOAD = { bot: '999', user: '123', type: 'upvote', isWeekend: false };
 
 describe('VoteWebhook', () => {
     const app = createVoteWebhookApp(AUTH_TOKEN);
@@ -36,32 +46,50 @@ describe('VoteWebhook', () => {
             expect(Logger.error).toHaveBeenCalledWith('[VoteWebhook] Unauthorized request received');
         });
 
-        it('should return 200 and log an upvote', async () => {
-            const payload = { bot: '999', user: '123', type: 'upvote', isWeekend: false };
-
+        it('should return 400 when payload is missing required fields', async () => {
             const res = await request(app)
                 .post('/webhook/vote')
                 .set('Authorization', AUTH_TOKEN)
-                .send(payload);
+                .send({ bot: '999' });
 
-            expect(res.status).toBe(200);
-            expect(Logger.log).toHaveBeenCalledWith(
-                '[VoteWebhook] Vote received — user: 123, type: upvote, isWeekend: false'
-            );
+            expect(res.status).toBe(400);
+            expect(Logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid payload'));
         });
 
-        it('should return 200 and log a test vote', async () => {
-            const payload = { bot: '999', user: '456', type: 'test', isWeekend: true };
+        it('should return 200 and ignore test votes', async () => {
+            const res = await request(app)
+                .post('/webhook/vote')
+                .set('Authorization', AUTH_TOKEN)
+                .send({ ...VALID_PAYLOAD, type: 'test' });
+
+            expect(res.status).toBe(200);
+            expect(inventoryService.add).not.toHaveBeenCalled();
+            expect(Logger.log).toHaveBeenCalledWith(expect.stringContaining('Test vote received'));
+        });
+
+        it('should return 200 and add a skip for an upvote', async () => {
+            (inventoryService.get as jest.Mock).mockResolvedValue(null);
+            (inventoryService.add as jest.Mock).mockResolvedValue(undefined);
 
             const res = await request(app)
                 .post('/webhook/vote')
                 .set('Authorization', AUTH_TOKEN)
-                .send(payload);
+                .send(VALID_PAYLOAD);
 
             expect(res.status).toBe(200);
-            expect(Logger.log).toHaveBeenCalledWith(
-                '[VoteWebhook] Vote received — user: 456, type: test, isWeekend: true'
-            );
+            expect(inventoryService.add).toHaveBeenCalledWith('123', Storable.Skip, 1);
+        });
+
+        it('should return 200 and skip the add when user is at the skip cap', async () => {
+            (inventoryService.get as jest.Mock).mockResolvedValue({ qty: 11 });
+
+            const res = await request(app)
+                .post('/webhook/vote')
+                .set('Authorization', AUTH_TOKEN)
+                .send(VALID_PAYLOAD);
+
+            expect(res.status).toBe(200);
+            expect(inventoryService.add).not.toHaveBeenCalled();
         });
     });
 });
