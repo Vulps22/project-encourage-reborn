@@ -1,66 +1,92 @@
 import { BotButtonInteraction } from '../../../../structures';
 import skip from '../../question/skip';
+import { challengeService, inventoryService, questionService, votingService } from '../../../../services';
+import { Storable } from '../../../../types';
 
-describe.skip('skip button handler', () => {
-  let mockInteraction: jest.Mocked<BotButtonInteraction>;
+jest.mock('../../../../services', () => ({
+    challengeService: { getChallengeByMessageId: jest.fn(), skip: jest.fn() },
+    inventoryService: { consume: jest.fn() },
+    questionService: { getQuestionById: jest.fn() },
+    votingService: { getVoteCount: jest.fn(), finalizeChallenge: jest.fn() },
+}));
 
-  beforeEach(() => {
-    mockInteraction = {
-      params: new Map([['id', '123']]),
-      reply: jest.fn().mockResolvedValue(undefined),
-      ephemeralReply: jest.fn().mockResolvedValue(undefined),
-      user: {
-        id: 'user-123',
-        username: 'testuser',
-      },
-    } as unknown as jest.Mocked<BotButtonInteraction>;
+jest.mock('../../../../views', () => ({
+    challengeEmbed: jest.fn().mockReturnValue({}),
+}));
 
-    jest.clearAllMocks();
-  });
+jest.mock('../../../../utils', () => ({
+    Logger: { error: jest.fn(), debug: jest.fn() },
+}));
 
-  afterEach(() => {
-    jest.resetAllMocks();
-  });
+const mockChallenge = { id: 1, user_id: 'user-123', question_id: 42, message_id: 'msg-1' };
+const mockChallengeVote = { final_result: null };
+const mockQuestion = { id: 42, content: 'Test question' };
+const mockUpdated = { final_result: 'skipped' };
 
-  describe('handler properties', () => {
+describe('skip button handler', () => {
+    let mockInteraction: jest.Mocked<BotButtonInteraction>;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+
+        mockInteraction = {
+            messageId: 'msg-1',
+            user: { id: 'user-123' },
+            ephemeralReply: jest.fn().mockResolvedValue(undefined),
+            ephemeralFollowUp: jest.fn().mockResolvedValue(undefined),
+            updateComponentMessage: jest.fn().mockResolvedValue(undefined),
+        } as unknown as jest.Mocked<BotButtonInteraction>;
+
+        (challengeService.getChallengeByMessageId as jest.Mock).mockResolvedValue(mockChallenge);
+        (votingService.getVoteCount as jest.Mock).mockResolvedValue(mockChallengeVote);
+        (inventoryService.consume as jest.Mock).mockResolvedValue({ qty: 0 });
+        (challengeService.skip as jest.Mock).mockResolvedValue(undefined);
+        (votingService.finalizeChallenge as jest.Mock).mockResolvedValue(mockUpdated);
+        (questionService.getQuestionById as jest.Mock).mockResolvedValue(mockQuestion);
+    });
+
     it('should have correct name', () => {
-      expect(skip.name).toBe('skip');
+        expect(skip.name).toBe('skip');
     });
 
-    it('should have execute function', () => {
-      expect(skip.execute).toBeDefined();
-      expect(typeof skip.execute).toBe('function');
-    });
-  });
+    it('should reply with error when challenge not found', async () => {
+        (challengeService.getChallengeByMessageId as jest.Mock).mockResolvedValue(null);
 
-  describe('execute', () => {
-    it('should reply with skip confirmation message', async () => {
-      await skip.execute(mockInteraction);
+        await skip.execute(mockInteraction);
 
-      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('⏭️ Skipped!');
+        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('Could not find tracking data'));
     });
 
-    it('should read questionId from params', async () => {
-      const paramsSpy = jest.spyOn(mockInteraction.params, 'get');
+    it('should reply with error when user is not the challenge owner', async () => {
+        (challengeService.getChallengeByMessageId as jest.Mock).mockResolvedValue({ ...mockChallenge, user_id: 'someone-else' });
 
-      await skip.execute(mockInteraction);
+        await skip.execute(mockInteraction);
 
-      expect(paramsSpy).toHaveBeenCalledWith('id');
+        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('Only the challenge recipient'));
     });
 
-    it('should handle different question IDs', async () => {
-      mockInteraction.params.set('id', '999');
+    it('should reply with error when challenge is already locked', async () => {
+        (votingService.getVoteCount as jest.Mock).mockResolvedValue({ final_result: 'done' });
 
-      await skip.execute(mockInteraction);
+        await skip.execute(mockInteraction);
 
-      expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('⏭️ Skipped!');
+        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('already been locked'));
     });
 
-    it('should send ephemeral reply', async () => {
-      await skip.execute(mockInteraction);
+    it('should reply with no skips message when consume returns false', async () => {
+        (inventoryService.consume as jest.Mock).mockResolvedValue(false);
 
-      const callArgs = (mockInteraction.reply as jest.Mock).mock.calls[0][0];
-      expect(callArgs.ephemeral).toBe(true);
+        await skip.execute(mockInteraction);
+
+        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('no skips left'));
     });
-  });
+
+    it('should finalize and confirm on happy path', async () => {
+        await skip.execute(mockInteraction);
+
+        expect(inventoryService.consume).toHaveBeenCalledWith('user-123', Storable.Skip, 1);
+        expect(challengeService.skip).toHaveBeenCalledWith(1);
+        expect(votingService.finalizeChallenge).toHaveBeenCalledWith(1, 'skipped');
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('skipped'));
+    });
 });

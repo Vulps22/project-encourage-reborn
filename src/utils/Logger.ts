@@ -12,6 +12,8 @@ import { Config } from '../config';
  */
 export class Logger {
   private static sensitiveValues: Set<string> = new Set();
+  private static logWebhookUrl: string | null = null;
+  private static errorWebhookUrl: string | null = null;
 
   /**
    * Initialize the logger by caching all sensitive values from environment variables
@@ -23,6 +25,21 @@ export class Logger {
       if (value && value.length > 0) {
         this.sensitiveValues.add(value);
       }
+    }
+
+    this.logWebhookUrl = process.env.DISCORD_LOG_WEBHOOK_URL ?? null;
+    this.errorWebhookUrl = process.env.DISCORD_ERROR_WEBHOOK_URL ?? null;
+  }
+
+  private static async postToWebhook(url: string, message: string): Promise<void> {
+    try {
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: this.sanitize(message) }),
+      });
+    } catch (err) {
+      console.error('Failed to post to webhook:', err);
     }
   }
 
@@ -137,13 +154,21 @@ export class Logger {
    * Send a log message to the log channel (STREAMER SAFE - auto-redacts sensitive data)
    * @param message Message to log
    */
-  static async log(message: string): Promise<void> {
-    const logChannelId = global.config.LOG_CHANNEL_ID;
-    if (!logChannelId) {
-      return;
-    }
-
-    await this.logTo(logChannelId, message);
+  static log(message: string): void {
+    const send = async () => {
+      try {
+        const logChannelId = global.config.LOG_CHANNEL_ID;
+        if (!logChannelId) {
+          if (this.logWebhookUrl) await this.postToWebhook(this.logWebhookUrl, message);
+          return;
+        }
+        await this.logTo(logChannelId, message);
+      } catch {
+        if (this.logWebhookUrl) await this.postToWebhook(this.logWebhookUrl, message);
+      }
+    };
+    console.log(this.sanitize(message));
+    send();
   }
 
   /**
@@ -460,10 +485,9 @@ export class Logger {
   /**
    * Error logging to both console and discord
    * @param message the message to display
-   * @throws Error with "Not Implemented Yet"
    */
   static error(message: string): void {
-  console.error(this.sanitize(message));
-  //throw new Error("Not Implemented Yet");
-}
+    console.error(this.sanitize(message));
+    if (this.errorWebhookUrl) this.postToWebhook(this.errorWebhookUrl, message);
+  }
 }
