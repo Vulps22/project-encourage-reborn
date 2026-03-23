@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { Logger } from '../utils';
-import { inventoryService } from '../services';
+import { inventoryService, userService } from '../services';
 import { Storable } from '../types';
 
 interface TopGGVotePayload {
@@ -39,8 +39,15 @@ export function createVoteWebhookApp(authToken: string): express.Application {
             return;
         }
 
+        const user = await userService.getUser(payload.user);
+        if (!user) {
+            Logger.log(`[VoteWebhook] Vote received from unregistered user ${payload.user}, skipping inventory update.`);
+            res.status(200).send('OK');
+            return;
+        }
+
         const skips = await inventoryService.get(payload.user, Storable.Skip);
-        if (skips && skips?.qty > 10) {
+        if (skips && skips.qty > 10) {
             Logger.log(`[VoteWebhook] User ${payload.user} has already received the maximum number of skips.`);
             res.status(200).send('OK');
             return;
