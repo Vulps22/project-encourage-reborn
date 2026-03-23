@@ -1,12 +1,8 @@
 import { ShardingManager } from 'discord.js';
-import dotenv from 'dotenv';
 import path from 'path';
 import { DatabaseService } from './services/DatabaseService';
 import { Logger } from './utils/Logger';
 import { startVoteWebhook } from './webhook/VoteWebhook';
-
-// Load environment variables
-dotenv.config();
 
 // Initialize Logger with sensitive values from .env
 Logger.initialize();
