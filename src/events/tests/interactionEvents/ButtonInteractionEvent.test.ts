@@ -53,6 +53,9 @@ describe('ButtonInteractionEvent', () => {
                 id: '111111111',
                 name: 'Test Guild'
             },
+            replied: false,
+            deferred: false,
+            reply: jest.fn().mockResolvedValue(undefined),
             deferReply: jest.fn().mockResolvedValue(undefined),
             followUp: jest.fn().mockResolvedValue(undefined)
         } as any;
@@ -94,15 +97,43 @@ describe('ButtonInteractionEvent', () => {
             expect(console.log).not.toHaveBeenCalled();
         });
 
-        it('should handle handler execution errors', async () => {
+        it('should handle handler execution errors gracefully', async () => {
             const testError = new Error('Handler execution failed');
             mockHandler.execute.mockRejectedValue(testError);
             const executionId = 'test-execution-id';
 
             await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
-                .rejects.toThrow('Handler execution failed');
+                .resolves.not.toThrow();
 
             expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
+            expect(mockButtonInteraction.reply).toHaveBeenCalledWith({
+                content: '❌ An error occurred while processing this action.',
+                ephemeral: true
+            });
+        });
+
+        it('should not reply on error if interaction already replied', async () => {
+            mockButtonInteraction.replied = true;
+            const testError = new Error('Handler execution failed');
+            mockHandler.execute.mockRejectedValue(testError);
+            const executionId = 'test-execution-id';
+
+            await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
+                .resolves.not.toThrow();
+
+            expect(mockButtonInteraction.reply).not.toHaveBeenCalled();
+        });
+
+        it('should not reply on error if interaction already deferred', async () => {
+            mockButtonInteraction.deferred = true;
+            const testError = new Error('Handler execution failed');
+            mockHandler.execute.mockRejectedValue(testError);
+            const executionId = 'test-execution-id';
+
+            await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
+                .resolves.not.toThrow();
+
+            expect(mockButtonInteraction.reply).not.toHaveBeenCalled();
         });
 
         it('should parse complex custom IDs correctly', async () => {
