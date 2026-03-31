@@ -12,7 +12,14 @@ class StringSelectInteractionEvent implements InteractionEvent<StringSelectMenuI
             Logger.error(`SelectMenu not found for Custom ID: ${botSelectInteraction.baseId}`);
             return;
         }
-        await selectHandler.execute(botSelectInteraction);
+        try {
+            await selectHandler.execute(botSelectInteraction);
+        } catch (error) {
+            console.error('SelectMenu execution error:', error);
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: '❌ An error occurred while processing this action.', ephemeral: true });
+            }
+        }
     }
 }
 
