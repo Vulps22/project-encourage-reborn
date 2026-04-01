@@ -12,6 +12,7 @@ jobs:
   determine:
     name: Determine Release Type
     runs-on: ubuntu-latest
+    if: vars.RELEASES_ENABLED == 'true'
     outputs:
       release_type: ${{ steps.type.outputs.release_type }}
       should_proceed: ${{ steps.changes.outputs.should_proceed }}
