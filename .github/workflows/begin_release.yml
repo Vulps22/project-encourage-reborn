@@ -1,0 +1,196 @@
+name: Begin Release
+
+on:
+  schedule:
+    - cron: '0 20 * * 3' # Every Wednesday at 8pm UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  determine:
+    name: Determine Release Type
+    runs-on: ubuntu-latest
+    if: vars.RELEASES_ENABLED == 'true'
+    outputs:
+      release_type: ${{ steps.type.outputs.release_type }}
+      should_proceed: ${{ steps.changes.outputs.should_proceed }}
+      version: ${{ steps.version.outputs.version }}
+      test_ref: ${{ steps.version.outputs.test_ref }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine release type
+        id: type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "release_type=hotfix" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          day=$(date +%-d)
+          if ([ "$day" -ge 8 ] && [ "$day" -le 14 ]) || ([ "$day" -ge 22 ] && [ "$day" -le 28 ]); then
+            echo "release_type=release" >> $GITHUB_OUTPUT
+          else
+            echo "release_type=freeze" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for changes since last tag
+        id: changes
+        run: |
+          if [ "${{ steps.type.outputs.release_type }}" = "hotfix" ]; then
+            echo "should_proceed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          last_tag=$(git tag -l 'v[0-9]*' | grep -v '\-H' | sort -V | tail -1)
+          if [ -z "$last_tag" ]; then
+            echo "No prior tags — proceeding"
+            echo "should_proceed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          changes=$(git log "${last_tag}..HEAD" --oneline | wc -l | tr -d ' ')
+          if [ "$changes" -gt 0 ]; then
+            echo "should_proceed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes since $last_tag — skipping"
+            echo "should_proceed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute version
+        id: version
+        if: steps.changes.outputs.should_proceed == 'true'
+        run: |
+          release_type="${{ steps.type.outputs.release_type }}"
+          year=$(date +%Y)
+          month=$(date +%-m)
+
+          if [ "$release_type" = "hotfix" ]; then
+            latest=$(git tag -l 'v[0-9]*' | sort -V | tail -1)
+            if echo "$latest" | grep -q '\-H'; then
+              base=$(echo "$latest" | sed 's/-H[0-9]*//')
+              h_num=$(echo "$latest" | grep -oE 'H[0-9]+' | grep -oE '[0-9]+')
+              version="${base}-H$((h_num + 1))"
+            else
+              version="${latest}-H1"
+            fi
+            echo "test_ref=main" >> $GITHUB_OUTPUT
+
+          elif [ "$release_type" = "freeze" ]; then
+            count=$(git tag -l "v${year}.${month}.*" | grep -v '\-H' | wc -l | tr -d ' ')
+            version="v${year}.${month}.$((count + 1))"
+            echo "test_ref=main" >> $GITHUB_OUTPUT
+
+          else # release
+            git fetch --all
+            freeze_version=$(git branch -r | grep 'origin/freeze/' | sed 's|.*origin/freeze/||' | sort -V | tail -1 | tr -d ' ')
+            if [ -z "$freeze_version" ]; then
+              echo "No freeze branch found" >&2
+              exit 1
+            fi
+            version="$freeze_version"
+            echo "test_ref=freeze/${freeze_version}" >> $GITHUB_OUTPUT
+          fi
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Computed version: $version"
+
+  # ── Freeze path (odd weeks) ────────────────────────────────────────────────
+
+  freeze:
+    name: Create Freeze Branch
+    needs: determine
+    if: needs.determine.outputs.should_proceed == 'true' && needs.determine.outputs.release_type == 'freeze'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create freeze branch
+        run: |
+          VERSION="${{ needs.determine.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "freeze/${VERSION}"
+          git push origin "freeze/${VERSION}"
+          echo "Created freeze/${VERSION}"
+
+  # ── Release path (even weeks + hotfix) ────────────────────────────────────
+
+  test:
+    name: Run Tests
+    needs: determine
+    if: needs.determine.outputs.should_proceed == 'true' && needs.determine.outputs.release_type != 'freeze'
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine.outputs.test_ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: TypeScript compilation check
+        run: npm run build
+
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_NAME: testdb
+          NODE_ENV: test
+        run: npm test
+
+  tag:
+    name: Tag and Create GitHub Release
+    needs: [determine, test]
+    if: needs.determine.outputs.should_proceed == 'true' && needs.determine.outputs.release_type != 'freeze'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.determine.outputs.test_ref }}
+
+      - name: Tag release commit
+        run: |
+          VERSION="${{ needs.determine.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ needs.determine.outputs.version }}" \
+            --title "Release ${{ needs.determine.outputs.version }}" \
+            --generate-notes

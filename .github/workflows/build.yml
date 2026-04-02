@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            vulps23/project-encourage:latest
+            vulps23/project-encourage:${{ github.ref_name }}
+
+      - name: Merge main into current-release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+          if git ls-remote --exit-code origin current-release; then
+            git checkout -b current-release origin/current-release
+          else
+            git checkout -b current-release origin/main
+          fi
+          git merge origin/main --no-edit
+          git push origin current-release
