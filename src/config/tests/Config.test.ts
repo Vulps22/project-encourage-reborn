@@ -13,9 +13,9 @@ describe('Config', () => {
         });
 
         it('should have correct channel ID values', () => {
-            expect(Config.TRUTHS_LOG_CHANNEL_ID).toBe('1235305292955127838');
-            expect(Config.DARES_LOG_CHANNEL_ID).toBe('1235306341724196976');
-            expect(Config.LOG_CHANNEL_ID).toBe('1266041224914276424');
+            expect(Config.TRUTHS_LOG_CHANNEL_ID).toBe('1489377626203357356');
+            expect(Config.DARES_LOG_CHANNEL_ID).toBe('1489377715072270397');
+            expect(Config.LOG_CHANNEL_ID).toBe('1489376162722353245');
             expect(Config.OFFICIAL_GUILD_ID).toBe('1079206786021732412');
         });
 
