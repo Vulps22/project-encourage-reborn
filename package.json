@@ -14,7 +14,8 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "db:install": "node database/scripts/fresh-install.js",
     "db:rollout": "node database/scripts/rollout.js",
-    "db:rollback": "node database/scripts/rollback.js"
+    "db:rollback": "node database/scripts/rollback.js",
+    "db:migrate": "node database/scripts/migrate-mysql-to-postgres.js"
   },
   "keywords": [
     "discord",
@@ -48,6 +49,7 @@
     "discord.js": "^14.24.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "mysql2": "^3.14.1",
     "pg": "^8.16.3",
     "tslib": "^2.8.1"
   }
