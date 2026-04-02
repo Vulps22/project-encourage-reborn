@@ -34,6 +34,9 @@ The current production bot remains running and untouched throughout.
 - [ ] Run `npm run db:migrate` to bring in production MySQL data
 - [ ] Start the bot: `docker compose up -d bot`
 - [ ] Confirm bot is online: `docker compose logs -f bot`
+- [ ] Configure the uptime bot to monitor the playtest bot on the official server:
+  - Watch for the playtest bot's online status
+  - When online, ping `https://cron.instatus.com/vulps-cf7dvnhecw447y0b`
 
 ---
 
