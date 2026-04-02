@@ -468,11 +468,47 @@ Make the script executable before registering:
 
 > chmod +x /opt/discord-bots/project-encourage/backup-postgres.sh
 
+**11.3 Setup Instructions**
+
+1.  **Deploy the script to the VPS:**
+
+    > scp database/scripts/backup-postgres.sh contabo:/opt/discord-bots/project-encourage/backup-postgres.sh
+
+2.  **Make it executable:**
+
+    > chmod +x /opt/discord-bots/project-encourage/backup-postgres.sh
+
+3.  **Verify rclone is configured** (should already be done by cowork):
+
+    > rclone lsf gdrive: \--config /root/.config/rclone/rclone.conf
+
+4.  **Register the cron job** (runs at midnight server time):
+
+    > crontab -e
+
+    Add:
+
+    > 0 0 \* \* \* /opt/discord-bots/project-encourage/backup-postgres.sh
+
+5.  **Test a dry run** before relying on it:
+
+    > /opt/discord-bots/project-encourage/backup-postgres.sh
+
+    Check the output and confirm a file appears in both
+    /opt/discord-bots/project-encourage/backups/ and in the
+    DATABASE\_BACKUPS folder on Google Drive.
+
 **11.4 Restore Procedure**
 
 To restore from a backup:
 
 > gunzip -c backups/backup\_YYYYMMDD.sql.gz \| docker exec -i \<postgres\_container\> psql -U \<user\> \<dbname\>
+
+To restore from Google Drive:
+
+> rclone copy gdrive:backup\_YYYYMMDD.sql.gz /tmp/ \--config /root/.config/rclone/rclone.conf
+
+> gunzip -c /tmp/backup\_YYYYMMDD.sql.gz \| docker exec -i \<postgres\_container\> psql -U \<user\> \<dbname\>
 
 > **Appendix --- Key File Locations**
 
