@@ -2,7 +2,7 @@
 
 MySQL → PostgreSQL & Bot Migration Plan
 
-Prepared: 31 March 2026 \| Status: DRAFT
+Prepared: 31 March 2026 \| Updated: 2 April 2026 \| Status: IN PROGRESS
 
 > **1. Executive Summary**
 
@@ -48,15 +48,17 @@ The MySQL database (named \'tord\') contains 18 tables. Key volume
 indicators from the backup taken 2026-03-23:
 
   -------------------------------- -------------- -------------------------------------------------
-  **Table**                        Row estimate   Notes
-  **questions**                    \~7,152        Core data --- approve/ban state, all questions
-  **user\_questions**              \~400+         Active challenge tracking (batched inserts)
-  **archive\_dares**               \~753          Old dare archive --- NO target table in reborn
-  **archive\_truths**              \~812          Old truth archive --- NO target table in reborn
-  **given\_questions**             \~408          PvP-style questions between users
-  **reports**                      \~238          Moderation reports
-  **users / servers**              Small          6 INSERT batches each
-  **user\_dares / user\_truths**   Small          Separate dare/truth tracking (merged in reborn)
+  **Table**                        Row count      Notes
+  **questions**                    4,588          Core data --- approve/ban state, all questions
+  **user\_questions**              1,983,390      Active challenge tracking
+  **archive\_dares**               753            Old dare archive --- discarded, no target table
+  **archive\_truths**              812            Old truth archive --- discarded, no target table
+  **given\_questions**             388            PvP-style questions between users
+  **reports**                      \~238          Skipped --- broken system
+  **users**                        69,953         Global user records
+  **servers**                      20,294         702 had no owner and were skipped
+  **server\_users**                52,610         Per-server user XP tracking
+  **user\_dares / user\_truths**   33,091/64,184  Discarded --- data already merged into user\_questions
   -------------------------------- -------------- -------------------------------------------------
 
 > **3. Target State**
@@ -147,16 +149,11 @@ a flat table list:
   (none)                                                   vote.user\_votes                                             New table                                                 Individual vote records. Partially derivable from user\_vote, but vote\_type is lost.
   -------------------------------------------------------- ------------------------------------------------------------ --------------------------------------------------------- ---------------------------------------------------------------------------------------------------------------------------------------
 
-**4.3 Archive Tables --- Decision Required**
+**4.3 Archive Tables --- Resolved**
 
   ----------------------------------------------------------------------------------------------------------------------------
-  archive\_dares (\~753 rows) and archive\_truths (\~812 rows) have no equivalent in project-encourage-reborn.
-  These appear to be historical questions from a pre-v5 era.
-  Option A --- Migrate into question.questions: Set is\_approved=TRUE, user\_id=NULL (or a placeholder), server\_id=NULL,
-  message\_id=NULL, is\_deleted=FALSE. This preserves the question text for use in gameplay.
-  Option B --- Discard: \~1,565 questions are lost. Given they were \'archived\', they may already be superseded
-  by questions in the main questions table.
-  Recommendation: Review a sample of archive rows before deciding. If question text overlaps with active questions, discard.
+  archive\_dares (753 rows) and archive\_truths (812 rows) have been discarded. These are pre-v5 era historical
+  questions with no equivalent in project-encourage-reborn. Decision: discard.
   ----------------------------------------------------------------------------------------------------------------------------
 
 **4.4 Challenge/Vote Table Restructure**
@@ -175,25 +172,22 @@ schema consolidates them:
 
 > **5. Data Migration Plan**
 
-**5.1 Migration Script Strategy**
+**5.1 Migration Script --- COMPLETE**
 
-A dedicated Node.js migration script should be written (separate from
-the existing convert-to-postgres.js, which is a schema-level converter,
-not a data migrator). The script should:
+database/scripts/migrate-mysql-to-postgres.js has been written, tested
+against a local copy of the production backup, and committed to the
+add-migration-script branch. Run via:
 
--   Connect to the old MySQL instance and the new PostgreSQL instance
-    simultaneously.
+> npm run db:migrate
 
--   Migrate tables in FK-safe order (users and servers before any
-    referencing tables).
+The script connects to MySQL and PostgreSQL simultaneously, migrates
+tables in FK-safe order, handles all data transformations inline, runs
+inside a single PostgreSQL transaction (rolls back on any error), and
+logs row counts and skipped/nulled values.
 
--   Handle all data transformations inline (type casts, NULL
-    substitutions, renames).
-
--   Run inside a single PostgreSQL transaction --- rollback on any
-    error.
-
--   Log every row count and any skipped/nulled values.
+Additional legacy placeholders discovered during testing (not in the
+original plan): empty string owner in servers (702 rows --- skipped),
+PRE\_5\_6\_9 in user\_questions.channelId (754,243 rows --- NULLed).
 
 **5.2 FK-Safe Migration Order**
 
@@ -271,15 +265,15 @@ maximise recoverability.
 
 **Phase A --- Preparation (before maintenance window)**
 
-  -------- ------------------------------------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  **\#**   **Action**                           **Detail**
-  **A1**   **Finalise all open PRs**            Ensure main branch is stable. All GitHub Actions (lint + 12 test suites + DB migration tests) must be passing.
-  **A2**   **Write data migration script**      Write and test the MySQL→PostgreSQL data migration script. Validate it successfully migrates a copy of the backup to a local PostgreSQL instance without errors.
-  **A3**   **Verify .env for new bot**          Confirm .env on local machine has correct values. Update DB\_PORT from 3306 (MySQL default in .env.example) to 5432 (PostgreSQL). Confirm DISCORD\_TOKEN, CLIENT\_ID, GUILD\_ID are set.
-  **A4**   **Build the new bot Docker image**   Write a Dockerfile for the new bot (npm ci && npm run build && npm start). Build and push to Docker Hub, or build directly on the VPS.
-  **A5**   **Update VPS docker-compose.yml**    Add a bot service and complete PostgreSQL service definition to /opt/discord-bots/project-encourage/docker-compose.yml. Add .env passthrough and port mapping.
-  **A6**   **Test new bot on staging**          If a staging bot token is available, run the new bot against the migrated PostgreSQL copy. Verify slash commands respond correctly.
-  -------- ------------------------------------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  -------- ------------------------------------ ------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  **\#**   **Action**                           **Status**   **Detail**
+  **A1**   **Finalise all open PRs**            Pending      Ensure main branch is stable. All GitHub Actions (lint + 12 test suites + DB migration tests) must be passing.
+  **A2**   **Write data migration script**      DONE         Written, tested against production backup, committed to add-migration-script branch. Successfully migrated 2.1M+ rows with zero errors.
+  **A3**   **Verify .env for new bot**          DONE         .env.example updated: DB\_PORT corrected to 5432, MYSQL\_\* vars added. MySQL vars documented for migration use only.
+  **A4**   **Build the new bot Docker image**   DONE         Handled in separate branch.
+  **A5**   **Update VPS docker-compose.yml**    Pending      Handled in separate branch (confirm with that conversation).
+  **A6**   **Test new bot on staging**          Pending      Saturday playtest will serve as staging test.
+  -------- ------------------------------------ ------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 **Phase B --- Maintenance Window (scheduled downtime)**
 
@@ -295,7 +289,7 @@ maximise recoverability.
   **B3**    **Take final backup**            Run: docker exec \<mysql\_container\> mysqldump -u root -p tord \> /opt/discord-bots/project-encourage/backup\_final\_\$(date +%Y%m%d\_%H%M%S).sql This is the rollback point.
   **B4**    **Start PostgreSQL container**   docker compose up -d db Wait for health check to pass: docker compose ps
   **B5**    **Run db:install on new bot**    From the project-encourage-reborn directory on the VPS: npm run db:install This creates all schemas, tables, triggers, and seed data.
-  **B6**    **Run data migration script**    node scripts/migrate-mysql-to-postgres.js Monitor output carefully. Confirm row counts match expectations.
+  **B6**    **Run data migration script**    npm run db:migrate Monitor output carefully. Confirm row counts match expectations: ~70k users, ~19.5k servers, ~4.6k questions, ~1.98M challenges.
   **B7**    **Verify migrated data**         Spot-check key tables in PostgreSQL: - question.questions row count vs backup - user.users row count - server.servers row count
   **B8**    **Start new bot**                docker compose up -d bot docker compose logs -f bot Confirm bot connects to Discord and logs show no errors.
   **B9**    **Register slash commands**      If slash commands are not auto-registered on startup, run the deploy-commands script manually.
@@ -339,8 +333,8 @@ only runs the old MySQL + old bot. The new docker-compose.yml needs:
 
 **7.2 .env Configuration**
 
-The .env.example in project-encourage-reborn still shows DB\_PORT=3306.
-This must be updated to 5432 before deploying. All other .env values
+.env.example has been updated: DB\_PORT is now 5432 and MYSQL\_\* vars
+have been added (migration use only). All other .env values
 (DISCORD\_TOKEN, CLIENT\_ID, etc.) carry over from the old bot\'s
 environment config.
 
@@ -395,31 +389,33 @@ straightforward because the old MySQL data is preserved:
 
 > **9. Estimated Timeframe**
 
-  ------------------------------------------ ----------------- ----------------------------------------------------------
-  **Task**                                   **Estimate**      **Notes**
-  Resolve open decisions (Section 5.4)       0.5 days          Archive tables, can\_create, vote\_type
-  Write Dockerfile + update docker-compose   0.5 days          Dockerfile + VPS docker-compose update
-  Write & test data migration script         1 day             Including local dry-run against backup file
-  Staging test (optional but recommended)    0.5--1 day        Requires a staging bot token
-  Production migration window                30 min -- 2 hrs   Actual bot downtime (steps B1--B11)
-  **Total (excluding staging)**              **2--3 days**     Plus 48-hour monitoring period before removing old stack
-  ------------------------------------------ ----------------- ----------------------------------------------------------
+  ------------------------------------------ ----------------- -------- ----------------------------------------------------------
+  **Task**                                   **Estimate**      **Status**   **Notes**
+  Resolve open decisions (Section 5.4)       0.5 days          DONE     All decisions resolved.
+  Write Dockerfile + update docker-compose   0.5 days          DONE     Handled in separate branch.
+  Write & test data migration script         1 day             DONE     Tested against production backup. 2.1M rows, zero errors.
+  Write backup script                        0.5 days          DONE     GFS retention + Google Drive sync via rclone.
+  Finalise open PRs + merge to main          0.5 days          Pending  add-migration-script + dockerfile branches.
+  Staging test / Saturday playtest           0.5--1 day        Pending  Saturday 5 April 2026.
+  Production migration window                30 min -- 2 hrs   Pending  Actual bot downtime (steps B1--B11).
+  **Total remaining**                        **\~1--2 days**            Plus 48-hour monitoring period before removing old stack.
+  ------------------------------------------ ----------------- -------- ----------------------------------------------------------
 
 > **10. Risk Register**
 
-  ----------------------------------------------------------------------------------------- ------------ ---------------- ----------------------------------------------------------------------------------------------------------
-  **Risk**                                                                                  **Impact**   **Likelihood**   **Mitigation**
-  Non-numeric legacy IDs (\'pre-v5-6\', \'UNSET\') cause CAST failure during migration      High         High             Migration script must explicitly NULL these values before casting. Test thoroughly on backup copy first.
-  archive\_dares / archive\_truths data permanently lost                                    Medium       High             Decide on archive strategy before migration. If discarding, document the decision.
-  vote\_type data loss from user\_vote table                                                Low          High             Old table didn\'t record vote type. Accept the loss or default all migrated votes to \'done\'.
-  Contabo DNS issue causes new bot to crash-loop                                            High         Medium           Do NOT add dns: override to docker-compose. Containers must inherit host DNS via systemd-resolved.
-  New bot docker-compose missing bot service definition                                     High         High             Current reborn docker-compose.yml only defines the db service. Bot service must be added before deploy.
-  .env DB\_PORT still set to 3306 (MySQL default)                                           High         High             Update to 5432 (PostgreSQL). Easily overlooked --- document explicitly.
-  top\_gg\_webhook\_secret truncated from VARCHAR(500) to VARCHAR(90)                       Low          Low              Check actual length of the stored value before migration. If \>90 chars, regenerate the webhook secret.
-  server\_level\_roles has no PK in MySQL --- duplicate rows would fail PostgreSQL import   Medium       Low              Run a de-duplication check on (server\_id, role\_id) before migration.
-  slash commands not registered after new bot starts                                        Medium       Medium           Ensure the bot\'s startup flow registers commands, or run deploy-commands manually.
-  No Dockerfile exists yet --- bot cannot run as container                                  High         High             Must be written before Phase B. See Section 7.3 for template.
-  ----------------------------------------------------------------------------------------- ------------ ---------------- ----------------------------------------------------------------------------------------------------------
+  ----------------------------------------------------------------------------------------- ------------ ---------------- -------- ----------------------------------------------------------------------------------------------------------
+  **Risk**                                                                                  **Impact**   **Likelihood**   **Status**   **Mitigation**
+  Non-numeric legacy IDs (\'pre-v5-6\', \'UNSET\', \'PRE\_5\_6\_9\', empty string)         High         High             RESOLVED     Migration script handles all variants. Tested against full production backup with zero errors.
+  archive\_dares / archive\_truths data permanently lost                                    Medium       High             RESOLVED     Discarded by decision. Documented.
+  vote\_type data loss from user\_vote table                                                Low          High             RESOLVED     Skipped by decision. Documented.
+  Contabo DNS issue causes new bot to crash-loop                                            High         Medium           Open         Do NOT add dns: override to docker-compose. Containers must inherit host DNS via systemd-resolved.
+  New bot docker-compose missing bot service definition                                     High         High             Open         Being handled in separate branch. Confirm before Phase B.
+  .env DB\_PORT still set to 3306 (MySQL default)                                           High         High             RESOLVED     .env.example updated to 5432.
+  top\_gg\_webhook\_secret truncated from VARCHAR(500) to VARCHAR(90)                       Low          Low              RESOLVED     Migration script truncates to 90 chars. Config row migrated successfully.
+  server\_level\_roles has no PK in MySQL --- duplicate rows would fail PostgreSQL import   Medium       Low              RESOLVED     De-duplication handled in migration script. 1 duplicate found and skipped.
+  slash commands not registered after new bot starts                                        Medium       Medium           Open         Ensure the bot\'s startup flow registers commands, or run deploy-commands manually.
+  No Dockerfile exists yet --- bot cannot run as container                                  High         High             RESOLVED     Handled in separate branch.
+  ----------------------------------------------------------------------------------------- ------------ ---------------- -------- ----------------------------------------------------------------------------------------------------------
 
 > **11. Automated PostgreSQL Backup Strategy**
 
@@ -453,20 +449,6 @@ The script should:
 
 -   Log each run (file written, files deleted, any errors) to
     /opt/discord-bots/project-encourage/backups/backup.log.
-
-**11.3 Cron Registration**
-
-SSH into VPS and register the cron job as root:
-
-> crontab -e
-
-Add the following line (runs at midnight server time daily):
-
-> 0 0 \* \* \* /opt/discord-bots/project-encourage/backup-postgres.sh \>\> /opt/discord-bots/project-encourage/backups/backup.log 2\>&1
-
-Make the script executable before registering:
-
-> chmod +x /opt/discord-bots/project-encourage/backup-postgres.sh
 
 **11.3 Setup Instructions**
 
@@ -517,9 +499,12 @@ To restore from Google Drive:
   MySQL backup (pre-migration)   /opt/discord-bots/project-encourage/backup\_pre\_migration\_20260323\_041727.sql
   MySQL backup (initial)         /opt/discord-bots/project-encourage/backup\_20260323\_033257.sql
   VPS docker-compose             /opt/discord-bots/project-encourage/docker-compose.yml
-  New bot source                 /sessions/\.../mnt/project-encourage-reborn/
   New bot schema files           database/schemas/\*\*/tables/\*.sql
   New bot DB scripts             database/scripts/ (fresh-install.js, rollout.js, rollback.js)
+  Data migration script          database/scripts/migrate-mysql-to-postgres.js (npm run db:migrate)
+  Backup script                  database/scripts/backup-postgres.sh → deploy to VPS before Phase C
+  rclone config                  /root/.config/rclone/rclone.conf (remote: gdrive → DATABASE\_BACKUPS)
+  PostgreSQL backups (VPS)       /opt/discord-bots/project-encourage/backups/
   LLM context notes              /opt/discord-bots/project-encourage/llm-messages-to-future-llms.md
   VPS IP                         84.247.164.151 (Contabo)
   VPS SSH                        ssh contabo (root, key: new\_contabo)
