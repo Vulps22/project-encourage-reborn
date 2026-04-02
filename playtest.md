@@ -1,25 +1,39 @@
 # Playtest Readiness Plan
-Target: bot live before midnight Friday (start of Saturday 5 April 2026)
+Target: playtest bot live before midnight Friday (start of Saturday 5 April 2026)
+The current production bot remains running and untouched throughout.
 
 ---
 
 ## Thursday night
 
-- [ ] Add bot service to `docker-compose.yml` — currently only has the `db` service. Needs:
-  - Image: `vulps23/project-encourage:latest`
+- [ ] Create a new Discord application for the playtest bot at discord.com/developers
+  - Note its token and client ID — these go in the playtest `.env`
+- [ ] Add bot service to `docker-compose.yml` in this repo — currently only has the `db` service. Needs:
+  - Image: `vulps23/project-encourage:playtest` (distinct tag from `:latest`)
   - `env_file: .env`
   - `depends_on: db`
   - `restart: unless-stopped`
   - No `dns:` override (Contabo blocks outbound UDP 53 — must inherit host DNS)
   - Restrict postgres port to `127.0.0.1:${DB_PORT:-5432}:5432` (not exposed to 0.0.0.0)
-- [ ] Commit and merge to main
-- [ ] Set `RELEASES_ENABLED=true` in GitHub repo variables
-- [ ] Trigger `begin_release` workflow manually (hotfix path) to kick off build → rollout → deploy
-- [ ] Monitor pipeline — expected: Docker image built and pushed, deployed to VPS (~15–30 min)
-- [ ] SSH into VPS, confirm PostgreSQL container is healthy (`docker compose ps`)
-- [ ] Run `npm run db:install` on VPS (first-time schema setup — creates all tables, triggers, seed data)
-- [ ] Run `npm run db:migrate` on VPS (migrates production MySQL data into PostgreSQL)
-- [ ] Confirm bot is online in Discord (`docker compose logs -f bot`)
+- [ ] Commit and push `docker-compose.yml` to main
+- [ ] Manually build and push the Docker image:
+  ```
+  docker build -t vulps23/project-encourage:playtest .
+  docker push vulps23/project-encourage:playtest
+  ```
+- [ ] SSH into VPS
+- [ ] Create `/opt/discord-bots/project-encourage-playtest/`
+- [ ] Copy `docker-compose.yml` into that directory
+- [ ] Create `.env` in that directory — same as production `.env` except:
+  - `DISCORD_TOKEN` = playtest bot token
+  - `CLIENT_ID` = playtest bot client ID
+  - `DB_PORT` = a free port (e.g. `5433`) to avoid conflicting with the production PostgreSQL
+- [ ] Start the database: `docker compose up -d db`
+- [ ] Confirm PostgreSQL is healthy: `docker compose ps`
+- [ ] Run `npm run db:install` to create the schema (tables, triggers, seed data)
+- [ ] Run `npm run db:migrate` to bring in production MySQL data
+- [ ] Start the bot: `docker compose up -d bot`
+- [ ] Confirm bot is online: `docker compose logs -f bot`
 
 ---
 
@@ -28,7 +42,7 @@ Target: bot live before midnight Friday (start of Saturday 5 April 2026)
 - [ ] Full smoke test: `/truth`, `/dare`, `/random`, `/create`, `/report`, done/failed/skip buttons
 - [ ] Verify moderation queue receives a test report and action/clear buttons work
 - [ ] Confirm top.gg webhook receives votes and skip is granted
-- [ ] Fix any issues surfaced by smoke test, hotfix-deploy if needed
+- [ ] Fix any issues — rebuild and push `:playtest` tag, pull on VPS, restart
 - [ ] Get the playtest bot invite link ready
 - [ ] Schedule / prepare the announcement post to go out to all servers at the playtest start time
 
@@ -36,12 +50,13 @@ Target: bot live before midnight Friday (start of Saturday 5 April 2026)
 
 ## Day off recommendation
 
-**No day off needed** — provided the pipeline runs cleanly Thursday night, Friday evening is enough for smoke testing and fixing minor issues.
+**No day off needed** — provided the VPS setup goes smoothly Thursday night, Friday evening is enough for smoke testing and fixing minor issues.
 
-Take Friday off only if Thursday night surfaces a significant problem (pipeline failure, VPS setup issue, data migration errors) that you don't have time to debug before bed. Keep Friday evening fully free regardless.
+Take Friday off only if Thursday night surfaces a significant problem (VPS setup, data migration errors, bot not connecting) that you don't have time to debug before bed. Keep Friday evening fully free regardless.
 
 ---
 
 ## Not required for playtest
+- CI/CD pipeline (`RELEASES_ENABLED`) — the playtest is a manual build/deploy
 - Automated PostgreSQL backup cron (Phase C — post-migration only)
-- VPS docker-compose cleanup of old MySQL stack
+- Any changes to the production bot or its docker-compose
