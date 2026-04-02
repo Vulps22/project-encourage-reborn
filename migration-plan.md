@@ -69,7 +69,7 @@ indicators from the backup taken 2026-03-23:
   Language             TypeScript, compiled to dist/
   Database             PostgreSQL (pg driver)
   Framework            Discord.js v14, multi-shard architecture
-  Deployment           To be containerised on same Contabo VPS
+  Deployment           Containerised — Dockerfile created. CI/CD pipeline deploys automatically to Contabo VPS.
   DB install           npm run db:install (runs database/scripts/fresh-install.js)
   DB migrations        npm run db:rollout / db:rollback
   CI                   GitHub Actions: lint + 12 test suites + DB migration validation
@@ -270,7 +270,7 @@ maximise recoverability.
   **A1**   **Finalise all open PRs**            Pending      Ensure main branch is stable. All GitHub Actions (lint + 12 test suites + DB migration tests) must be passing.
   **A2**   **Write data migration script**      DONE         Written, tested against production backup, committed to add-migration-script branch. Successfully migrated 2.1M+ rows with zero errors.
   **A3**   **Verify .env for new bot**          DONE         .env.example updated: DB\_PORT corrected to 5432, MYSQL\_\* vars added. MySQL vars documented for migration use only.
-  **A4**   **Build the new bot Docker image**   DONE         Handled in separate branch.
+  **A4**   **Build the new bot Docker image**   DONE         Dockerfile created. CI/CD pipeline (build workflow) handles image building automatically once RELEASES\_ENABLED=true.
   **A5**   **Update VPS docker-compose.yml**    Pending      Handled in separate branch (confirm with that conversation).
   **A6**   **Test new bot on staging**          Pending      Saturday playtest will serve as staging test.
   -------- ------------------------------------ ------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -340,9 +340,9 @@ environment config.
 
 **7.3 Dockerfile**
 
-No Dockerfile exists yet in project-encourage-reborn. One must be
-created before the bot can run as a Docker container. A minimal
-multi-stage build is recommended:
+A multi-stage Dockerfile has been created in the repository root. The
+database/ directory is included in the final stage so that npm run
+db:install and npm run db:rollout can be run from within the container.
 
 > FROM node:18-alpine AS builder
 >
@@ -364,11 +364,83 @@ multi-stage build is recommended:
 >
 > COPY \--from=builder /app/node\_modules ./node\_modules
 >
+> COPY \--from=builder /app/database ./database
+>
 > COPY package.json .
 >
 > CMD \[\"node\", \"-r\", \"dotenv/config\", \"dist/index.js\"\]
+
+A .dockerignore is also in the repository root, excluding: node\_modules,
+dist, coverage, .env, .env.local, .git, .github, \*.docx
 >
-> **8. Rollback Plan**
+> **8. CI/CD Pipeline**
+
+The deployment pipeline is fully automated via four chained GitHub
+Actions workflows: begin\_release → build → rollout → deploy.
+
+**Branching Model**
+
+  Branch                   Purpose
+  ------------------------ -----------------------------------------------------------------------
+  main                     Protected. All development work merges here.
+  freeze/vX.Y.Z            Release candidate snapshot. Created on odd weeks (1st and 3rd Wednesday).
+  current-release          Mirrors deployed state. Migration files committed here post-rollout, then merged back to main.
+
+**Workflow: begin\_release**
+
+Triggers every Wednesday at 8pm UTC (cron) and manually for hotfixes
+(workflow\_dispatch). Gated by repository variable RELEASES\_ENABLED ---
+must be set to true in GitHub repo settings before any release will
+proceed.
+
+-   Odd weeks (1st and 3rd Wednesday): checks for changes since last
+    tag; if found, computes next version and creates a freeze/vX.Y.Z
+    branch from main.
+
+-   Even weeks (2nd and 4th Wednesday): finds the current freeze branch,
+    checks out its code, runs the full test suite (all Jest tests +
+    TypeScript compilation, excluding the linter), then tags the HEAD of
+    the freeze branch and creates a GitHub Release.
+
+-   Manual trigger (hotfix): same release path as even weeks, but
+    appends -H\<n\> to the previous version tag (e.g. v2026.3.2-H1,
+    v2026.3.2-H2).
+
+Version format: v\<year\>.\<month\>.\<release\> for automatic releases,
+v\<year\>.\<month\>.\<release\>-H\<n\> for hotfixes.
+
+**Workflow: build** (triggered by tag push matching v[0-9]\*)
+
+Builds the Docker image from the tagged commit and pushes two tags to
+Docker Hub (vulps23/project-encourage): :latest and :\<version\>. Then
+merges main into current-release (creating the branch if it does not
+exist).
+
+**Workflow: rollout** (triggered when build completes successfully)
+
+Checks out current-release. Opens an SSH tunnel to the VPS to reach the
+PostgreSQL database on 127.0.0.1:5432. Runs npm run db:rollout through
+the tunnel. Commits any migration files moved to
+database/migrations/applied/ back to current-release. Merges
+current-release into main.
+
+**Workflow: deploy** (triggered when rollout completes successfully)
+
+SSHes into the VPS and runs: docker compose pull bot && docker compose
+up -d bot
+
+**GitHub Secrets required:**
+SSH\_PRIVATE\_KEY, VPS\_HOST, DB\_USER, DB\_PASSWORD, DB\_NAME,
+DOCKERHUB\_USERNAME, DOCKERHUB\_TOKEN
+
+**GitHub Repository Variable required:**
+RELEASES\_ENABLED --- set to true to enable the pipeline (unset by default).
+
+**Branch protection:** Both main and current-release should use GitHub
+Rulesets (not classic branch protection) with GitHub Actions set as a
+bypass actor.
+
+> **9. Rollback Plan**
 
 If the new bot fails during or after migration, rollback is
 straightforward because the old MySQL data is preserved:
@@ -387,7 +459,7 @@ straightforward because the old MySQL data is preserved:
   Rollback is available for the full 48-hour monitoring window.
   ------------------------------------------------------------------------------
 
-> **9. Estimated Timeframe**
+> **10. Estimated Timeframe**
 
   ------------------------------------------ ----------------- -------- ----------------------------------------------------------
   **Task**                                   **Estimate**      **Status**   **Notes**
@@ -401,7 +473,7 @@ straightforward because the old MySQL data is preserved:
   **Total remaining**                        **\~1--2 days**            Plus 48-hour monitoring period before removing old stack.
   ------------------------------------------ ----------------- -------- ----------------------------------------------------------
 
-> **10. Risk Register**
+> **11. Risk Register**
 
   ----------------------------------------------------------------------------------------- ------------ ---------------- -------- ----------------------------------------------------------------------------------------------------------
   **Risk**                                                                                  **Impact**   **Likelihood**   **Status**   **Mitigation**
@@ -417,7 +489,7 @@ straightforward because the old MySQL data is preserved:
   No Dockerfile exists yet --- bot cannot run as container                                  High         High             RESOLVED     Handled in separate branch.
   ----------------------------------------------------------------------------------------- ------------ ---------------- -------- ----------------------------------------------------------------------------------------------------------
 
-> **11. Automated PostgreSQL Backup Strategy**
+> **12. Automated PostgreSQL Backup Strategy**
 
 **11.1 Retention Policy (GFS rotation)**
 
