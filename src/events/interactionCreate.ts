@@ -1,4 +1,4 @@
-import { Interaction, MessageFlags } from 'discord.js';
+import { GuildTextBasedChannel, Interaction, MessageCreateOptions, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
 import { moderationService, serverService, userService, userTrackingService } from '../services';
 import { EventHandler, TargetType } from '../types';
@@ -77,7 +77,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
     if (interaction.guildId && interaction.channel) {
       const server = await serverService.getServerSettings(interaction.guildId);
       if (server && !server.playtest_notified) {
-        await interaction.channel.send(playtestNoticeView());
+        await (interaction.channel as GuildTextBasedChannel).send(playtestNoticeView() as MessageCreateOptions);
         await serverService.markPlaytestNotified(interaction.guildId);
       }
     }
