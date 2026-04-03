@@ -30,7 +30,7 @@ async function ReportView(report: Report, banReasons: [] | null ): Promise<Unive
         .setDisabled(report.status === ReportStatus.ACTIONED);
 
     const viewOffenderButton = new ButtonBuilder()
-        .setCustomId(`moderation_viewOffender_id:${report.sender_id}`)
+        .setCustomId(`moderation_viewOffender_id:${report.offender_user_id ?? report.offender_id}`)
         .setLabel('View Offender')
         .setStyle(ButtonStyle.Secondary);
 

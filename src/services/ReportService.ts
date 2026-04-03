@@ -40,7 +40,8 @@ export class ReportService {
       content: content
     };
 
-    const res = (await this.db.insert('moderation', 'reports', reportData))!.rows![0] as Report;
+    const inserted = (await this.db.insert('moderation', 'reports', reportData))!.rows![0] as Report;
+    const res = (await this.db.get<Report>('moderation', 'report_view', { id: inserted.id })) ?? inserted;
 
     const logMessage = await Logger.logReport(res);
     

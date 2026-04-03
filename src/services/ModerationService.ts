@@ -166,7 +166,7 @@ export class ModerationService {
         
         try {
 
-            const activeReport = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+            const activeReport = await this.db.get<Report>('moderation', 'report_view', { id: reportId });
             if (!activeReport) {
                 throw new Error(`Report with ID ${reportId} not found`);
             }
@@ -189,7 +189,7 @@ export class ModerationService {
                     throw new Error("Unexpectedly failed to clear Report");
                 }
 
-                const updatedReport = await this.db.get<Report>('moderation', 'reports', { id: report.id });
+                const updatedReport = await this.db.get<Report>('moderation', 'report_view', { id: report.id });
                 if (!updatedReport) {
                     throw new Error(`Report with ID ${report.id} not found after update`);
                 }
@@ -228,7 +228,7 @@ export class ModerationService {
                 throw new Error("Unexpectedly failed to mark report as actioning");
             }
 
-            const report = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+            const report = await this.db.get<Report>('moderation', 'report_view', { id: reportId });
 
             if (!report) {
                 throw new Error(`Report with ID ${reportId} not found after update`);
@@ -250,7 +250,7 @@ export class ModerationService {
      */
     async findActioningReports(offenderId: string): Promise<Report[]> {
         return await this.db.query<Report>(
-            `SELECT * FROM "moderation"."reports" WHERE offender_id = $1 AND status IN ($2, $3)`,
+            `SELECT * FROM "moderation"."report_view" WHERE offender_id = $1 AND status IN ($2, $3)`,
             [offenderId, ReportStatus.PENDING, ReportStatus.ACTIONING]
         );
     }
@@ -261,7 +261,7 @@ export class ModerationService {
      * @returns The report, or null if not found
      */
     async getReport(reportId: number): Promise<Report | null> {
-        return await this.db.get<Report>('moderation', 'reports', { id: reportId });
+        return await this.db.get<Report>('moderation', 'report_view', { id: reportId });
     }
 
     /**
@@ -273,7 +273,7 @@ export class ModerationService {
         await Logger.log(`Marking report ${reportId} as actioned by moderator ${moderatorId}`);
         
         try {
-            const activeReport = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+            const activeReport = await this.db.get<Report>('moderation', 'report_view', { id: reportId });
             if (!activeReport) {
                 throw new Error(`Report with ID ${reportId} not found`);
             }
@@ -298,7 +298,7 @@ export class ModerationService {
                     throw new Error('Unexpectedly failed to mark report as actioned');
                 }
 
-                const updatedReport = await this.db.get<Report>('moderation', 'reports', { id: report.id });
+                const updatedReport = await this.db.get<Report>('moderation', 'report_view', { id: report.id });
                 if (!updatedReport) {
                     throw new Error(`Report with ID ${report.id} not found after update`);
                 }
@@ -327,7 +327,7 @@ export class ModerationService {
             { id: reportId }
         );
 
-        const report = await this.db.get<Report>('moderation', 'reports', { id: reportId });
+        const report = await this.db.get<Report>('moderation', 'report_view', { id: reportId });
         if (!report) throw new Error(`Report with ID ${reportId} not found after reset`);
 
         return report;
