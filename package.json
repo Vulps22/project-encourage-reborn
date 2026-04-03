@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node -r dotenv/config dist/index.js",
-    "dev": "tsc && node -r dotenv/config dist/index.js",
+    "dev": "DOTENV_CONFIG_PATH=.env.development node -r dotenv/config dist/index.js",
+    "stage": "DOTENV_CONFIG_PATH=.env.staging node -r dotenv/config dist/index.js",
+    "prod": "DOTENV_CONFIG_PATH=.env.production node -r dotenv/config dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "coverage": "jest --coverage",

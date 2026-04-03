@@ -361,6 +361,88 @@ describe('Logger', () => {
     });
   });
 
+  describe('initialize / redaction', () => {
+    let consoleSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      // Reset static sensitive values between tests
+      (Logger as any).sensitiveValues = new Set<string>();
+      consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    });
+
+    afterEach(() => {
+      consoleSpy.mockRestore();
+    });
+
+    it('should redact values from secret env vars', () => {
+      process.env.BOT_TOKEN = 'supersecret123';
+      Logger.initialize();
+
+      Logger.debug('Token is supersecret123');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Token is xxxxxxxxxxxx');
+      delete process.env.BOT_TOKEN;
+    });
+
+    it('should redact values matching token, key, secret, password, webhook patterns', () => {
+      process.env.TEST_API_KEY = 'myapikey';
+      process.env.TEST_SECRET = 'mysecret';
+      process.env.TEST_PASSWORD = 'mypassword';
+      process.env.TEST_WEBHOOK_URL = 'https://hooks.example.com/abc';
+      Logger.initialize();
+
+      Logger.debug('myapikey mysecret mypassword https://hooks.example.com/abc');
+
+      expect(consoleSpy).toHaveBeenCalledWith('xxxxxxxxxxxx xxxxxxxxxxxx xxxxxxxxxxxx xxxxxxxxxxxx');
+
+      delete process.env.TEST_API_KEY;
+      delete process.env.TEST_SECRET;
+      delete process.env.TEST_PASSWORD;
+      delete process.env.TEST_WEBHOOK_URL;
+    });
+
+    it('should NOT redact values from non-secret env vars', () => {
+      process.env.PORT = '3000';
+      process.env.ENVIRONMENT = 'stage';
+      Logger.initialize();
+
+      Logger.debug('Running on port 3000 in stage environment');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Running on port 3000 in stage environment');
+
+      delete process.env.PORT;
+      delete process.env.ENVIRONMENT;
+    });
+
+    it('should NOT redact Discord user IDs even if they share digits with non-secret env vars', () => {
+      process.env.PORT = '3000';
+      Logger.initialize();
+
+      Logger.debug('Vote received from user 914368203482890240');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Vote received from user 914368203482890240');
+
+      delete process.env.PORT;
+    });
+
+    it('should match secret pattern case-insensitively', () => {
+      process.env.Bot_Token = 'casetest456';
+      Logger.initialize();
+
+      Logger.debug('Value: casetest456');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Value: xxxxxxxxxxxx');
+
+      delete process.env.Bot_Token;
+    });
+
+    it('should not redact anything when no secrets are initialised', () => {
+      Logger.debug('Nothing sensitive here: 914368203482890240');
+
+      expect(consoleSpy).toHaveBeenCalledWith('Nothing sensitive here: 914368203482890240');
+    });
+  });
+
   describe('error', () => {
     it('should log error messages to console', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();

@@ -77,6 +77,7 @@ const report = new Command('report', 'Report Inappropriate Content')
         await reportService.createReport(
             interaction.user.id,
             offenderId,
+            getContent(content),
             reportType,
             interaction.guildId!,
             interaction.options.getString('reason') || 'No reason provided'
@@ -90,14 +91,25 @@ export default report;
 
 async function getQuestion(id: number): Promise<false | Question> {
     if (id < 1) return false;
-    let question = await db.get<Question>('question', 'questions', { id: id });
+    const question = await db.get<Question>('question', 'questions', { id: id });
     if (!question) return false;
     return question;
 }
 
 async function getServer(guildId: string): Promise<false | Server> {
     if (!guildId || guildId.length < 17 || guildId.length > 19) return false;
-    let server = await db.get<Server>('server', 'servers', { id: BigInt(guildId) });
+    const server = await db.get<Server>('server', 'servers', { id: BigInt(guildId) });
     if (!server) return false;
     return server;
+}
+
+function getContent(content: Question | Server): string | null {
+    if(!content) return null;
+    if ('question' in content) {
+        return content.question;
+    } else if ('name' in content) {
+        return content.name || null;
+    }
+
+    return null;
 }

@@ -11,6 +11,7 @@ export interface Report {
     id?: number;
     type: TargetType;
     reason: string | null;
+    content: string | null;
     status: ReportStatus;
     moderator_id: string | null;
     ban_reason: string | null;

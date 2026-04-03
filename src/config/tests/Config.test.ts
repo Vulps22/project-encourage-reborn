@@ -1,7 +1,12 @@
-import { Config } from '../Config';
-
 describe('Config', () => {
-    describe('enum configuration values', () => {
+    describe('configuration values', () => {
+        let Config: typeof import('../index')['Config'];
+
+        beforeAll(async () => {
+            process.env.ENVIRONMENT = 'stage';
+            ({ Config } = await import('../index'));
+        });
+
         it('should have all required channel IDs', () => {
             expect(Config.TRUTHS_LOG_CHANNEL_ID).toBeDefined();
             expect(Config.DARES_LOG_CHANNEL_ID).toBeDefined();
@@ -12,15 +17,7 @@ describe('Config', () => {
             expect(Config.OFFICIAL_GUILD_ID).toBeDefined();
         });
 
-        it('should have correct channel ID values', () => {
-            expect(Config.TRUTHS_LOG_CHANNEL_ID).toBe('1489377626203357356');
-            expect(Config.DARES_LOG_CHANNEL_ID).toBe('1489377715072270397');
-            expect(Config.LOG_CHANNEL_ID).toBe('1489376162722353245');
-            expect(Config.OFFICIAL_GUILD_ID).toBe('1079206786021732412');
-        });
-
-        it('should be immutable enum values', () => {
-            // Enum values should not be changeable
+        it('should have string values', () => {
             expect(typeof Config.TRUTHS_LOG_CHANNEL_ID).toBe('string');
             expect(typeof Config.DARES_LOG_CHANNEL_ID).toBe('string');
             expect(typeof Config.LOG_CHANNEL_ID).toBe('string');

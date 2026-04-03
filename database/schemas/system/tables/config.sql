@@ -5,7 +5,7 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
-CREATE TABLE IF NOT EXISTS "config" ("id" SERIAL,
+CREATE TABLE IF NOT EXISTS "system"."config" ("id" SERIAL,
   "maintenance_mode" BOOLEAN NOT NULL DEFAULT FALSE,
   "maintenance_reason" TEXT,
   "dares_log" BIGINT DEFAULT NULL,
@@ -31,6 +31,6 @@ CREATE TABLE IF NOT EXISTS "config" ("id" SERIAL,
   PRIMARY KEY ("id")
 );
  
-CREATE UNIQUE INDEX IF NOT EXISTS "id_UNIQUE" ON "config"("id");
+CREATE UNIQUE INDEX IF NOT EXISTS "id_UNIQUE" ON "system"."config"("id");
 
-COMMENT ON TABLE "config" IS 'DEPRECATED: Used for database-based config in production. Moving to .env in rewrite.';
+COMMENT ON TABLE "system"."config" IS 'DEPRECATED: Used for database-based config in production. Moving to .env in rewrite.';

@@ -1,5 +1,5 @@
 import { NewsChannel, PermissionFlagsBits } from 'discord.js';
-import { Config } from '../../../config/Config';
+import { Config } from '../../../config';
 import { serverService } from '../../../services';
 import { BotSelectMenuInteraction } from '../../../structures';
 import { Handler, Logger } from '../../../utils';

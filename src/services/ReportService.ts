@@ -21,6 +21,7 @@ export class ReportService {
   async createReport(
     senderId: Snowflake,
     offenderId: string,
+    content: string | null,
     type: TargetType,
     serverId: Snowflake,
     reason: string = 'No reason provided'
@@ -35,7 +36,8 @@ export class ReportService {
       offender_id: offenderId,
       server_id: serverId,
       moderator_id: null,
-      ban_reason: null
+      ban_reason: null,
+      content: content
     };
 
     const res = (await this.db.insert('moderation', 'reports', reportData))!.rows![0] as Report;

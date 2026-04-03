@@ -1,7 +1,10 @@
 const { Pool } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
-require('dotenv').config();
+
+const envMap = { '--dev': '.env.development', '--stage': '.env.staging', '--prod': '.env.production' };
+const envFlag = process.argv.find(a => envMap[a]);
+require('dotenv').config({ path: path.resolve(process.cwd(), envFlag ? envMap[envFlag] : '.env') });
 
 /**
  * Rollback Script

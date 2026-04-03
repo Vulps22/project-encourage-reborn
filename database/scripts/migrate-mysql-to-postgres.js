@@ -26,6 +26,49 @@ require('dotenv').config();
 // Legacy string placeholders that cannot be cast to BIGINT.
 const LEGACY_IDS = new Set(['pre-v5', 'pre-v5-6', 'UNSET', 'PRE_5_6_9', 'PRE_5_7_0']);
 
+const SPINNER_FRAMES = ['-', '\\', '|', '/'];
+let spinnerIndex = 0;
+
+function renderProgressBar(label, current, total) {
+  const percent = total > 0 ? Math.min(100, Math.floor((current / total) * 100)) : 100;
+  const width = 30;
+  const filled = Math.round((percent / 100) * width);
+  const empty = width - filled;
+  const bar = '█'.repeat(filled) + ' '.repeat(empty);
+  const frame = SPINNER_FRAMES[spinnerIndex % SPINNER_FRAMES.length];
+  spinnerIndex += 1;
+
+  process.stdout.write(
+    `\r${frame} ${label}: [${bar}] ${String(percent).padStart(3, ' ')}% (${current}/${total})`
+  );
+
+  if (current === total) {
+    process.stdout.write('\n');
+  }
+}
+
+const progressMemory = new Map();
+
+function logProgress(current, total, label) {
+  const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 100;
+  const step = Math.max(1, Math.floor(total / 100));
+
+  if (process.stdout.isTTY) {
+    renderProgressBar(label, current, total);
+    return;
+  }
+
+  const lastPercent = progressMemory.get(label) ?? -1;
+  if (percent === lastPercent && current !== total) {
+    return;
+  }
+
+  if (current === total || current % step === 0 || percent !== lastPercent) {
+    console.log(`${label}: ${percent}% (${current}/${total})`);
+    progressMemory.set(label, percent);
+  }
+}
+
 /** Convert a value to a BIGINT-compatible string, or null for legacy/invalid values. */
 function toId(val) {
   if (val === null || val === undefined) return null;
@@ -46,13 +89,15 @@ function truncate(val, len) {
   return String(val).slice(0, len);
 }
 
-/** Check whether a table exists in the MySQL database. */
-async function tableExists(conn, db, table) {
-  const [rows] = await conn.query(
-    'SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = ? AND table_name = ?',
-    [db, table]
+/** Check if a table exists in the MySQL source database. */
+async function tableExists(mysqlConn, database, tableName) {
+  const [rows] = await mysqlConn.query(
+    'SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_schema = ? AND table_name = ?',
+    [database, tableName]
   );
-  return rows[0].cnt > 0;
+
+  const count = rows[0] && (rows[0].count || rows[0].COUNT || Object.values(rows[0])[0]);
+  return Number(count) > 0;
 }
 
 async function migrate() {
@@ -65,6 +110,8 @@ async function migrate() {
     password: process.env.MYSQL_PASSWORD,
     database: mysqlDb,
   });
+  await mysqlConn.query('SELECT 1');
+  console.log('Connected to MySQL.');
 
   const pgPool = new Pool({
     host:     process.env.DB_HOST,
@@ -75,9 +122,10 @@ async function migrate() {
   });
 
   const pg = await pgPool.connect();
+  await pg.query('SELECT 1');
+  console.log('Connected to PostgreSQL.');
 
   try {
-    console.log('Connected to MySQL and PostgreSQL.');
     await pg.query('BEGIN');
     console.log('PostgreSQL transaction started.\n');
 
@@ -86,14 +134,16 @@ async function migrate() {
     // -------------------------------------------------------------------------
     console.log('=== Migrating user.users ===');
     const [users] = await mysqlConn.query('SELECT * FROM `users`');
+    const totalUsers = users.length;
+    console.log(`Found ${totalUsers} users to migrate.`);
     let userCount = 0;
     for (const u of users) {
       await pg.query(
         `INSERT INTO "user"."users" (
           id, username, global_level, global_level_xp, banned_questions,
           rules_accepted, is_banned, ban_reason, vote_count, ban_message_id,
-          can_create, delete_date, created_datetime
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+          delete_date, created_datetime
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         ON CONFLICT (id) DO NOTHING`,
         [
           toId(u.id),
@@ -106,12 +156,12 @@ async function migrate() {
           u.banReason   ?? u.ban_reason   ?? null,
           u.voteCount   ?? u.vote_count   ?? 0,
           toId(u.banMessageId ?? u.ban_message_id),
-          toBool(u.canCreate ?? u.can_create ?? true),
           u.deleteDate  ?? u.delete_date  ?? null,
           u.createdDatetime ?? u.created_datetime ?? u.created ?? null,
         ]
       );
       userCount++;
+      logProgress(userCount, totalUsers, 'Users');
     }
     console.log(`✓ ${userCount} users migrated.\n`);
 
@@ -120,9 +170,13 @@ async function migrate() {
     // -------------------------------------------------------------------------
     console.log('=== Migrating server.servers ===');
     const [servers] = await mysqlConn.query('SELECT * FROM `servers`');
+    const totalServers = servers.length;
+    console.log(`Found ${totalServers} servers to migrate.`);
     let serverCount = 0;
     let serverSkipped = 0;
+    let processedServers = 0;
     for (const s of servers) {
+      processedServers++;
       if (!toId(s.owner ?? s.user_id)) { serverSkipped++; continue; }
       await pg.query(
         `INSERT INTO "server"."servers" (
@@ -155,6 +209,7 @@ async function migrate() {
         ]
       );
       serverCount++;
+      logProgress(processedServers, totalServers, 'Servers');
     }
     if (serverSkipped > 0) console.log(`  (skipped ${serverSkipped} servers with no owner)`);
     console.log(`✓ ${serverCount} servers migrated.\n`);
@@ -164,10 +219,14 @@ async function migrate() {
     // -------------------------------------------------------------------------
     console.log('=== Migrating question.questions ===');
     const [questions] = await mysqlConn.query('SELECT * FROM `questions`');
+    const totalQuestions = questions.length;
+    console.log(`Found ${totalQuestions} questions to migrate.`);
     let questionCount = 0;
     let questionNulled = 0;
     let maxQuestionId = 0;
+    let processedQuestions = 0;
     for (const q of questions) {
+      processedQuestions++;
       const userId = toId(q.creator ?? q.user_id);
       if (userId === null) questionNulled++;
       if ((q.id ?? 0) > maxQuestionId) maxQuestionId = q.id;
@@ -197,6 +256,7 @@ async function migrate() {
         ]
       );
       questionCount++;
+      logProgress(processedQuestions, totalQuestions, 'Questions');
     }
     if (maxQuestionId > 0) {
       await pg.query(
@@ -214,7 +274,11 @@ async function migrate() {
     let maxGivenId = 0;
     if (await tableExists(mysqlConn, mysqlDb, 'given_questions')) {
       const [gqs] = await mysqlConn.query('SELECT * FROM `given_questions`');
+      const totalGqs = gqs.length;
+      console.log(`Found ${totalGqs} given_questions to migrate.`);
+      let processedGqs = 0;
       for (const gq of gqs) {
+        processedGqs++;
         if ((gq.id ?? 0) > maxGivenId) maxGivenId = gq.id;
         await pg.query(
           `INSERT INTO "question"."given_questions" (
@@ -239,6 +303,7 @@ async function migrate() {
           ]
         );
         givenCount++;
+        logProgress(processedGqs, totalGqs, 'Given Questions');
       }
       if (maxGivenId > 0) {
         await pg.query(
@@ -259,7 +324,11 @@ async function migrate() {
     let serverUserSkipped = 0;
     if (await tableExists(mysqlConn, mysqlDb, 'server_users')) {
       const [serverUsers] = await mysqlConn.query('SELECT * FROM `server_users`');
+      const totalServerUsers = serverUsers.length;
+      console.log(`Found ${totalServerUsers} server_users to migrate.`);
+      let processedServerUsers = 0;
       for (const su of serverUsers) {
+        processedServerUsers++;
         const userId   = toId(su.userId   ?? su.user_id);
         const serverId = toId(su.serverId ?? su.server_id);
         if (!userId || !serverId) { serverUserSkipped++; continue; }
@@ -277,6 +346,7 @@ async function migrate() {
           ]
         );
         serverUserCount++;
+        logProgress(processedServerUsers, totalServerUsers, 'Server Users');
       }
     } else {
       console.log('  (server_users not found in MySQL, skipping)');
@@ -292,8 +362,12 @@ async function migrate() {
     let slrDuplicates = 0;
     if (await tableExists(mysqlConn, mysqlDb, 'server_level_roles')) {
       const [roles] = await mysqlConn.query('SELECT * FROM `server_level_roles`');
+      const totalRoles = roles.length;
+      console.log(`Found ${totalRoles} server_level_roles to migrate.`);
+      let processedRoles = 0;
       const seen = new Set();
       for (const r of roles) {
+        processedRoles++;
         const serverId = toId(r.serverId ?? r.server_id);
         const roleId   = toId(r.roleId   ?? r.role_id);
         if (!serverId || !roleId) { slrDuplicates++; continue; }
@@ -308,6 +382,7 @@ async function migrate() {
           [serverId, roleId, r.level ?? 0]
         );
         slrCount++;
+        logProgress(processedRoles, totalRoles, 'Server Level Roles');
       }
     } else {
       console.log('  (server_level_roles not found in MySQL, skipping)');
@@ -395,6 +470,8 @@ async function migrate() {
         );
 
         challengeCount += challengeRows.length;
+        const totalChallenges = uqs.length;
+        logProgress(challengeCount, totalChallenges, 'Challenges');
         if (challengeCount % 50000 === 0) console.log(`  ... ${challengeCount.toLocaleString()} rows inserted`);
       }
     }

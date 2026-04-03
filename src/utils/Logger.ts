@@ -20,9 +20,10 @@ export class Logger {
    * Call this once at bot startup
    */
   static initialize(): void {
-    // Cache all non-empty env values as sensitive
-    for (const value of Object.values(process.env)) {
-      if (value && value.length > 0) {
+    // Cache values from env vars whose names indicate they are secrets
+    const secretPattern = /token|key|secret|password|webhook/i;
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value && secretPattern.test(key)) {
         this.sensitiveValues.add(value);
       }
     }

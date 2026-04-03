@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS "reports" (
   "id" SERIAL,
   "type" TEXT NOT NULL,
   "reason" TEXT NOT NULL,
+  "content" TEXT NOT NULL,
   "status" report_status NOT NULL DEFAULT 'pending',
   "moderator_id" BIGINT DEFAULT NULL,
   "ban_reason" TEXT,
@@ -47,5 +48,6 @@ COMMENT ON TABLE "reports" IS 'Stores user reports for inappropriate questions o
 COMMENT ON COLUMN "reports"."id" IS 'Unique identifier for the report';
 COMMENT ON COLUMN "reports"."type" IS 'Type of content being reported';
 COMMENT ON COLUMN "reports"."reason" IS 'User-provided reason for the report';
+COMMENT ON COLUMN "reports"."content" IS 'Content of the report';
 COMMENT ON COLUMN "reports"."status" IS 'Current status of the report';
 COMMENT ON COLUMN "reports"."ban_reason" IS 'Moderator-provided reason if content was banned';

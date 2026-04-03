@@ -1,7 +1,7 @@
 /** Component V2 message displayed on a server's first interaction during the playtest */
 
 import { ContainerBuilder, SeparatorBuilder, TextDisplayBuilder, MessageFlags } from 'discord.js';
-import { Urls } from '../config/urls';
+import { Urls } from '../config';
 import { UniversalMessage } from '../types';
 
 function playtestNoticeView(): UniversalMessage {

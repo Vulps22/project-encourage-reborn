@@ -36,6 +36,7 @@ describe('ReportService', () => {
       const result = await reportService.createReport(
         '111222333',
         '42',
+        null,
         TargetType.Question,
         '987654321',
         'Inappropriate content'
@@ -50,6 +51,7 @@ describe('ReportService', () => {
         server_id: '987654321',
         moderator_id: null,
         ban_reason: null,
+        content: null,
       });
       expect(Logger.logReport).toHaveBeenCalledWith(mockReport);
       expect(result).toEqual(mockReport);
@@ -60,7 +62,7 @@ describe('ReportService', () => {
       mockDb.insert.mockResolvedValue({ rows: [mockReport] });
       (Logger.logReport as jest.Mock).mockResolvedValue(undefined);
 
-      await reportService.createReport('111', '42', TargetType.Question, '999');
+      await reportService.createReport('111', '42', null, TargetType.Question, '999');
 
       expect(mockDb.insert).toHaveBeenCalledWith(
         'moderation',

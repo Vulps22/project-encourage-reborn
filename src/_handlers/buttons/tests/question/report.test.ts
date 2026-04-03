@@ -45,6 +45,7 @@ describe('reportButton', () => {
         expect(reportService.createReport).toHaveBeenCalledWith(
             '111222333',
             '42',
+            'Test question?',
             TargetType.Question,
             '987654321'
         );

@@ -23,6 +23,7 @@ const reportButton: Handler<BotButtonInteraction> = {
         await reportService.createReport(
             interaction.user.id,
             questionId,
+            question.question,
             TargetType.Question,
             interaction.guildId!
         );

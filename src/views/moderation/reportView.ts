@@ -10,6 +10,7 @@ async function ReportView(report: Report, banReasons: [] | null ): Promise<Unive
     const reportInfo = new TextDisplayBuilder()
         .setContent(
             `**Report ID:** ${report.id}   **Type:** ${report.type}   **Status:** ${report.status}\n\n` +
+            `**Content:** ${report.content || 'No content provided'}\n\n` +
             `**Reason:** ${report.reason || 'No reason provided'}\n\n` +
             `**Reporter:** <@${report.sender_id}> ( ${report.sender_id} )\n\n` +
             `**Offender ID:** ${report.offender_id}\n\n` +
