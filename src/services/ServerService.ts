@@ -118,7 +118,8 @@ export class ServerService {
       entitlement_end_date: null,
       message_id: null,
       is_deleted: false,
-      datetime_deleted: null
+      datetime_deleted: null,
+      playtest_notified: false
     });
 
     Logger.debug(`Created new server record for ${serverId}`);
@@ -174,7 +175,8 @@ export class ServerService {
       entitlement_end_date: row.entitlement_end_date ? new Date(row.entitlement_end_date) : null,
       message_id: row.message_id ? String(row.message_id) : null,
       is_deleted: row.is_deleted,
-      datetime_deleted: row.datetime_deleted ? new Date(row.datetime_deleted) : null
+      datetime_deleted: row.datetime_deleted ? new Date(row.datetime_deleted) : null,
+      playtest_notified: row.playtest_notified
     };
   }
 
@@ -231,6 +233,15 @@ export class ServerService {
   async setAnnouncementChannel(serverId: Snowflake, channelId: Snowflake): Promise<void> {
     Logger.debug(`Setting announcement channel for server ${serverId} to ${channelId}`);
     await this.updateServerSettings(serverId, { announcement_channel: channelId });
+  }
+
+  /**
+   * Mark server as having been shown the playtest notice
+   * @param serverId Discord server ID
+   */
+  async markPlaytestNotified(serverId: Snowflake): Promise<void> {
+    Logger.debug(`Marking playtest notice as shown for server ${serverId}`);
+    await this.updateServerSettings(serverId, { playtest_notified: true });
   }
 
   /**

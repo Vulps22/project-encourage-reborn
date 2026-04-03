@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS "server"."servers" (
   "message_id" BIGINT DEFAULT NULL,
   "is_deleted" BOOLEAN NOT NULL DEFAULT FALSE,
   "datetime_deleted" TIMESTAMP DEFAULT NULL,
+  "playtest_notified" BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY ("id")
 );
  
@@ -52,3 +53,4 @@ COMMENT ON COLUMN "server"."servers"."is_entitled" IS 'Whether server has active
 COMMENT ON COLUMN "server"."servers"."entitlement_end_date" IS 'When premium entitlement expires';
 COMMENT ON COLUMN "server"."servers"."is_deleted" IS 'Whether server has been soft deleted';
 COMMENT ON COLUMN "server"."servers"."datetime_deleted" IS 'When server was soft deleted';
+COMMENT ON COLUMN "server"."servers"."playtest_notified" IS 'Whether the server has been shown the playtest notice on first interaction';

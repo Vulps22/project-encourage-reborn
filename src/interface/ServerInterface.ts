@@ -27,4 +27,5 @@ export interface Server {
   message_id: Snowflake | null;
   is_deleted: boolean;
   datetime_deleted: Date | null;
+  playtest_notified: boolean;
 }

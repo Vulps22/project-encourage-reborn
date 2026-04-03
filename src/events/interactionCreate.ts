@@ -5,6 +5,7 @@ import { EventHandler, TargetType } from '../types';
 import { Logger } from '../utils';
 import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';
+import { playtestNoticeView } from '../views/playtestNoticeView';
 
 /**
  * InteractionCreate event handler
@@ -70,6 +71,15 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
         flags: MessageFlags.Ephemeral
       });
       return;
+    }
+
+    // Send playtest notice on the server's first interaction
+    if (interaction.guildId && interaction.channel) {
+      const server = await serverService.getServerSettings(interaction.guildId);
+      if (server && !server.playtest_notified) {
+        await interaction.channel.send(playtestNoticeView());
+        await serverService.markPlaytestNotified(interaction.guildId);
+      }
     }
 
     if (interaction.isChatInputCommand()) {

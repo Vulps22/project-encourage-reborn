@@ -4,6 +4,12 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, Message
 import { UniversalMessage } from "../../types";
 
 function termsView(): UniversalMessage {
+    const playtestNote = new TextDisplayBuilder()
+        .setContent(
+            `⚠️ **Playtest Version Notice**\n` +
+            `This is a playtest version of the Truth or Dare bot. When the playtest completes on <t:1775343600:F>, all data from the playtest period will be reset. You will need to run setup again after the reset. \n\n During the playtest, you are encouraged to push every button and try every feature. You will not be banned or penalised for doing so (unless you break Discord's ToS or the law, of course). \n\n If you have any feedback, please join our support server and let us know!`
+        );
+
     const title = new TextDisplayBuilder()
         .setContent(`## **Accept these Terms and Conditions to proceed**`);
 
@@ -55,6 +61,8 @@ function termsView(): UniversalMessage {
 
     // Build container
     const container = new ContainerBuilder()
+        .addTextDisplayComponents(playtestNote)
+        .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(title)
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(subtitle, acknowledgment, precautions, reporting, investigation, consequences, data)
