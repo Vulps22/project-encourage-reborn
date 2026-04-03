@@ -1,6 +1,7 @@
 /** A ComponentV2 message for displaying the help menu with all available commands */
 
 import { ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
+import { Urls } from "../../config";
 import { UniversalMessage } from "../../types";
 
 function helpView(): UniversalMessage {
@@ -40,9 +41,9 @@ function helpView(): UniversalMessage {
             `The more we all create, the more variety when we play 😊\n\n` +
             `**Links**\n\n` +
             `**For news, updates and help**\t\t\t **Got your own community?**\n` +
-            `[Join Our Support Server](#)\t\t\t[Add The Bot](#)\n\n` +
+            `[Join Our Support Server](${Urls.OFFICIAL_SERVER})\t\t\t[Add The Bot](${Urls.ADD_BOT})\n\n` +
             `**Need More Information?**\n` +
-            `[Github Wiki] (#)`
+            `[Github Wiki](${Urls.WIKI})`
         );
 
     // Assemble container

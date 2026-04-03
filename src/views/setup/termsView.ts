@@ -1,6 +1,7 @@
 /** Component V2 message for displaying Terms and Conditions during setup */
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
+import { Urls } from "../../config";
 import { UniversalMessage } from "../../types";
 
 function termsView(): UniversalMessage {
@@ -55,8 +56,9 @@ function termsView(): UniversalMessage {
     const links = new TextDisplayBuilder()
         .setContent(
             `**Links**\n\n` +
-            `**For updates and help**\t\t\t **Got your own community?**\n` +
-            `Join Our Support Server\t\t\tAdd The Bot`
+            `**For updates and help**\t\t\t\t **Got your own community?**\n` +
+            `[Join Our Support Server](${Urls.OFFICIAL_SERVER})\t\t\t[Add The Bot](${Urls.ADD_BOT})\n\n` +
+            `[Privacy Policy](${Urls.PRIVACY_POLICY})  •  [Terms of Service](${Urls.TERMS_OF_SERVICE})`
         );
 
     // Build container
