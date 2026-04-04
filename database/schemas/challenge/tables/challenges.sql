@@ -26,4 +26,9 @@ COMMENT ON COLUMN "challenge"."challenges"."message_id" IS 'Discord message ID o
 COMMENT ON COLUMN "challenge"."challenges"."question_id" IS 'ID reference to question.questions table';
 COMMENT ON COLUMN "challenge"."challenges"."username" IS 'Discord username at time of challenge';
 COMMENT ON COLUMN "challenge"."challenges"."image_url" IS 'Profile image URL at time of challenge';
+COMMENT ON COLUMN "challenge"."challenges"."user_id" IS 'Discord user ID of the user who received the challenge';
+COMMENT ON COLUMN "challenge"."challenges"."server_id" IS 'Discord server ID where the challenge was issued';
+COMMENT ON COLUMN "challenge"."challenges"."channel_id" IS 'Discord channel ID where the challenge was posted';
+COMMENT ON COLUMN "challenge"."challenges"."type" IS 'Question type: truth or dare';
+COMMENT ON COLUMN "challenge"."challenges"."datetime_created" IS 'When the challenge was created';
 COMMENT ON COLUMN "challenge"."challenges"."skipped" IS 'Whether the user skipped this challenge';

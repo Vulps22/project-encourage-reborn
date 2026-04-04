@@ -25,4 +25,7 @@ FOR EACH ROW
 EXECUTE FUNCTION update_adverts_updated();
 
 COMMENT ON TABLE "adverts" IS 'Stores server advertisements posted to the official support server';
+COMMENT ON COLUMN "adverts"."serverId" IS 'Discord server ID of the advertising server';
+COMMENT ON COLUMN "adverts"."messageId" IS 'Discord message ID of the posted advertisement in the support server';
+COMMENT ON COLUMN "adverts"."updated" IS 'When the advert was last updated (auto-maintained by trigger)';
 COMMENT ON COLUMN "adverts"."advert" IS 'Brief description of the server provided by user';

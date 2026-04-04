@@ -29,4 +29,11 @@ COMMENT ON COLUMN "question"."given_questions"."question" IS 'The question TEXT'
 COMMENT ON COLUMN "question"."given_questions"."wager" IS 'Amount of XP wagered - transferred to target if completed';
 COMMENT ON COLUMN "question"."given_questions"."done_count" IS 'Number of completion votes';
 COMMENT ON COLUMN "question"."given_questions"."fail_count" IS 'Number of failure votes';
+COMMENT ON COLUMN "question"."given_questions"."sender_id" IS 'Discord user ID of the user who sent the question';
+COMMENT ON COLUMN "question"."given_questions"."target_id" IS 'Discord user ID of the user who received the question';
+COMMENT ON COLUMN "question"."given_questions"."server_id" IS 'Discord server ID where the question was given';
+COMMENT ON COLUMN "question"."given_questions"."message_id" IS 'Discord message ID of the challenge embed';
+COMMENT ON COLUMN "question"."given_questions"."type" IS 'Question type: truth or dare';
+COMMENT ON COLUMN "question"."given_questions"."xp_type" IS 'XP scope: global or server';
+COMMENT ON COLUMN "question"."given_questions"."created" IS 'When the question was given';
 COMMENT ON COLUMN "question"."given_questions"."skipped" IS 'Whether the question was skipped';
