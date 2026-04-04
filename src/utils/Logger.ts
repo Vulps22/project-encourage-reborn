@@ -14,6 +14,7 @@ export class Logger {
   private static sensitiveValues: Set<string> = new Set();
   private static logWebhookUrl: string | null = null;
   private static errorWebhookUrl: string | null = null;
+  private static consoleLines: Map<string, string> = new Map();
 
   private static readonly SENSITIVE_KEY_PATTERNS = [
     'TOKEN', 'SECRET', 'PASSWORD', 'WEBHOOK', 'DATABASE', 'DB_', 'MONGO',
@@ -97,8 +98,7 @@ export class Logger {
       }
 
       const msg = `${typeLabel} | Server: ${interaction.guild?.name || 'DM'} - ${interaction.guild?.id || 'N/A'} | User: ${interaction.user.username} - ${interaction.user.id} || Processing`;
-
-      console.log(this.sanitize(msg));
+      const sanitized = this.sanitize(msg);
 
       // Send message via the correct shard
       const messageIds = await global.client.shard!.broadcastEval(
@@ -113,8 +113,14 @@ export class Logger {
         { context: { channelId: logChannelId, msg } }
       );
 
-      const messageId = messageIds.find(id => id !== null);
-      return messageId || '';
+      const messageId = messageIds.find(id => id !== null) ?? '';
+
+      if (messageId) {
+        this.consoleLines.set(messageId, sanitized);
+        console.log(sanitized);
+      }
+
+      return messageId;
     } catch (error) {
       console.error('Failed to log interaction:', error);
       return '';
@@ -176,22 +182,24 @@ export class Logger {
       // Sanitize the message before sending
       const sanitized = this.sanitize(message);
 
-      console.log(`[${executionId.slice(-6)}] → ${sanitized}`);
+      // Update console line in-place by rewriting with new status
+      const existing = this.consoleLines.get(executionId);
+      if (existing) {
+        const prefix = existing.split('||')[0].trim();
+        const updated = `${prefix} || ${sanitized}`;
+        this.consoleLines.set(executionId, updated);
+        process.stdout.write(`\r${updated}\n`);
+      }
 
-      // Find and update message via the correct shard
-      await global.client.shard!.broadcastEval(
+      // Find and update message via the correct shard (fire and forget)
+      void global.client.shard!.broadcastEval(
         async (c, { channelId, msgId, newStatus }) => {
           const ch = await c.channels.fetch(channelId).catch(() => null);
           if (ch && ch.isTextBased()) {
             const msg = await ch.messages.fetch(msgId).catch(() => null);
             if (msg) {
-              // Split the existing message content by '||'
               const parts = msg.content.split('||');
-              
-              // Grab everything before the '||', trim trailing spaces, and append the new status
-              // (If for some reason the message doesn't have a '||', parts[0] just grabs the whole message)
               const updatedContent = `${parts[0].trim()} || ${newStatus}`;
-              
               await msg.edit(updatedContent);
               return true;
             }
