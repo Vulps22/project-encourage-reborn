@@ -15,14 +15,21 @@ export class Logger {
   private static logWebhookUrl: string | null = null;
   private static errorWebhookUrl: string | null = null;
 
+  private static readonly SENSITIVE_KEY_PATTERNS = [
+    'TOKEN', 'SECRET', 'PASSWORD', 'WEBHOOK', 'DATABASE', 'DB_', 'MONGO',
+    'REDIS', 'API_KEY', 'PRIVATE', 'CREDENTIAL', 'AUTH'
+  ];
+
   /**
-   * Initialize the logger by caching all sensitive values from environment variables
-   * Call this once at bot startup
+   * Initialize the logger by caching sensitive env var values for redaction.
+   * Only caches values from keys matching known sensitive patterns.
+   * Call this once at bot startup.
    */
   static initialize(): void {
-    // Cache all non-empty env values as sensitive
-    for (const value of Object.values(process.env)) {
-      if (value && value.length > 0) {
+    for (const [key, value] of Object.entries(process.env)) {
+      if (!value || value.length < 8) continue;
+      const upperKey = key.toUpperCase();
+      if (this.SENSITIVE_KEY_PATTERNS.some(pattern => upperKey.includes(pattern))) {
         this.sensitiveValues.add(value);
       }
     }
