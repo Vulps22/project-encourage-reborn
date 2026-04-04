@@ -7,9 +7,13 @@ async function ReportView(report: Report, banReasons: [] | null ): Promise<Unive
     const title = new TextDisplayBuilder()
         .setContent(`## **New Report Submitted**`);
 
+    const typeLabel = report.type === TargetType.Question && report.question_type
+        ? `${report.type} (${report.question_type})`
+        : report.type;
+
     const reportInfo = new TextDisplayBuilder()
         .setContent(
-            `**Report ID:** ${report.id}   **Type:** ${report.type}   **Status:** ${report.status}\n\n` +
+            `**Report ID:** ${report.id}   **Type:** ${typeLabel}   **Status:** ${report.status}\n\n` +
             `**Content:** ${report.content || 'No content provided'}\n\n` +
             `**Reason:** ${report.reason || 'No reason provided'}\n\n` +
             `**Reporter:** <@${report.sender_id}> ( ${report.sender_id} )\n\n` +
