@@ -46,14 +46,20 @@ LEFT JOIN "question"."questions" q
     ON r."type" = 'question'
     AND r."offender_id" = q."id"
 
+-- Join server data for server-type reports
+LEFT JOIN "server"."servers" sv
+    ON r."type" = 'server'
+    AND r."offender_id" = sv."id"
+
 -- Join reporter user data
 LEFT JOIN "user"."users" su
     ON su."id" = r."sender_id"
 
--- Join offending user: question creator for question reports, direct user ID for user reports
+-- Join offending user: question creator, server owner, or direct user ID
 LEFT JOIN "user"."users" ou
     ON ou."id" = CASE
         WHEN r."type" = 'question' THEN q."user_id"
+        WHEN r."type" = 'server'   THEN sv."user_id"
         WHEN r."type" = 'user'     THEN r."offender_id"
         ELSE NULL
     END;

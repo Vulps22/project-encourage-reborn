@@ -46,12 +46,17 @@ LEFT JOIN "question"."questions" q
     ON r."type" = 'question'
     AND r."offender_id" = q."id"
 
+LEFT JOIN "server"."servers" sv
+    ON r."type" = 'server'
+    AND r."offender_id" = sv."id"
+
 LEFT JOIN "user"."users" su
     ON su."id" = r."sender_id"
 
 LEFT JOIN "user"."users" ou
     ON ou."id" = CASE
         WHEN r."type" = 'question' THEN q."user_id"
+        WHEN r."type" = 'server'   THEN sv."user_id"
         WHEN r."type" = 'user'     THEN r."offender_id"
         ELSE NULL
     END;
