@@ -1,7 +1,7 @@
 import { Guild } from "discord.js";
 import { EventHandler } from "../types";
 import { serverService } from "../services";
-import { Logger } from "../utils";
+import { Logger, ModerationLogger } from "../utils";
 import { ServerProfileBuilder } from "../builders/ServerProfileBuilder";
 
 const guildCreated: EventHandler<'guildCreate'> = {
@@ -13,7 +13,7 @@ const guildCreated: EventHandler<'guildCreate'> = {
       await serverService.getOrCreateServer(guild.id, guild.name, guild.ownerId);
       const profile = await new ServerProfileBuilder().getServerProfile(guild.id);
       if (profile) {
-        const message = await Logger.logServer(profile);
+        const message = await ModerationLogger.logServer(profile);
         if (message) await serverService.updateServerSettings(guild.id, { message_id: message.id });
       }
       Logger.debug(`Server ${guild.name} (ID: ${guild.id}) added to database successfully`);

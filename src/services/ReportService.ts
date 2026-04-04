@@ -1,6 +1,6 @@
 import { Snowflake } from 'discord.js';
 import { DatabaseService } from './DatabaseService';
-import { Logger } from '../utils';
+import { Logger, ModerationLogger } from '../utils';
 import { Report, ReportStatus } from '../interface';
 import { TargetType } from '../types';
 
@@ -43,7 +43,7 @@ export class ReportService {
     const inserted = (await this.db.insert('moderation', 'reports', reportData))!.rows![0] as Report;
     const res = (await this.db.get<Report>('moderation', 'report_view', { id: inserted.id })) ?? inserted;
 
-    const logMessage = await Logger.logReport(res);
+    const logMessage = await ModerationLogger.logReport(res);
     
     // Update the report with the message ID from the log
     if (logMessage?.id) {

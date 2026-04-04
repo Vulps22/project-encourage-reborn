@@ -1,4 +1,4 @@
-import { Handler, Logger } from "../../../utils";
+import { Handler, Logger, ModerationLogger } from "../../../utils";
 import { moderationService, questionService } from "../../../services";
 import { BotButtonInteraction } from "../../../structures";
 import { QuestionType } from "../../../types";
@@ -26,7 +26,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
             const logChannelId = question.type === QuestionType.Truth
                 ? global.config.TRUTHS_LOG_CHANNEL_ID
                 : global.config.DARES_LOG_CHANNEL_ID;
-            await Logger.updateQuestionLog(question, logChannelId);
+            await ModerationLogger.updateQuestionLog(question, logChannelId);
             await interaction.sendReply('✅ Question approved successfully!');
 
         } catch (error) {

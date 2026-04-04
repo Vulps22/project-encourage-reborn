@@ -1,18 +1,15 @@
-import { BaseInteraction, Message, MessageCreateOptions, Snowflake, TextChannel } from 'discord.js';
-import { UniversalMessage } from '../types';
-import { Question, Report } from '../interface';
-import { ServerProfile } from '../interface/ServerProfileInterface';
-import { Config } from '../config';
+import { BaseInteraction } from 'discord.js';
 
 /**
- * Logger - Static utility for logging bot execution to Discord
- * 
- * Sends log messages to a dedicated Discord channel and tracks execution flow
- * by editing messages as status changes occur.
+ * Logger - Webhook-based utility for logging bot execution.
+ *
+ * All interaction logging goes directly to Discord via webhook HTTP calls,
+ * bypassing the shard manager entirely for minimum latency.
  */
 export class Logger {
   private static sensitiveValues: Set<string> = new Set();
-  private static logWebhookUrl: string | null = null;
+  private static logWebhookId: string | null = null;
+  private static logWebhookToken: string | null = null;
   private static errorWebhookUrl: string | null = null;
   private static consoleLines: Map<string, string> = new Map();
 
@@ -21,11 +18,6 @@ export class Logger {
     'REDIS', 'API_KEY', 'PRIVATE', 'CREDENTIAL', 'AUTH'
   ];
 
-  /**
-   * Initialize the logger by caching sensitive env var values for redaction.
-   * Only caches values from keys matching known sensitive patterns.
-   * Call this once at bot startup.
-   */
   static initialize(): void {
     for (const [key, value] of Object.entries(process.env)) {
       if (!value || value.length < 8) continue;
@@ -35,92 +27,54 @@ export class Logger {
       }
     }
 
-    this.logWebhookUrl = process.env.DISCORD_LOG_WEBHOOK_URL ?? null;
+    const logWebhookUrl = process.env.DISCORD_LOG_WEBHOOK_URL ?? null;
+    if (logWebhookUrl) {
+      const match = logWebhookUrl.match(/webhooks\/(\d+)\/([^/?]+)/);
+      if (match) {
+        this.logWebhookId = match[1];
+        this.logWebhookToken = match[2];
+      }
+    }
+
     this.errorWebhookUrl = process.env.DISCORD_ERROR_WEBHOOK_URL ?? null;
   }
 
-  private static async postToWebhook(url: string, message: string): Promise<void> {
-    try {
-      await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: this.sanitize(message) }),
-      });
-    } catch (err) {
-      console.error('Failed to post to webhook:', err);
-    }
-  }
-
-  /**
-   * Sanitize a message by replacing all sensitive values with 'xxxxxxxxxxxx'
-   * @param message The message to sanitize
-   * @returns The sanitized message safe for streaming
-   */
-  private static sanitize(message: string): string {
+  static sanitize(message: string): string {
     let sanitized = message;
-
-    // Replace each sensitive value with xxxxxxxxxxxx
     for (const sensitive of this.sensitiveValues) {
-      // Escape special regex characters in the sensitive value
       const escaped = sensitive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(escaped, 'gi');
-      sanitized = sanitized.replace(regex, 'xxxxxxxxxxxx');
+      sanitized = sanitized.replace(new RegExp(escaped, 'gi'), 'xxxxxxxxxxxx');
     }
-
     return sanitized;
   }
 
   /**
-   * Log that an interaction was received
-   * @param interaction Discord interaction object
-   * @param typeLabel Human-readable interaction type (e.g. "Command: /truth", "Button: skip")
-   * @returns ExecutionId (Discord message ID) for tracking this execution
+   * Log that an interaction was received.
+   * POSTs to the log webhook and returns the message ID for subsequent updates.
    */
   static async logInteractionReceived(interaction: BaseInteraction, typeLabel: string = 'Interaction'): Promise<string> {
+    if (!this.logWebhookId || !this.logWebhookToken) return '';
+
+    const msg = `${typeLabel} | Server: ${interaction.guild?.name || 'DM'} - ${interaction.guild?.id || 'N/A'} | User: ${interaction.user.username} - ${interaction.user.id} || Processing`;
+    const sanitized = this.sanitize(msg);
+
+    console.log(sanitized);
+
     try {
-      const logChannelId = global.config.LOG_CHANNEL_ID;
-      if (!logChannelId) {
-        return '';
-      }
-
-      // Find the shard that has the log channel
-      const results = await global.client.shard!.broadcastEval(
-        async (c, channelId) => {
-          const ch = await c.channels.fetch(channelId as string).catch(() => null);
-          return ch ? { found: true, shardId: c.shard?.ids[0] || 0 } : { found: false, shardId: 0 };
-        },
-        { context: logChannelId }
+      const response = await fetch(
+        `https://discord.com/api/webhooks/${this.logWebhookId}/${this.logWebhookToken}?wait=true`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: sanitized }),
+        }
       );
 
-      const shardWithChannel = results.find(r => r.found);
-      if (!shardWithChannel) {
-        return '';
-      }
+      if (!response.ok) return '';
 
-      const msg = `${typeLabel} | Server: ${interaction.guild?.name || 'DM'} - ${interaction.guild?.id || 'N/A'} | User: ${interaction.user.username} - ${interaction.user.id} || Processing`;
-      const sanitized = this.sanitize(msg);
-
-      // Send message via the correct shard
-      const messageIds = await global.client.shard!.broadcastEval(
-        async (c, context) => {
-          const ch = await c.channels.fetch(context.channelId).catch(() => null);
-          if (ch && ch.isTextBased()) {
-            const sent = await (ch as TextChannel).send(context.msg);
-            return sent.id;
-          }
-          return null;
-        },
-        { context: { channelId: logChannelId, msg } }
-      );
-
-      const messageId = messageIds.find(id => id !== null) ?? '';
-
-      if (messageId) {
-        this.consoleLines.set(messageId, sanitized);
-        console.log(sanitized);
-      }
-
-      return messageId;
+      const data = await response.json() as { id: string };
+      this.consoleLines.set(data.id, sanitized);
+      return data.id;
     } catch (error) {
       console.error('Failed to log interaction:', error);
       return '';
@@ -128,429 +82,71 @@ export class Logger {
   }
 
   /**
-   * Update the interaction type prefix in a log message, replacing "Interaction Received"
-   * @param executionId Discord message ID
-   * @param type Interaction type label (e.g. "Command", "Button", "Select Menu")
+   * Update the status of an existing interaction log message.
+   * PATCHes the webhook message — fire and forget.
    */
-  static async updateInteractionType(executionId: string, type: string): Promise<void> {
-    try {
-      if (!executionId) {
-        return;
-      }
+  static updateExecution(executionId: string, message: string): void {
+    if (!executionId || !this.logWebhookId || !this.logWebhookToken) return;
 
-      const logChannelId = global.config.LOG_CHANNEL_ID;
-      if (!logChannelId) {
-        return;
-      }
+    const sanitized = this.sanitize(message);
 
-      await global.client.shard!.broadcastEval(
-        async (c, { channelId, msgId, interactionType }) => {
-          const ch = await c.channels.fetch(channelId).catch(() => null);
-          if (ch && ch.isTextBased()) {
-            const msg = await ch.messages.fetch(msgId).catch(() => null);
-            if (msg) {
-              const updatedContent = msg.content.replace('Interaction Received', interactionType);
-              await msg.edit(updatedContent);
-              return true;
-            }
-          }
-          return false;
-        },
-        { context: { channelId: logChannelId, msgId: executionId, interactionType: type } }
-      );
-    } catch (error) {
-      console.error('Failed to update interaction type:', error);
+    const existing = this.consoleLines.get(executionId);
+    const prefix = existing ? existing.split('||')[0].trim() : '';
+    const updated = `${prefix} || ${sanitized}`;
+
+    if (existing) {
+      this.consoleLines.set(executionId, updated);
+      process.stdout.write(`\r${updated}\n`);
     }
+
+    void fetch(
+      `https://discord.com/api/webhooks/${this.logWebhookId}/${this.logWebhookToken}/messages/${executionId}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: updated }),
+      }
+    ).catch(err => console.error('Failed to update execution log:', err));
   }
 
   /**
-   * Update an execution log with new message content
-   * @param executionId Discord message ID
-   * @param message New message content
-   */
-  static async updateExecution(executionId: string, message: string): Promise<void> {
-    try {
-      if (!executionId) {
-        return;
-      }
-
-      const logChannelId = global.config.LOG_CHANNEL_ID;
-      if (!logChannelId) {
-        return;
-      }
-
-      // Sanitize the message before sending
-      const sanitized = this.sanitize(message);
-
-      // Update console line in-place by rewriting with new status
-      const existing = this.consoleLines.get(executionId);
-      if (existing) {
-        const prefix = existing.split('||')[0].trim();
-        const updated = `${prefix} || ${sanitized}`;
-        this.consoleLines.set(executionId, updated);
-        process.stdout.write(`\r${updated}\n`);
-      }
-
-      // Find and update message via the correct shard (fire and forget)
-      void global.client.shard!.broadcastEval(
-        async (c, { channelId, msgId, newStatus }) => {
-          const ch = await c.channels.fetch(channelId).catch(() => null);
-          if (ch && ch.isTextBased()) {
-            const msg = await ch.messages.fetch(msgId).catch(() => null);
-            if (msg) {
-              const parts = msg.content.split('||');
-              const updatedContent = `${parts[0].trim()} || ${newStatus}`;
-              await msg.edit(updatedContent);
-              return true;
-            }
-          }
-          return false;
-        },
-        { context: { channelId: logChannelId, msgId: executionId, newStatus: sanitized } }
-      );
-    } catch (error) {
-      console.error('Failed to update execution log:', error);
-    }
-  }
-
-  /**
-   * Send a log message to the log channel (STREAMER SAFE - auto-redacts sensitive data)
-   * @param message Message to log
+   * General log — posts to the log webhook (fire and forget) and echoes to console.
    */
   static log(message: string): void {
-    const send = async () => {
-      try {
-        const logChannelId = global.config.LOG_CHANNEL_ID;
-        if (!logChannelId) {
-          if (this.logWebhookUrl) await this.postToWebhook(this.logWebhookUrl, message);
-          return;
-        }
-        await this.logTo(logChannelId, message);
-      } catch {
-        if (this.logWebhookUrl) await this.postToWebhook(this.logWebhookUrl, message);
+    const sanitized = this.sanitize(message);
+    console.log(sanitized);
+
+    if (!this.logWebhookId || !this.logWebhookToken) return;
+
+    void fetch(
+      `https://discord.com/api/webhooks/${this.logWebhookId}/${this.logWebhookToken}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: sanitized }),
       }
-    };
-    console.log(this.sanitize(message));
-    send();
+    ).catch(err => console.error('Failed to post log to webhook:', err));
   }
 
   /**
-   * Send a message to any channel in the official guild (STREAMER SAFE - auto-redacts sensitive data)
-   * @param channelId The channel ID to send to
-   * @param message The message content to send
-   */
-  static async logTo(channelId: string, message: string | UniversalMessage): Promise<void> {
-    try {
-      if (!channelId) {
-        return;
-      }
-
-      // Sanitize string messages, pass MessagePayload as-is
-      const messageData = typeof message === 'string' ? this.sanitize(message) : message;
-
-      // Send message via the correct shard
-      await global.client.shard!.broadcastEval(
-        async (c, context) => {
-          const ch = await c.channels.fetch(context.channelId).catch(() => null);
-          if (ch && ch.isTextBased()) {
-            await (ch as TextChannel).send(context.msg as any);
-            return true;
-          }
-          return false;
-        },
-        { context: { channelId: channelId, msg: messageData } }
-      );
-    } catch (error) {
-      console.error(`Failed to send message to channel ${channelId}:`, error);
-    }
-  }
-
-  // Inside Logger
-  static async logQuestion(question: Question, channelId: Snowflake): Promise<Message | null> {
-
-    const results = await global.client.shard!.broadcastEval(
-      async (c, context) => {
-        const ch = c.channels.cache.get(context.channelId);
-        if (ch?.isTextBased()) {
-          // Import view function using absolute path1`
-          const path = await import('path');
-          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
-          const { newQuestionView } = await import(viewPath);
-
-          // Reconstruct dates from serialized strings
-          const questionData = {
-            ...context.question,
-            datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
-            datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
-            datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
-            created: new Date(context.question.created)
-          };
-
-          const view = await newQuestionView(questionData);
-          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
-          return sentMessage;
-        }
-        return null;
-      },
-      {
-        context: {
-          channelId: channelId,
-          question: question
-        }
-      }
-    );
-
-    // Return the first non-null message from the shards
-    return results.find(result => result !== null) as Message || null;
-  }
-
-  static async updateQuestionLog(question: Question, channelId: Snowflake, reasons: {}[] | null = null): Promise<Message | null> {
-    this.debug(`Updating question log for question ID ${question.id} in channel ${channelId}`);
-    if (!question.message_id) {
-      return null;
-    }
-
-    const results = await global.client.shard!.broadcastEval(
-      async (c, context) => {
-        const ch = c.channels.cache.get(context.channelId);
-        if (ch?.isTextBased()) {
-          try {
-            // Fetch the existing message
-            const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
-            if (!existingMessage) {
-              return { success: false, error: 'Message not found', message: null };
-            }
-
-            // Import view function using absolute path
-            const path = await import('path');
-            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
-            const { newQuestionView } = await import(viewPath);
-
-            // Reconstruct dates from serialized strings
-            const questionData = {
-              ...context.question,
-              datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
-              datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
-              datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
-              created: new Date(context.question.created)
-            };
-
-            const view = await newQuestionView(questionData, context.reasons);
-            const updatedMessage = await existingMessage.edit(view as any);
-            return { success: true, error: null, message: updatedMessage };
-          } catch (err) {
-            console.error('Failed to update question log:', err);
-            return { success: false, error: String(err), message: null };
-          }
-        }
-        return { success: false, error: 'Channel not found or not text-based', message: null };
-      },
-      {
-        context: {
-          channelId: channelId,
-          question: question,
-          messageId: question.message_id,
-          reasons: reasons
-        }
-      }
-    );
-
-  // Handle errors in parent context with Logger
-  const errorResult = results.find(r => r && !r.success);
-  if(errorResult) {
-    this.error(`Failed to update question log: ${errorResult.error}`);
-  }
-
-  // Return the first successful message from the shards
-  const successResult = results.find(result => result && result.success);
-  return(successResult? successResult.message: null) as Message | null;
-}
-
-
-  static async logServer(server: ServerProfile): Promise<Message | null> {
-
-    const results = await global.client.shard!.broadcastEval(
-      async (c, context) => {
-        const ch = c.channels.cache.get(context.channelId);
-        if (ch?.isTextBased()) {
-          const path = await import('path');
-          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'serverView.js');
-          const { serverView } = await import(viewPath);
-
-          const view = await serverView(context.server);
-          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
-          return sentMessage;
-        }
-        return null;
-      },
-      {
-        context: {
-          channelId: Config.SERVER_LOG_CHANNEL_ID,
-          server: server
-        }
-      }
-    );
-
-    return results.find(result => result !== null) as Message || null;
-  }
-
-  static async updateServerLog(server: ServerProfile, reasons: {}[] | null = null): Promise<Message | null> {
-    this.debug(`Updating server log for server ID ${server.id}`);
-    if (!server.message_id) {
-      return null;
-    }
-
-    const results = await global.client.shard!.broadcastEval(
-      async (c, context) => {
-        const ch = c.channels.cache.get(context.channelId);
-        if (ch?.isTextBased()) {
-          try {
-            const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
-            if (!existingMessage) {
-              return { success: false, error: 'Message not found', message: null };
-            }
-
-            const path = await import('path');
-            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'serverView.js');
-            const { serverView } = await import(viewPath);
-
-            const view = await serverView(context.server, context.reasons);
-            const updatedMessage = await existingMessage.edit(view as any);
-            return { success: true, error: null, message: updatedMessage };
-          } catch (err) {
-            console.error('Failed to update server log:', err);
-            return { success: false, error: String(err), message: null };
-          }
-        }
-        return { success: false, error: 'Channel not found or not text-based', message: null };
-      },
-      {
-        context: {
-          channelId: Config.SERVER_LOG_CHANNEL_ID,
-          server: server,
-          messageId: server.message_id,
-          reasons: reasons
-        }
-      }
-    );
-
-    const errorResult = results.find(r => r && !r.success);
-    if (errorResult) {
-      this.error(`Failed to update server log: ${errorResult.error}`);
-    }
-
-    const successResult = results.find(result => result && result.success);
-    return (successResult ? successResult.message : null) as Message | null;
-  }
-
-  static async logReport(report: Report): Promise<Message | null> {
-
-    const results = await global.client.shard!.broadcastEval(
-      async (c, context) => {
-        const ch = c.channels.cache.get(context.channelId);
-        if (ch?.isTextBased()) {
-          // Import view function using absolute path
-          const path = await import('path');
-          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'reportView.js');
-          const { ReportView } = await import(viewPath);
-
-          // Reconstruct dates from serialized strings
-          const reportData = {
-            ...context.report,
-            created_at: context.report.created_at ? new Date(context.report.created_at) : undefined,
-            updated_at: context.report.updated_at ? new Date(context.report.updated_at) : undefined
-          };
-
-          const view = await ReportView(reportData);
-          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
-          return sentMessage;
-        }
-        return null;
-      },
-      {
-        context: {
-          channelId: Config.REPORT_CHANNEL_ID,
-          report: report
-        }
-      }
-    );
-
-    // Return the first non-null message from the shards
-    return results.find(result => result !== null) as Message || null;
-  }
-
-  static async updateReportLog(report: Report, reasons: {}[] | null = null): Promise<Message | null> {
-    this.debug(`Updating report log for report ID ${report.id}`);
-    if (!report.message_id) {
-      return null;
-    }
-
-    const results = await global.client.shard!.broadcastEval(
-      async (c, context) => {
-        const ch = c.channels.cache.get(context.channelId);
-        if (ch?.isTextBased()) {
-          try {
-            const existingMessage = await (ch as TextChannel).messages.fetch(context.messageId);
-            if (!existingMessage) {
-              return { success: false, error: 'Message not found', message: null };
-            }
-
-            const path = await import('path');
-            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'reportView.js');
-            const { ReportView } = await import(viewPath);
-
-            // Reconstruct dates from serialized strings
-            const reportData = {
-              ...context.report,
-              created_at: context.report.created_at ? new Date(context.report.created_at) : undefined,
-              updated_at: context.report.updated_at ? new Date(context.report.updated_at) : undefined
-            };
-
-            const view = await ReportView(reportData, context.reasons);
-            const updatedMessage = await existingMessage.edit(view as any);
-            return { success: true, error: null, message: updatedMessage };
-          } catch (err) {
-            console.error('Failed to update report log:', err);
-            return { success: false, error: String(err), message: null };
-          }
-        }
-        return { success: false, error: 'Channel not found or not text-based', message: null };
-      },
-      {
-        context: {
-          channelId: Config.REPORT_CHANNEL_ID,
-          report: report,
-          messageId: report.message_id,
-          reasons: reasons
-        }
-      }
-    );
-
-    const errorResult = results.find(r => r && !r.success);
-    if (errorResult) {
-      this.error(`Failed to update report log: ${errorResult.error}`);
-    }
-
-    const successResult = results.find(result => result && result.success);
-    return (successResult ? successResult.message : null) as Message | null;
-  }
-
-  /**
-   * Debug logging to console (STREAMER SAFE - auto-redacts sensitive data)
-   * Replaces console.log with automatic sanitization of sensitive values
-   * @param message Message to log to console
-   */
-  static debug(message: string): void {
-  const sanitized = this.sanitize(message);
-  console.log(sanitized);
-}
-
-  /**
-   * Error logging to both console and discord
-   * @param message the message to display
+   * Error logging — echoes to console.error and posts to the error webhook (fire and forget).
    */
   static error(message: string): void {
     console.error(this.sanitize(message));
-    if (this.errorWebhookUrl) this.postToWebhook(this.errorWebhookUrl, message);
+
+    if (!this.errorWebhookUrl) return;
+
+    void fetch(this.errorWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: this.sanitize(message) }),
+    }).catch(err => console.error('Failed to post error to webhook:', err));
+  }
+
+  /**
+   * Debug logging to console only.
+   */
+  static debug(message: string): void {
+    console.log(this.sanitize(message));
   }
 }

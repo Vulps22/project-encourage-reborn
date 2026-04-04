@@ -1,6 +1,6 @@
 import { moderationService, questionService, reportService } from "../../../services";
 import { BotSelectMenuInteraction } from "../../../structures";
-import { Handler, Logger } from "../../../utils";
+import { Handler, Logger, ModerationLogger } from "../../../utils";
 import { QuestionType } from "../../../types";
 
 const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
@@ -34,7 +34,7 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             const logChannelId = question.type === QuestionType.Truth
                 ? global.config.TRUTHS_LOG_CHANNEL_ID
                 : global.config.DARES_LOG_CHANNEL_ID;
-            await Logger.updateQuestionLog(question, logChannelId);
+            await ModerationLogger.updateQuestionLog(question, logChannelId);
 
             const reports = await moderationService.findActioningReports(questionId);
             for (const report of reports) {

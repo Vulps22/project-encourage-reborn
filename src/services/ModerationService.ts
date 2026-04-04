@@ -1,6 +1,6 @@
 import { DatabaseService } from './DatabaseService';
 import { Question, Report, ReportStatus } from '../interface';
-import { Logger } from '../utils';
+import { Logger, ModerationLogger } from '../utils';
 import { QuestionType, TargetType } from '../types';
 import { Message, Snowflake } from 'discord.js';
 import { banReasons } from '../config';
@@ -25,7 +25,7 @@ export class ModerationService {
                 throw new Error(`No log channel configured for ${question.type} questions`);
             }
 
-            const message: Message | null = await Logger.logQuestion(question, channelId);
+            const message: Message | null = await ModerationLogger.logQuestion(question, channelId);
             if (!message) throw new Error("Failed to log question message for approval");
             // For now, just log that it would be sent
             Logger.debug(`Question ${question.id} would be sent to approval queue in channel ${channelId}`);
@@ -193,7 +193,7 @@ export class ModerationService {
                 if (!updatedReport) {
                     throw new Error(`Report with ID ${report.id} not found after update`);
                 }
-                await Logger.updateReportLog(updatedReport);
+                await ModerationLogger.updateReportLog(updatedReport);
             }
 
             Logger.debug(`Report ${reportId} cleared successfully`);
@@ -302,7 +302,7 @@ export class ModerationService {
                 if (!updatedReport) {
                     throw new Error(`Report with ID ${report.id} not found after update`);
                 }
-                await Logger.updateReportLog(updatedReport);
+                await ModerationLogger.updateReportLog(updatedReport);
             }
 
             Logger.debug(`Report ${reportId} marked as actioned successfully`);

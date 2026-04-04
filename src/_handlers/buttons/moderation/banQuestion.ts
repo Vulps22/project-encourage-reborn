@@ -1,4 +1,4 @@
-import { Handler, Logger } from "../../../utils";
+import { Handler, ModerationLogger } from "../../../utils";
 import { moderationService, questionService } from "../../../services";
 import { QuestionNotFoundError } from "../../../errors/QuestionNotFoundError";
 import { QuestionType, TargetType } from "../../../types";
@@ -27,7 +27,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
                     const logChannelId = question.type === QuestionType.Truth
                         ? global.config.TRUTHS_LOG_CHANNEL_ID
                         : global.config.DARES_LOG_CHANNEL_ID;
-                    await Logger.updateQuestionLog(question, logChannelId);
+                    await ModerationLogger.updateQuestionLog(question, logChannelId);
                 }
             });
         }
@@ -47,6 +47,6 @@ async function showBanReasons(questionId: number): Promise<void> {
         : global.config.DARES_LOG_CHANNEL_ID;
     const reasons = moderationService.getBanReasons(TargetType.Question);
 
-    await Logger.updateQuestionLog(question, logChannelId, reasons);
+    await ModerationLogger.updateQuestionLog(question, logChannelId, reasons);
 }
 export default approveQuestionButton;

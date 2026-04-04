@@ -1,6 +1,6 @@
 import { ServerProfileBuilder } from "../../../builders/ServerProfileBuilder";
 import { BotButtonInteraction } from "../../../structures";
-import { Handler, Logger } from "../../../utils";
+import { Handler, ModerationLogger } from "../../../utils";
 import { serverService } from "../../../services";
 
 const unbanServerButton: Handler<BotButtonInteraction> = {
@@ -24,7 +24,7 @@ const unbanServerButton: Handler<BotButtonInteraction> = {
             return;
         }
 
-        await Logger.updateServerLog(profile);
+        await ModerationLogger.updateServerLog(profile);
     }
 };
 

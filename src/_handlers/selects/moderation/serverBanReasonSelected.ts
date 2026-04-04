@@ -1,6 +1,6 @@
 import { moderationService, reportService } from "../../../services";
 import { BotSelectMenuInteraction } from "../../../structures";
-import { Handler, Logger } from "../../../utils";
+import { Handler, Logger, ModerationLogger } from "../../../utils";
 import { ServerProfileBuilder } from "../../../builders/ServerProfileBuilder";
 
 const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
@@ -30,7 +30,7 @@ const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
                 return;
             }
 
-            await Logger.updateServerLog(profile);
+            await ModerationLogger.updateServerLog(profile);
 
             const reports = await moderationService.findActioningReports(serverId);
             for (const report of reports) {
