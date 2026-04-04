@@ -98,6 +98,8 @@ export class Logger {
 
       const msg = `${typeLabel} | Server: ${interaction.guild?.name || 'DM'} - ${interaction.guild?.id || 'N/A'} | User: ${interaction.user.username} - ${interaction.user.id} || Processing`;
 
+      console.log(this.sanitize(msg));
+
       // Send message via the correct shard
       const messageIds = await global.client.shard!.broadcastEval(
         async (c, context) => {
@@ -173,6 +175,8 @@ export class Logger {
 
       // Sanitize the message before sending
       const sanitized = this.sanitize(message);
+
+      console.log(`[${executionId.slice(-6)}] → ${sanitized}`);
 
       // Find and update message via the correct shard
       await global.client.shard!.broadcastEval(
