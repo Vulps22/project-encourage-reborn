@@ -13,8 +13,11 @@ class ButtonInteractionEvent implements InteractionEvent<ButtonInteraction> {
         }
         try {
             await button.execute(botInteraction);
+            await Logger.updateExecution(executionId, 'Success');
         } catch (error) {
             console.error('Button execution error:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
             if (!interaction.replied && !interaction.deferred) {
                 await interaction.reply({ content: '❌ An error occurred while processing this action.', ephemeral: true });
             }

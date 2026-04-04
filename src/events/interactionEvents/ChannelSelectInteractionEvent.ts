@@ -12,7 +12,17 @@ class ChannelSelectInteractionEvent implements InteractionEvent<ChannelSelectMen
             Logger.error(`SelectMenu not found for Custom ID: ${botSelectInteraction.baseId}`);
             return;
         }
-        await selectHandler.execute(botSelectInteraction);
+        try {
+            await selectHandler.execute(botSelectInteraction);
+            await Logger.updateExecution(executionId, 'Success');
+        } catch (error) {
+            console.error('ChannelSelect execution error:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: '❌ An error occurred while processing this action.', ephemeral: true });
+            }
+        }
     }
 }
 
