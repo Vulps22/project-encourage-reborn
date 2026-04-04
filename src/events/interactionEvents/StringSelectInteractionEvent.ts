@@ -6,7 +6,6 @@ import { Handler, Logger } from "../../utils";
 class StringSelectInteractionEvent implements InteractionEvent<StringSelectMenuInteraction> {
 
     async execute(interaction: StringSelectMenuInteraction, executionId: string): Promise<void> {
-        await Logger.updateInteractionType(executionId, 'Select Menu');
         const botSelectInteraction = new BotSelectMenuInteraction(interaction, executionId);
         const selectHandler: Handler<BotSelectMenuInteraction> | undefined = global.selects.get(botSelectInteraction.baseId);
         if (!selectHandler) {

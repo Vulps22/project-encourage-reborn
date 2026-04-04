@@ -5,7 +5,6 @@ import { BotModalInteraction } from '../../structures';
 
 class ModalInteractionEvent implements InteractionEvent<ModalSubmitInteraction> {
     async execute(interaction: ModalSubmitInteraction, executionId: string): Promise<void> {
-        await Logger.updateInteractionType(executionId, 'Modal');
         const botInteraction = new BotModalInteraction(interaction, executionId);
         const handler: Handler<BotModalInteraction> | undefined = global.modals.get(botInteraction.baseId);
         if (!handler) {

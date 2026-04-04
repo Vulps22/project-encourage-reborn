@@ -7,7 +7,6 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
 
 
     async execute(interaction: ChatInputCommandInteraction, executionId: string): Promise<void> {
-        await Logger.updateInteractionType(executionId, 'Command');
         const command = global.commands.get(interaction.commandName);
         if (!command) {
             Logger.error(`No command found for name: ${interaction.commandName}`);
