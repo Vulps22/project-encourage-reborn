@@ -26,13 +26,12 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
             await command.execute(botInteraction);
             await Logger.updateExecution(executionId, 'Success');
         } catch (error) {
-            console.error('Command execution error:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
+            Logger.error(`Command execution error (${interaction.commandName}): ${errorMessage}`);
             await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
 
-            // Try to send error message to user if interaction hasn't been responded to
             if (!interaction.replied && !interaction.deferred) {
-                await botInteraction.sendReply('❌ An error occurred while processing your command.');
+                await botInteraction.sendReply('❌ An error occurred while processing your command.').catch(() => null);
             }
         }
     }

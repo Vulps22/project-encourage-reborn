@@ -15,7 +15,14 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
   event: 'interactionCreate',
   once: false,
   execute: async (interaction: Interaction): Promise<void> => {
-    const executionId = await Logger.logInteractionReceived(interaction);
+    const typeLabel = interaction.isChatInputCommand() ? `Command: /${interaction.commandName}`
+      : interaction.isButton() ? `Button: ${interaction.customId.split('_')[1] ?? interaction.customId}`
+      : interaction.isModalSubmit() ? `Modal: ${interaction.customId.split('_')[1] ?? interaction.customId}`
+      : interaction.isStringSelectMenu() || interaction.isChannelSelectMenu() ? `Select: ${interaction.customId.split('_')[1] ?? interaction.customId}`
+      : interaction.isAutocomplete() ? `Autocomplete: /${interaction.commandName}`
+      : 'Interaction';
+
+    const executionId = await Logger.logInteractionReceived(interaction, typeLabel);
 
     // Track user interaction before processing
     try {
@@ -83,35 +90,26 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
     }
 
     if (interaction.isChatInputCommand()) {
-      await Logger.updateInteractionType(executionId, `Command: /${interaction.commandName}`);
       void new CommandInteractionEvent().execute(interaction, executionId);
       return;
     }
 
     if (interaction.isModalSubmit()) {
-      const modalAction = interaction.customId.split('_')[1] ?? interaction.customId;
-      await Logger.updateInteractionType(executionId, `Modal: ${modalAction}`);
       void new ModalInteractionEvent().execute(interaction, executionId);
       return;
     }
 
     if (interaction.isButton()) {
-      const buttonAction = interaction.customId.split('_')[1] ?? interaction.customId;
-      await Logger.updateInteractionType(executionId, `Button: ${buttonAction}`);
       void new ButtonInteractionEvent().execute(interaction, executionId);
       return;
     }
 
     if (interaction.isStringSelectMenu()) {
-      const selectAction = interaction.customId.split('_')[1] ?? interaction.customId;
-      await Logger.updateInteractionType(executionId, `Select: ${selectAction}`);
       void new StringSelectInteractionEvent().execute(interaction, executionId);
       return;
     }
 
     if (interaction.isChannelSelectMenu()) {
-      const selectAction = interaction.customId.split('_')[1] ?? interaction.customId;
-      await Logger.updateInteractionType(executionId, `Select: ${selectAction}`);
       void new ChannelSelectInteractionEvent().execute(interaction, executionId);
       return;
     }

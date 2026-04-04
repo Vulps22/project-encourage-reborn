@@ -16,11 +16,11 @@ class ChannelSelectInteractionEvent implements InteractionEvent<ChannelSelectMen
             await selectHandler.execute(botSelectInteraction);
             await Logger.updateExecution(executionId, 'Success');
         } catch (error) {
-            console.error('ChannelSelect execution error:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
+            Logger.error(`ChannelSelect execution error (${botSelectInteraction.baseId}): ${errorMessage}`);
             await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
             if (!interaction.replied && !interaction.deferred) {
-                await interaction.reply({ content: '❌ An error occurred while processing this action.', ephemeral: true });
+                await interaction.reply({ content: '❌ An error occurred while processing this action.', ephemeral: true }).catch(() => null);
             }
         }
     }

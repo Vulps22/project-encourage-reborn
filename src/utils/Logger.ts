@@ -72,9 +72,10 @@ export class Logger {
   /**
    * Log that an interaction was received
    * @param interaction Discord interaction object
+   * @param typeLabel Human-readable interaction type (e.g. "Command: /truth", "Button: skip")
    * @returns ExecutionId (Discord message ID) for tracking this execution
    */
-  static async logInteractionReceived(interaction: BaseInteraction): Promise<string> {
+  static async logInteractionReceived(interaction: BaseInteraction, typeLabel: string = 'Interaction'): Promise<string> {
     try {
       const logChannelId = global.config.LOG_CHANNEL_ID;
       if (!logChannelId) {
@@ -95,7 +96,7 @@ export class Logger {
         return '';
       }
 
-      const msg = `Interaction Received | Server: ${interaction.guild?.name || 'DM'} - ${interaction.guild?.id || 'N/A'} | User: ${interaction.user.username} - ${interaction.user.id} || Processing`;
+      const msg = `${typeLabel} | Server: ${interaction.guild?.name || 'DM'} - ${interaction.guild?.id || 'N/A'} | User: ${interaction.user.username} - ${interaction.user.id} || Processing`;
 
       // Send message via the correct shard
       const messageIds = await global.client.shard!.broadcastEval(
