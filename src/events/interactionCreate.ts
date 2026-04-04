@@ -3,7 +3,7 @@ import { DMInteractionError } from '../errors';
 import { moderationService, serverService, userService, userTrackingService } from '../services';
 import { EventHandler, TargetType } from '../types';
 import { Logger } from '../utils';
-import { CommandInteractionEvent, ButtonInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
+import { CommandInteractionEvent, ButtonInteractionEvent, ModalInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';
 import { playtestNoticeView } from '../views/playtestNoticeView';
 
@@ -84,6 +84,11 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
 
     if (interaction.isChatInputCommand()) {
       void new CommandInteractionEvent().execute(interaction, executionId);
+      return;
+    }
+
+    if (interaction.isModalSubmit()) {
+      void new ModalInteractionEvent().execute(interaction, executionId);
       return;
     }
 

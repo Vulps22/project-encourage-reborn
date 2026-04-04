@@ -1,0 +1,26 @@
+import { ModalSubmitInteraction } from 'discord.js';
+import { InteractionEvent } from './InteractionEvent';
+import { Handler, Logger } from '../../utils';
+import { BotModalInteraction } from '../../structures';
+
+class ModalInteractionEvent implements InteractionEvent<ModalSubmitInteraction> {
+    async execute(interaction: ModalSubmitInteraction, executionId: string): Promise<void> {
+        await Logger.updateInteractionType(executionId, 'Modal');
+        const botInteraction = new BotModalInteraction(interaction, executionId);
+        const handler: Handler<BotModalInteraction> | undefined = global.modals.get(botInteraction.baseId);
+        if (!handler) {
+            Logger.error(`Modal handler not found for Custom ID: ${botInteraction.baseId}`);
+            return;
+        }
+        try {
+            await handler.execute(botInteraction);
+        } catch (error) {
+            console.error('Modal execution error:', error);
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: '❌ An error occurred while processing this action.', ephemeral: true });
+            }
+        }
+    }
+}
+
+export { ModalInteractionEvent };

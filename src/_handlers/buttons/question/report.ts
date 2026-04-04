@@ -1,8 +1,6 @@
+import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { BotButtonInteraction } from '../../../structures';
 import { Handler } from '../../../utils';
-import { db, reportService } from '../../../services';
-import { Question } from '../../../interface';
-import { TargetType } from '../../../types';
 
 const reportButton: Handler<BotButtonInteraction> = {
     name: 'report',
@@ -14,21 +12,22 @@ const reportButton: Handler<BotButtonInteraction> = {
             throw new Error('Invalid question ID when using Button: question_report');
         }
 
-        const question = await db.get<Question>('question', 'questions', { id: parseInt(questionId) });
-        if (!question) {
-            await interaction.ephemeralReply('❌ Question not found.');
-            return;
-        }
+        const modal = new ModalBuilder()
+            .setCustomId(`question_reportModal_id:${questionId}`)
+            .setTitle('Report Question')
+            .addComponents(
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                    new TextInputBuilder()
+                        .setCustomId('reason')
+                        .setLabel('Why are you reporting this?')
+                        .setStyle(TextInputStyle.Paragraph)
+                        .setMinLength(10)
+                        .setMaxLength(500)
+                        .setRequired(true)
+                )
+            );
 
-        await reportService.createReport(
-            interaction.user.id,
-            questionId,
-            question.question,
-            TargetType.Question,
-            interaction.guildId!
-        );
-
-        await interaction.ephemeralReply('✅ Report submitted successfully.');
+        await interaction.showModal(modal);
     }
 };
 

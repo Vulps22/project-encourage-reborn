@@ -1,10 +1,6 @@
 import { ButtonInteraction } from 'discord.js';
 import { BotButtonInteraction } from '../../../../structures';
 import reportButton from '../../question/report';
-import { db, reportService } from '../../../../services';
-import { TargetType } from '../../../../types';
-
-jest.mock('../../../../services');
 
 describe('reportButton', () => {
     let mockInteraction: any;
@@ -21,14 +17,14 @@ describe('reportButton', () => {
             user: { id: '111222333' },
             reply: jest.fn().mockResolvedValue(undefined),
             editReply: jest.fn().mockResolvedValue(undefined),
+            showModal: jest.fn().mockResolvedValue(undefined),
+            message: { id: 'msg123' },
         };
 
         botInteraction = new BotButtonInteraction(
             mockInteraction as ButtonInteraction,
             'exec-123'
         );
-
-        (reportService.createReport as jest.Mock).mockResolvedValue({ id: 1 });
     });
 
     it('should have correct name and params', () => {
@@ -36,22 +32,13 @@ describe('reportButton', () => {
         expect(reportButton.params).toEqual({ id: 'id' });
     });
 
-    it('should submit report and confirm to user', async () => {
-        (db.get as jest.Mock).mockResolvedValue({ id: 42, question: 'Test question?' });
-
+    it('should show the report reason modal', async () => {
         await reportButton.execute(botInteraction);
 
-        expect(db.get).toHaveBeenCalledWith('question', 'questions', { id: 42 });
-        expect(reportService.createReport).toHaveBeenCalledWith(
-            '111222333',
-            '42',
-            'Test question?',
-            TargetType.Question,
-            '987654321'
-        );
-        expect(mockInteraction.reply).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '✅ Report submitted successfully.' })
-        );
+        expect(mockInteraction.showModal).toHaveBeenCalledTimes(1);
+        const modal = mockInteraction.showModal.mock.calls[0][0];
+        expect(modal.data.custom_id).toBe('question_reportModal_id:42');
+        expect(modal.data.title).toBe('Report Question');
     });
 
     it('should handle missing question ID', async () => {
@@ -61,17 +48,6 @@ describe('reportButton', () => {
         await expect(reportButton.execute(botInteraction)).rejects.toThrow(
             'Invalid question ID when using Button: question_report'
         );
-        expect(reportService.createReport).not.toHaveBeenCalled();
-    });
-
-    it('should handle question not found', async () => {
-        (db.get as jest.Mock).mockResolvedValue(null);
-
-        await reportButton.execute(botInteraction);
-
-        expect(reportService.createReport).not.toHaveBeenCalled();
-        expect(mockInteraction.reply).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '❌ Question not found.' })
-        );
+        expect(mockInteraction.showModal).not.toHaveBeenCalled();
     });
 });

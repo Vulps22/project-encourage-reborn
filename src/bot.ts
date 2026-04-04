@@ -4,7 +4,7 @@ import { join } from 'path';
 import { Handler, Command, Logger } from './utils';
 import { EventHandler } from './types';
 import { Config } from './config';
-import { BotButtonInteraction, BotSelectMenuInteraction } from './structures';
+import { BotButtonInteraction, BotModalInteraction, BotSelectMenuInteraction } from './structures';
 
 /**
  * Initialize global objects
@@ -15,6 +15,7 @@ function initializeGlobals(client: Client): void {
     global.commands = new Collection<string, Command>();
     global.buttons = new Collection<string, Handler<BotButtonInteraction>>();
     global.selects = new Collection<string, Handler<BotSelectMenuInteraction>>();
+    global.modals = new Collection<string, Handler<BotModalInteraction>>();
 }
 
 /**
@@ -92,6 +93,17 @@ async function loadSelectMenus(): Promise<void> {
 
     if (existsSync(selectsPath)) {
         await loadHandlersFromDirectory(selectsPath, global.selects);
+    }
+}
+
+/**
+ * Load all modal handlers
+ */
+async function loadModals(): Promise<void> {
+    const modalsPath = join(__dirname, '_handlers', 'modals');
+
+    if (existsSync(modalsPath)) {
+        await loadHandlersFromDirectory(modalsPath, global.modals);
     }
 }
 
@@ -215,6 +227,7 @@ async function startBot(): Promise<void> {
     await loadCommands();
     await loadButtons();
     await loadSelectMenus();
+    await loadModals();
     await loadEvents(client);
 
     client.once(Events.ClientReady, () => {

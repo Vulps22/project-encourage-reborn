@@ -1,16 +1,16 @@
-import { ChatInputCommandInteraction, ButtonInteraction, InteractionEditReplyOptions, InteractionReplyOptions, Message, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, ButtonInteraction, InteractionEditReplyOptions, InteractionReplyOptions, Message, MessageFlags, ModalSubmitInteraction } from 'discord.js';
 import { BotInteraction } from './BotInteraction';
 import { UniversalMessage } from '../types/UniversalMessage';
 import { AnySelectMenuInteraction } from '../types';
 
 /**
  * BotRepliableInteraction - Abstract base class for interactions that can be replied to
- * Includes slash commands and message components (buttons, select menus)
+ * Includes slash commands, message components (buttons, select menus), and modal submissions
  */
 export abstract class BotRepliableInteraction extends BotInteraction {
-  protected declare readonly _interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction;
+  protected declare readonly _interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction | ModalSubmitInteraction;
 
-  constructor(interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, executionId: string) {
+  constructor(interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction | ModalSubmitInteraction, executionId: string) {
     super(interaction, executionId);
     this._interaction = interaction;
   }
