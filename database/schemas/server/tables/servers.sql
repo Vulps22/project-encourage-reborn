@@ -36,6 +36,12 @@ CREATE INDEX IF NOT EXISTS "idx_entitled" ON "server"."servers"("is_entitled");
 CREATE INDEX IF NOT EXISTS "idx_deleted" ON "server"."servers"("is_deleted");
 
 COMMENT ON TABLE "server"."servers" IS 'Stores Discord server configuration and settings';
+COMMENT ON COLUMN "server"."servers"."id" IS 'Discord server (guild) ID';
+COMMENT ON COLUMN "server"."servers"."date_created" IS 'When the server was first registered with the bot';
+COMMENT ON COLUMN "server"."servers"."date_updated" IS 'When the server record was last updated';
+COMMENT ON COLUMN "server"."servers"."level_up_channel" IS 'Discord channel ID where level-up announcements are posted';
+COMMENT ON COLUMN "server"."servers"."announcement_channel" IS 'Discord channel ID for bot announcements';
+COMMENT ON COLUMN "server"."servers"."message_id" IS 'Discord message ID of the server advert post in the support server';
 COMMENT ON COLUMN "server"."servers"."name" IS 'Discord server name';
 COMMENT ON COLUMN "server"."servers"."user_id" IS 'Discord user ID of the server owner';
 COMMENT ON COLUMN "server"."servers"."has_accepted" IS 'Whether owner has accepted bot terms/rules';

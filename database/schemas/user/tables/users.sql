@@ -30,4 +30,7 @@ COMMENT ON COLUMN "user"."users"."rules_accepted" IS 'Whether user has accepted 
 COMMENT ON COLUMN "user"."users"."is_banned" IS 'Whether user is banned from using the bot';
 COMMENT ON COLUMN "user"."users"."ban_reason" IS 'Reason for user ban';
 COMMENT ON COLUMN "user"."users"."vote_count" IS 'Number of votes cast by user';
+COMMENT ON COLUMN "user"."users"."id" IS 'Discord user ID';
+COMMENT ON COLUMN "user"."users"."ban_message_id" IS 'Discord message ID of the ban notification message';
+COMMENT ON COLUMN "user"."users"."created_datetime" IS 'When the user was first seen by the bot';
 COMMENT ON COLUMN "user"."users"."delete_date" IS 'Scheduled date for user data deletion';

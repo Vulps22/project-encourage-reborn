@@ -23,5 +23,9 @@ CREATE TABLE IF NOT EXISTS "purchasables" ("id" SERIAL,
  
 COMMENT ON TABLE "purchasables" IS 'Defines available Discord subscription/consumable products for purchase';
 COMMENT ON COLUMN "purchasables"."id" IS 'Unique identifier for the purchasable item';
+COMMENT ON COLUMN "purchasables"."application_id" IS 'Discord application ID this purchasable belongs to';
 COMMENT ON COLUMN "purchasables"."environment" IS 'Environment where this purchasable is available';
+COMMENT ON COLUMN "purchasables"."name" IS 'Human-readable product name';
+COMMENT ON COLUMN "purchasables"."sku_id" IS 'Discord SKU ID for this product';
+COMMENT ON COLUMN "purchasables"."created_at" IS 'When this purchasable was registered';
 COMMENT ON COLUMN "purchasables"."type" IS 'Type of purchase: consumable (one-time) or subscription (recurring)';

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS "leaderboard_recent_top10" (
  
 COMMENT ON TABLE "leaderboard_recent_top10" IS 'TODO: Needs cleanup - holds current top 10 users (maybe?)';
 COMMENT ON COLUMN "leaderboard_recent_top10"."userId" IS 'Discord user ID';
+COMMENT ON COLUMN "leaderboard_recent_top10"."username" IS 'Discord username';
 COMMENT ON COLUMN "leaderboard_recent_top10"."truths_done" IS 'Number of truths completed';
 COMMENT ON COLUMN "leaderboard_recent_top10"."dares_done" IS 'Number of dares completed';
 COMMENT ON COLUMN "leaderboard_recent_top10"."total_done" IS 'Total number of questions completed';
