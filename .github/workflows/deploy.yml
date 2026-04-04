@@ -10,9 +10,10 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to Production
+    name: Deploy to ${{ github.event.workflow_run.head_branch == 'staging' && 'Staging' || 'Production' }}
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
+    environment: ${{ github.event.workflow_run.head_branch == 'staging' && 'staging' || 'production' }}
 
     steps:
       - name: Setup SSH
@@ -25,7 +26,7 @@ jobs:
       - name: Deploy
         run: |
           ssh -i ~/.ssh/id_rsa root@${{ secrets.VPS_HOST }} "
-            cd /opt/discord-bots/project-encourage &&
+            cd ${{ github.event.workflow_run.head_branch == 'staging' && '/opt/discord-bots/project-encourage-reborn' || '/opt/discord-bots/project-encourage' }} &&
             docker compose pull bot &&
             docker compose up -d bot
           "
