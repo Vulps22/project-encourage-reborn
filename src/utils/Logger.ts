@@ -20,10 +20,9 @@ export class Logger {
    * Call this once at bot startup
    */
   static initialize(): void {
-    // Cache values from env vars whose names indicate they are secrets
-    const secretPattern = /token|key|secret|password|webhook/i;
-    for (const [key, value] of Object.entries(process.env)) {
-      if (value && secretPattern.test(key)) {
+    // Cache all non-empty env values as sensitive
+    for (const value of Object.values(process.env)) {
+      if (value && value.length > 0) {
         this.sensitiveValues.add(value);
       }
     }
@@ -113,6 +112,42 @@ export class Logger {
   }
 
   /**
+   * Update the interaction type prefix in a log message, replacing "Interaction Received"
+   * @param executionId Discord message ID
+   * @param type Interaction type label (e.g. "Command", "Button", "Select Menu")
+   */
+  static async updateInteractionType(executionId: string, type: string): Promise<void> {
+    try {
+      if (!executionId) {
+        return;
+      }
+
+      const logChannelId = global.config.LOG_CHANNEL_ID;
+      if (!logChannelId) {
+        return;
+      }
+
+      await global.client.shard!.broadcastEval(
+        async (c, { channelId, msgId, interactionType }) => {
+          const ch = await c.channels.fetch(channelId).catch(() => null);
+          if (ch && ch.isTextBased()) {
+            const msg = await ch.messages.fetch(msgId).catch(() => null);
+            if (msg) {
+              const updatedContent = msg.content.replace('Interaction Received', interactionType);
+              await msg.edit(updatedContent);
+              return true;
+            }
+          }
+          return false;
+        },
+        { context: { channelId: logChannelId, msgId: executionId, interactionType: type } }
+      );
+    } catch (error) {
+      console.error('Failed to update interaction type:', error);
+    }
+  }
+
+  /**
    * Update an execution log with new message content
    * @param executionId Discord message ID
    * @param message New message content
@@ -133,18 +168,25 @@ export class Logger {
 
       // Find and update message via the correct shard
       await global.client.shard!.broadcastEval(
-        async (c, { channelId, msgId, newMsg }) => {
+        async (c, { channelId, msgId, newStatus }) => {
           const ch = await c.channels.fetch(channelId).catch(() => null);
           if (ch && ch.isTextBased()) {
             const msg = await ch.messages.fetch(msgId).catch(() => null);
             if (msg) {
-              await msg.edit(newMsg);
+              // Split the existing message content by '||'
+              const parts = msg.content.split('||');
+              
+              // Grab everything before the '||', trim trailing spaces, and append the new status
+              // (If for some reason the message doesn't have a '||', parts[0] just grabs the whole message)
+              const updatedContent = `${parts[0].trim()} || ${newStatus}`;
+              
+              await msg.edit(updatedContent);
               return true;
             }
           }
           return false;
         },
-        { context: { channelId: logChannelId, msgId: executionId, newMsg: sanitized } }
+        { context: { channelId: logChannelId, msgId: executionId, newStatus: sanitized } }
       );
     } catch (error) {
       console.error('Failed to update execution log:', error);
