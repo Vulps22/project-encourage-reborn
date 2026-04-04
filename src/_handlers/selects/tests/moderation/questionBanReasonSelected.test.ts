@@ -1,7 +1,7 @@
 import questionBanReasonSelected from '../../moderation/questionBanReasonSelected';
 import { BotSelectMenuInteraction } from '../../../../structures';
 import { moderationService, questionService } from '../../../../services';
-import { Logger } from '../../../../utils';
+import { Logger, ModerationLogger } from '../../../../utils';
 
 jest.mock('../../../../services', () => ({
     moderationService: {
@@ -19,14 +19,17 @@ jest.mock('../../../../services', () => ({
 
 jest.mock('../../../../utils', () => ({
     Logger: {
-        updateQuestionLog: jest.fn(),
         error: jest.fn()
+    },
+    ModerationLogger: {
+        updateQuestionLog: jest.fn(),
     }
 }));
 
 const mockModerationService = moderationService as jest.Mocked<typeof moderationService>;
 const mockQuestionService = questionService as jest.Mocked<typeof questionService>;
 const mockLogger = Logger as jest.Mocked<typeof Logger>;
+const mockModerationLogger = ModerationLogger as jest.Mocked<typeof ModerationLogger>;
 
 (global as any).config = {
     TRUTHS_LOG_CHANNEL_ID: 'truths-channel-id',
@@ -75,14 +78,14 @@ describe('questionBanReasonSelected select menu handler', () => {
         const mockQuestion = { id: 123, message_id: 'msg-789', type: 'truth' };
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
         expect(mockSelectInteraction.deferUpdate).toHaveBeenCalled();
         expect(mockModerationService.banQuestion).toHaveBeenCalledWith('123', '123456789012345678', 'Inappropriate content');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id');
+        expect(mockModerationLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id');
         expect(mockSelectInteraction.ephemeralReply).not.toHaveBeenCalled();
         expect(mockSelectInteraction.ephemeralFollowUp).not.toHaveBeenCalled();
     });
@@ -134,7 +137,7 @@ describe('questionBanReasonSelected select menu handler', () => {
         const mockInteractionMultiValues = { ...mockSelectInteraction, values: ['First reason', 'Second reason'] };
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue({ id: 123 } as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await questionBanReasonSelected.execute(mockInteractionMultiValues as any);
 
@@ -145,7 +148,7 @@ describe('questionBanReasonSelected select menu handler', () => {
         mockSelectInteraction.user.id = '999888777666555444';
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue({ id: 123 } as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await questionBanReasonSelected.execute(mockSelectInteraction);
 
@@ -160,7 +163,7 @@ describe('questionBanReasonSelected select menu handler', () => {
         const mockQuestion = { id: 123, message_id: 'msg-789' };
         mockModerationService.banQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
         (mockModerationService as any).findActioningReports.mockResolvedValue(mockReports);
 
         await questionBanReasonSelected.execute(mockSelectInteraction);

@@ -4,7 +4,8 @@ import { ButtonInteraction } from 'discord.js';
 jest.mock('../../../utils/Logger', () => ({
     Logger: {
         debug: jest.fn(),
-        error: jest.fn()
+        error: jest.fn(),
+        updateExecution: jest.fn()
     }
 }));
 
@@ -108,7 +109,7 @@ describe('ButtonInteractionEvent', () => {
             expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
             expect(mockButtonInteraction.reply).toHaveBeenCalledWith({
                 content: '❌ An error occurred while processing this action.',
-                ephemeral: true
+                flags: 64
             });
         });
 

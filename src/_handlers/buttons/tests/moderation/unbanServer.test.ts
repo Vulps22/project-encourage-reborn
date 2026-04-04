@@ -3,11 +3,15 @@ import { BotButtonInteraction } from '../../../../structures';
 import unbanServerButton from '../../moderation/unbanServer';
 import { serverService } from '../../../../services';
 import { ServerProfileBuilder } from '../../../../builders/ServerProfileBuilder';
-import { Logger } from '../../../../utils';
+import { ModerationLogger } from '../../../../utils/ModerationLogger';
 
 jest.mock('../../../../services');
 jest.mock('../../../../builders/ServerProfileBuilder');
-jest.mock('../../../../utils/Logger');
+jest.mock('../../../../utils/ModerationLogger', () => ({
+    ModerationLogger: {
+        updateServerLog: jest.fn(),
+    }
+}));
 
 describe('unbanServerButton', () => {
     let mockInteraction: any;
@@ -30,7 +34,7 @@ describe('unbanServerButton', () => {
         );
 
         (serverService.updateServerSettings as jest.Mock).mockResolvedValue(undefined);
-        (Logger.updateServerLog as jest.Mock).mockResolvedValue(undefined);
+        (ModerationLogger.updateServerLog as jest.Mock).mockResolvedValue(undefined);
     });
 
     it('should have correct name and params', () => {
@@ -49,7 +53,7 @@ describe('unbanServerButton', () => {
             ban_reason: null
         });
         expect(ServerProfileBuilder.prototype.getServerProfile).toHaveBeenCalledWith('123456789');
-        expect(Logger.updateServerLog).toHaveBeenCalledWith(mockProfile);
+        expect(ModerationLogger.updateServerLog).toHaveBeenCalledWith(mockProfile);
     });
 
     it('should handle missing server ID', async () => {
@@ -68,6 +72,6 @@ describe('unbanServerButton', () => {
         await unbanServerButton.execute(botInteraction);
 
         expect(serverService.updateServerSettings).toHaveBeenCalled();
-        expect(Logger.updateServerLog).not.toHaveBeenCalled();
+        expect(ModerationLogger.updateServerLog).not.toHaveBeenCalled();
     });
 });

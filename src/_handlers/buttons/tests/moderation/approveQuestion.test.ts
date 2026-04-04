@@ -1,7 +1,7 @@
 import approveQuestionButton from '../../moderation/approveQuestion';
 import { BotButtonInteraction } from '../../../../structures';
 import { moderationService, questionService } from '../../../../services';
-import { Logger } from '../../../../utils';
+import { Logger, ModerationLogger } from '../../../../utils';
 
 // Mock the services and Logger
 jest.mock('../../../../services', () => ({
@@ -15,14 +15,17 @@ jest.mock('../../../../services', () => ({
 
 jest.mock('../../../../utils', () => ({
     Logger: {
-        updateQuestionLog: jest.fn(),
         error: jest.fn()
+    },
+    ModerationLogger: {
+        updateQuestionLog: jest.fn(),
     }
 }));
 
 const mockModerationService = moderationService as jest.Mocked<typeof moderationService>;
 const mockQuestionService = questionService as jest.Mocked<typeof questionService>;
 const mockLogger = Logger as jest.Mocked<typeof Logger>;
+const mockModerationLogger = ModerationLogger as jest.Mocked<typeof ModerationLogger>;
 
 (global as any).config = {
     TRUTHS_LOG_CHANNEL_ID: 'truths-channel-id',
@@ -70,13 +73,13 @@ describe('approveQuestion button handler', () => {
         const mockQuestion = { id: 123, message_id: 'msg-789', type: 'truth' };
         mockModerationService.approveQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await approveQuestionButton.execute(mockButtonInteraction);
 
         expect(mockModerationService.approveQuestion).toHaveBeenCalledWith('123', '123456789012345678');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id');
+        expect(mockModerationLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id');
         expect(mockButtonInteraction.sendReply).toHaveBeenCalledWith('✅ Question approved successfully!');
         expect(mockButtonInteraction.ephemeralReply).not.toHaveBeenCalled();
     });
@@ -129,13 +132,13 @@ describe('approveQuestion button handler', () => {
         mockButtonInteraction.params.get = jest.fn().mockReturnValue('999');
         mockModerationService.approveQuestion.mockResolvedValue(undefined);
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await approveQuestionButton.execute(mockButtonInteraction);
 
         expect(mockModerationService.approveQuestion).toHaveBeenCalledWith('999', '123456789012345678');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(999);
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'dares-channel-id');
+        expect(mockModerationLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'dares-channel-id');
     });
 
     it('should handle question not found after approval', async () => {

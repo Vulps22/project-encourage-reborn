@@ -1,4 +1,4 @@
-import { ChannelSelectMenuInteraction } from "discord.js";
+import { ChannelSelectMenuInteraction, MessageFlags } from "discord.js";
 import { InteractionEvent } from "./InteractionEvent";
 import { BotSelectMenuInteraction } from "../../structures";
 import { Handler, Logger } from "../../utils";
@@ -20,7 +20,7 @@ class ChannelSelectInteractionEvent implements InteractionEvent<ChannelSelectMen
             Logger.error(`ChannelSelect execution error (${botSelectInteraction.baseId}): ${errorMessage}`);
             await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
             if (!interaction.replied && !interaction.deferred) {
-                await interaction.reply({ content: '❌ An error occurred while processing this action.', ephemeral: true }).catch(() => null);
+                await interaction.reply({ content: '❌ An error occurred while processing this action.', flags: MessageFlags.Ephemeral }).catch(() => null);
             }
         }
     }

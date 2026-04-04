@@ -15,7 +15,7 @@ jest.mock('../../../../views', () => ({
   setupFailedView: jest.fn(),
 }));
 
-jest.mock('../../../../config/Config', () => ({
+jest.mock('../../../../config', () => ({
   Config: {
     ANNOUNCEMENT_CHANNEL_ID: '', // Empty means no IPC call
   },

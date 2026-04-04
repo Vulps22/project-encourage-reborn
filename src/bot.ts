@@ -219,6 +219,7 @@ async function registerModCommands(rest: REST, commands: Command[]): Promise<voi
  * Initialize and start the Discord bot
  */
 async function startBot(): Promise<void> {
+    Logger.initialize();
     const client = new Client({
         intents: [GatewayIntentBits.Guilds],
     });

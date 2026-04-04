@@ -1,7 +1,7 @@
 import banQuestionButton from '../../moderation/banQuestion';
 import { BotButtonInteraction } from '../../../../structures';
 import { moderationService, questionService } from '../../../../services';
-import { Logger } from '../../../../utils';
+import { ModerationLogger } from '../../../../utils/ModerationLogger';
 import { TargetType } from '../../../../types';
 import { QuestionNotFoundError } from '../../../../errors/QuestionNotFoundError';
 
@@ -15,15 +15,15 @@ jest.mock('../../../../services', () => ({
     }
 }));
 
-jest.mock('../../../../utils', () => ({
-    Logger: {
+jest.mock('../../../../utils/ModerationLogger', () => ({
+    ModerationLogger: {
         updateQuestionLog: jest.fn()
     }
 }));
 
 const mockModerationService = moderationService as jest.Mocked<typeof moderationService>;
 const mockQuestionService = questionService as jest.Mocked<typeof questionService>;
-const mockLogger = Logger as jest.Mocked<typeof Logger>;
+const mockModerationLogger = ModerationLogger as jest.Mocked<typeof ModerationLogger>;
 
 (global as any).config = {
     TRUTHS_LOG_CHANNEL_ID: 'truths-channel-id',
@@ -85,13 +85,13 @@ describe('banQuestion button handler', () => {
         
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
         mockModerationService.getBanReasons.mockReturnValue(mockReasons as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await banQuestionButton.execute(mockButtonInteraction);
 
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
         expect(mockModerationService.getBanReasons).toHaveBeenCalledWith(TargetType.Question);
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id', mockReasons);
+        expect(mockModerationLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'truths-channel-id', mockReasons);
         expect(mockButtonInteraction.ephemeralReply).not.toHaveBeenCalled();
     });
 
@@ -103,7 +103,7 @@ describe('banQuestion button handler', () => {
 
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
         expect(mockModerationService.getBanReasons).not.toHaveBeenCalled();
-        expect(mockLogger.updateQuestionLog).not.toHaveBeenCalled();
+        expect(mockModerationLogger.updateQuestionLog).not.toHaveBeenCalled();
     });
 
     it('should handle different question IDs correctly', async () => {
@@ -115,12 +115,12 @@ describe('banQuestion button handler', () => {
             .mockReturnValueOnce(null); // Second call for 'reason'
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
         mockModerationService.getBanReasons.mockReturnValue(mockReasons as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await banQuestionButton.execute(mockButtonInteraction);
 
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(999);
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'dares-channel-id', mockReasons);
+        expect(mockModerationLogger.updateQuestionLog).toHaveBeenCalledWith(mockQuestion, 'dares-channel-id', mockReasons);
     });
 
     it('should handle when question ID is provided as reason parameter', async () => {
@@ -143,15 +143,15 @@ describe('banQuestion button handler', () => {
 
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
         mockModerationService.getBanReasons.mockReturnValue(mockReasons as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
         mockButtonInteraction.message.awaitMessageComponent = jest.fn().mockRejectedValue(new Error('timeout'));
 
         await banQuestionButton.execute(mockButtonInteraction);
         await new Promise(resolve => setImmediate(resolve));
 
         // updateQuestionLog called twice: once with reasons (show dropdown), once without (revert)
-        expect(mockLogger.updateQuestionLog).toHaveBeenCalledTimes(2);
-        expect(mockLogger.updateQuestionLog).toHaveBeenLastCalledWith(mockQuestion, 'truths-channel-id');
+        expect(mockModerationLogger.updateQuestionLog).toHaveBeenCalledTimes(2);
+        expect(mockModerationLogger.updateQuestionLog).toHaveBeenLastCalledWith(mockQuestion, 'truths-channel-id');
     });
 
     it('should have correct button handler structure', () => {
@@ -165,7 +165,7 @@ describe('banQuestion button handler', () => {
 
         mockQuestionService.getQuestionById.mockResolvedValue(mockQuestion as any);
         mockModerationService.getBanReasons.mockReturnValue(mockReasons as any);
-        mockLogger.updateQuestionLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateQuestionLog.mockResolvedValue({} as any);
 
         await banQuestionButton.execute(mockButtonInteraction);
 

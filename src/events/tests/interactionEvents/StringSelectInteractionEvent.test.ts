@@ -3,7 +3,8 @@ import { StringSelectMenuInteraction } from 'discord.js';
 jest.mock('../../../utils/Logger', () => ({
     Logger: {
         debug: jest.fn(),
-        error: jest.fn()
+        error: jest.fn(),
+        updateExecution: jest.fn()
     }
 }));
 
@@ -96,7 +97,7 @@ describe('StringSelectInteractionEvent', () => {
             expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotSelectMenuInteraction));
             expect(mockSelectInteraction.reply).toHaveBeenCalledWith({
                 content: '❌ An error occurred while processing this action.',
-                ephemeral: true
+                flags: 64
             });
         });
 

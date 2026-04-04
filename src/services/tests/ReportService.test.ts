@@ -1,12 +1,19 @@
 import { ReportService } from '../ReportService';
 import { Logger } from '../../utils';
+import { ModerationLogger } from '../../utils/ModerationLogger';
 import { ReportStatus } from '../../interface';
 import { TargetType } from '../../types';
 
 jest.mock('../../utils/Logger');
+jest.mock('../../utils/ModerationLogger', () => ({
+    ModerationLogger: {
+        logReport: jest.fn(),
+    }
+}));
 
 const mockDb = {
   insert: jest.fn(),
+  get: jest.fn(),
 };
 
 describe('ReportService', () => {
@@ -31,7 +38,7 @@ describe('ReportService', () => {
         ban_reason: null,
       };
       mockDb.insert.mockResolvedValue({ rows: [mockReport] });
-      (Logger.logReport as jest.Mock).mockResolvedValue(undefined);
+      (ModerationLogger.logReport as jest.Mock).mockResolvedValue(undefined);
 
       const result = await reportService.createReport(
         '111222333',
@@ -53,14 +60,14 @@ describe('ReportService', () => {
         ban_reason: null,
         content: null,
       });
-      expect(Logger.logReport).toHaveBeenCalledWith(mockReport);
+      expect(ModerationLogger.logReport).toHaveBeenCalledWith(mockReport);
       expect(result).toEqual(mockReport);
     });
 
     it('should default reason to "No reason provided"', async () => {
       const mockReport = { id: 2, reason: 'No reason provided' };
       mockDb.insert.mockResolvedValue({ rows: [mockReport] });
-      (Logger.logReport as jest.Mock).mockResolvedValue(undefined);
+      (ModerationLogger.logReport as jest.Mock).mockResolvedValue(undefined);
 
       await reportService.createReport('111', '42', null, TargetType.Question, '999');
 

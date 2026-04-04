@@ -1,7 +1,7 @@
 import serverBanReasonSelected from '../../moderation/serverBanReasonSelected';
 import { BotSelectMenuInteraction } from '../../../../structures';
 import { moderationService } from '../../../../services';
-import { Logger } from '../../../../utils';
+import { Logger, ModerationLogger } from '../../../../utils';
 import { ServerProfileBuilder } from '../../../../builders/ServerProfileBuilder';
 
 jest.mock('../../../../services', () => ({
@@ -17,8 +17,10 @@ jest.mock('../../../../services', () => ({
 
 jest.mock('../../../../utils', () => ({
     Logger: {
-        updateServerLog: jest.fn(),
         error: jest.fn()
+    },
+    ModerationLogger: {
+        updateServerLog: jest.fn(),
     }
 }));
 
@@ -30,6 +32,7 @@ jest.mock('../../../../builders/ServerProfileBuilder', () => ({
 
 const mockModerationService = moderationService as jest.Mocked<typeof moderationService>;
 const mockLogger = Logger as jest.Mocked<typeof Logger>;
+const mockModerationLogger = ModerationLogger as jest.Mocked<typeof ModerationLogger>;
 const MockServerProfileBuilder = ServerProfileBuilder as jest.MockedClass<typeof ServerProfileBuilder>;
 
 describe('serverBanReasonSelected select menu handler', () => {
@@ -77,13 +80,13 @@ describe('serverBanReasonSelected select menu handler', () => {
         const mockProfile = { id: '987654321098765432', name: 'Test Server' };
         mockModerationService.banServer.mockResolvedValue(undefined);
         mockGetServerProfile.mockResolvedValue(mockProfile);
-        mockLogger.updateServerLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateServerLog.mockResolvedValue({} as any);
 
         await serverBanReasonSelected.execute(mockSelectInteraction);
 
         expect(mockModerationService.banServer).toHaveBeenCalledWith('987654321098765432', '123456789012345678', 'Hate Speech');
         expect(mockGetServerProfile).toHaveBeenCalledWith('987654321098765432');
-        expect(mockLogger.updateServerLog).toHaveBeenCalledWith(mockProfile);
+        expect(mockModerationLogger.updateServerLog).toHaveBeenCalledWith(mockProfile);
         expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('✅ Server banned successfully!');
         expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
     });
@@ -133,7 +136,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         const mockInteractionMultiValues = { ...mockSelectInteraction, values: ['First reason', 'Second reason'] };
         mockModerationService.banServer.mockResolvedValue(undefined);
         mockGetServerProfile.mockResolvedValue({ id: '987654321098765432' });
-        mockLogger.updateServerLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateServerLog.mockResolvedValue({} as any);
 
         await serverBanReasonSelected.execute(mockInteractionMultiValues as any);
 
@@ -144,7 +147,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         mockSelectInteraction.user.id = '999888777666555444';
         mockModerationService.banServer.mockResolvedValue(undefined);
         mockGetServerProfile.mockResolvedValue({ id: '987654321098765432' });
-        mockLogger.updateServerLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateServerLog.mockResolvedValue({} as any);
 
         await serverBanReasonSelected.execute(mockSelectInteraction);
 
@@ -158,7 +161,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         ];
         mockModerationService.banServer.mockResolvedValue(undefined);
         mockGetServerProfile.mockResolvedValue({ id: '987654321098765432' });
-        mockLogger.updateServerLog.mockResolvedValue({} as any);
+        mockModerationLogger.updateServerLog.mockResolvedValue({} as any);
         (mockModerationService as any).findActioningReports.mockResolvedValue(mockReports);
 
         await serverBanReasonSelected.execute(mockSelectInteraction);

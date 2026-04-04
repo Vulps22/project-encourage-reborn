@@ -1,4 +1,4 @@
-import { AutocompleteInteraction } from "discord.js";
+import { AutocompleteInteraction, MessageFlags } from "discord.js";
 import { Question, Server } from "../../../interface";
 import { db, reportService } from "../../../services";
 import { BotCommandInteraction } from "../../../structures";
@@ -44,7 +44,7 @@ const report = new Command('report', 'Report Inappropriate Content')
         }
     })
     .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         
         const subcommand = interaction.options.getSubcommand();
         let content: Question | Server | false;

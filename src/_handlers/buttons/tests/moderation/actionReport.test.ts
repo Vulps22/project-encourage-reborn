@@ -2,16 +2,14 @@ import { ButtonInteraction } from 'discord.js';
 import { BotButtonInteraction } from '../../../../structures';
 import actionReportButton from '../../moderation/actionReport';
 import { moderationService } from '../../../../services';
-import { Logger } from '../../../../utils';
+import { ModerationLogger } from '../../../../utils/ModerationLogger';
 import { ReportStatus } from '../../../../interface';
 import { TargetType } from '../../../../types';
 
 jest.mock('../../../../services');
-jest.mock('../../../../utils', () => ({
-    Logger: {
+jest.mock('../../../../utils/ModerationLogger', () => ({
+    ModerationLogger: {
         updateReportLog: jest.fn().mockResolvedValue(null),
-        debug: jest.fn(),
-        error: jest.fn(),
     }
 }));
 
@@ -72,7 +70,7 @@ describe('actionReportButton', () => {
 
         expect(moderationService.actioningReport).toHaveBeenCalledWith(1, '444555666');
         expect(moderationService.getBanReasons).toHaveBeenCalledWith(mockReport.type);
-        expect(Logger.updateReportLog).toHaveBeenCalledWith(mockReport, mockBanReasons);
+        expect(ModerationLogger.updateReportLog).toHaveBeenCalledWith(mockReport, mockBanReasons);
     });
 
     it('should handle invalid report ID', async () => {
@@ -98,7 +96,7 @@ describe('actionReportButton', () => {
         await new Promise(resolve => setTimeout(resolve, 0));
 
         expect(moderationService.resetReport).toHaveBeenCalledWith(1);
-        expect(Logger.updateReportLog).toHaveBeenCalledWith(resetReport);
+        expect(ModerationLogger.updateReportLog).toHaveBeenCalledWith(resetReport);
     });
 
     it('should handle service error with ephemeral follow-up', async () => {

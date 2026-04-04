@@ -2,7 +2,7 @@ import { ModerationService } from '../ModerationService';
 import { DatabaseService, MutationResult } from '../DatabaseService';
 import { Question, Report, ReportStatus } from '../../interface';
 import { QuestionType, TargetType } from '../../types';
-import { Logger } from '../../utils';
+import { Logger, ModerationLogger } from '../../utils';
 
 // Mock the global objects
 const mockConfig = {
@@ -12,15 +12,18 @@ const mockConfig = {
     OFFICIAL_GUILD_ID: '999999999'
 };
 
-// Mock the Logger
 jest.mock('../../utils/Logger', () => ({
     Logger: {
         log: jest.fn(),
         debug: jest.fn(),
         error: jest.fn(),
-        logTo: jest.fn(),
+    }
+}));
+
+jest.mock('../../utils/ModerationLogger', () => ({
+    ModerationLogger: {
         logQuestion: jest.fn().mockResolvedValue({ id: 'msg-123' }),
-        updateReportLog: jest.fn().mockResolvedValue(null)
+        updateReportLog: jest.fn().mockResolvedValue(null),
     }
 }));
 
@@ -67,8 +70,8 @@ describe('ModerationService', () => {
         // Set up global mocks
         (global as any).config = mockConfig;
 
-        // Reset Logger.logQuestion mock to return proper message object
-        (Logger.logQuestion as jest.Mock).mockResolvedValue({ id: 'msg-123' });
+        // Reset ModerationLogger.logQuestion mock to return proper message object
+        (ModerationLogger.logQuestion as jest.Mock).mockResolvedValue({ id: 'msg-123' });
 
         // Create mock database service
         mockDb = {
@@ -92,7 +95,7 @@ describe('ModerationService', () => {
         it('should send truth question to truths log channel', async () => {
             const result = await moderationService.sendToApprovalQueue(mockQuestion);
 
-            expect(Logger.logQuestion).toHaveBeenCalledWith(mockQuestion, '123456789');
+            expect(ModerationLogger.logQuestion).toHaveBeenCalledWith(mockQuestion, '123456789');
             expect(Logger.debug).toHaveBeenCalledWith('Sending question 1 to approval queue');
             expect(Logger.debug).toHaveBeenCalledWith('Question 1 would be sent to approval queue in channel 123456789');
             expect(result).toBe('msg-123'); // Should return the message ID
@@ -103,7 +106,7 @@ describe('ModerationService', () => {
             
             const result = await moderationService.sendToApprovalQueue(dareQuestion);
 
-            expect(Logger.logQuestion).toHaveBeenCalledWith(dareQuestion, '987654321');
+            expect(ModerationLogger.logQuestion).toHaveBeenCalledWith(dareQuestion, '987654321');
             expect(result).toBe('msg-123'); // Should return the message ID
         });
 
@@ -286,7 +289,7 @@ describe('ModerationService', () => {
 
             const result = await moderationService.getReport(1);
 
-            expect(mockDb.get).toHaveBeenCalledWith('moderation', 'reports', { id: 1 });
+            expect(mockDb.get).toHaveBeenCalledWith('moderation', 'report_view', { id: 1 });
             expect(result).toEqual(mockReport);
         });
 
@@ -373,7 +376,7 @@ describe('ModerationService', () => {
             await moderationService.actionedReport(1, '123456789012345678');
 
             expect(mockDb.update).toHaveBeenCalledTimes(2);
-            expect(Logger.updateReportLog).toHaveBeenCalledTimes(2);
+            expect(ModerationLogger.updateReportLog).toHaveBeenCalledTimes(2);
             expect(Logger.debug).toHaveBeenCalledWith('Report 1 marked as actioned successfully');
         });
 
@@ -402,7 +405,7 @@ describe('ModerationService', () => {
             await moderationService.actionedReport(1, '123456789012345678');
 
             expect(mockDb.update).not.toHaveBeenCalled();
-            expect(Logger.updateReportLog).not.toHaveBeenCalled();
+            expect(ModerationLogger.updateReportLog).not.toHaveBeenCalled();
         });
     });
 
@@ -420,7 +423,7 @@ describe('ModerationService', () => {
             await moderationService.clearReport(1, '123456789012345678');
 
             expect(mockDb.update).toHaveBeenCalledTimes(2);
-            expect(Logger.updateReportLog).toHaveBeenCalledTimes(2);
+            expect(ModerationLogger.updateReportLog).toHaveBeenCalledTimes(2);
             expect(Logger.debug).toHaveBeenCalledWith('Report 1 cleared successfully');
         });
 

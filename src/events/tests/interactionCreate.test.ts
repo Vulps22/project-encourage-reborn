@@ -76,9 +76,11 @@ describe('interactionCreate event', () => {
       isAutocomplete: jest.fn().mockReturnValue(false),
       isStringSelectMenu: jest.fn().mockReturnValue(false),
       isChannelSelectMenu: jest.fn().mockReturnValue(false),
+      isModalSubmit: jest.fn().mockReturnValue(false),
       isRepliable: jest.fn().mockReturnValue(true),
       guildId: '987654321',
       user: { id: '111222333' },
+      customId: 'moderation_approveQuestion_id:123',
       reply: jest.fn()
     } as any;
 
