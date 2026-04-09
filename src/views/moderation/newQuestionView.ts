@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, Message
 import { Question } from "../../interface";
 import { UniversalMessage } from "../../types";
 
-async function newQuestionView(question: Question, banReasons: [] | null = null): Promise<UniversalMessage> {
+async function newQuestionView(question: Question, banReasons: [] | null = null, prefetched?: { username?: string, guildName?: string }): Promise<UniversalMessage> {
 
 
     const title = new TextDisplayBuilder()
@@ -11,21 +11,26 @@ async function newQuestionView(question: Question, banReasons: [] | null = null)
     const questionText = new TextDisplayBuilder()
         .setContent(`**Question:** \n ${question.question}`);
 
-    const client = global.client;
+    let username: string;
+    let guildName: string;
 
-    //get the user's username. do not use cache
-    const user = await client.users.fetch(question.user_id);
-    const username = user ? user.username : "Unknown User";
-
-    //get the server's name. do not use cache
-    const guild = await client.guilds.fetch(question.server_id);
+    if (prefetched?.username !== undefined && prefetched?.guildName !== undefined) {
+        username = prefetched.username;
+        guildName = prefetched.guildName;
+    } else {
+        const client = global.client;
+        const user = await client.users.fetch(question.user_id);
+        username = user ? user.username : 'Unknown User';
+        const guild = await client.guilds.fetch(question.server_id);
+        guildName = guild.name;
+    }
 
     const authorInfo = new TextDisplayBuilder()
         //.setContent(`**Submitted by:**\n<@${question.user_id}> | ${question.user_id})`);
         .setContent(`**Submitted by:**\n${username} (User ID: ${question.user_id})`);
 
     const serverInfo = new TextDisplayBuilder()
-        .setContent(`**Server Name:**\n${guild.name} | ${question.server_id}`);
+        .setContent(`**Server Name:**\n${guildName} | ${question.server_id}`);
 
     const id: TextDisplayBuilder = new TextDisplayBuilder()
         .setContent(`**Question ID:**\n${question.id}`);

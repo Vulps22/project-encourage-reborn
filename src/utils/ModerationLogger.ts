@@ -13,29 +13,45 @@ import { Logger } from './Logger';
 export class ModerationLogger {
 
   static async logQuestion(question: Question, channelId: Snowflake): Promise<Message | null> {
+    let username = 'Unknown User';
+    let guildName = 'Unknown Server';
+    try {
+      const user = await global.client.users.fetch(question.user_id);
+      if (user) username = user.username;
+    } catch { /* best-effort */ }
+    try {
+      const guild = await global.client.guilds.fetch(question.server_id);
+      if (guild) guildName = guild.name;
+    } catch { /* best-effort */ }
+
     const results = await global.client.shard!.broadcastEval(
       async (c, context) => {
         const ch = c.channels.cache.get(context.channelId);
         if (ch?.isTextBased()) {
-          const path = await import('path');
-          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
-          const { newQuestionView } = await import(viewPath);
+          try {
+            const path = await import('path');
+            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'newQuestionView.js');
+            const { newQuestionView } = await import(viewPath);
 
-          const questionData = {
-            ...context.question,
-            datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
-            datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
-            datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
-            created: new Date(context.question.created)
-          };
+            const questionData = {
+              ...context.question,
+              datetime_approved: context.question.datetime_approved ? new Date(context.question.datetime_approved) : null,
+              datetime_banned: context.question.datetime_banned ? new Date(context.question.datetime_banned) : null,
+              datetime_deleted: context.question.datetime_deleted ? new Date(context.question.datetime_deleted) : null,
+              created: new Date(context.question.created)
+            };
 
-          const view = await newQuestionView(questionData);
-          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
-          return sentMessage;
+            const view = await newQuestionView(questionData, null, { username: context.username, guildName: context.guildName });
+            const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
+            return sentMessage;
+          } catch (err) {
+            console.error('[ModerationLogger] logQuestion failed on shard:', String(err));
+            return null;
+          }
         }
         return null;
       },
-      { context: { channelId, question } }
+      { context: { channelId, question, username, guildName } }
     );
 
     return results.find(result => result !== null) as Message || null;
@@ -77,10 +93,11 @@ export class ModerationLogger {
       { context: { channelId, question, messageId: question.message_id, reasons } }
     );
 
-    const errorResult = results.find(r => r && !r.success);
-    if (errorResult) Logger.error(`Failed to update question log: ${errorResult.error}`);
-
     const successResult = results.find(result => result && result.success);
+    if (!successResult) {
+      const errorResult = results.find(r => r && !r.success);
+      if (errorResult) Logger.error(`Failed to update question log: ${errorResult.error}`);
+    }
     return (successResult ? successResult.message : null) as Message | null;
   }
 
@@ -89,13 +106,18 @@ export class ModerationLogger {
       async (c, context) => {
         const ch = c.channels.cache.get(context.channelId);
         if (ch?.isTextBased()) {
-          const path = await import('path');
-          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'serverView.js');
-          const { serverView } = await import(viewPath);
+          try {
+            const path = await import('path');
+            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'serverView.js');
+            const { serverView } = await import(viewPath);
 
-          const view = await serverView(context.server);
-          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
-          return sentMessage;
+            const view = await serverView(context.server);
+            const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
+            return sentMessage;
+          } catch (err) {
+            console.error('[ModerationLogger] logServer failed on shard:', String(err));
+            return null;
+          }
         }
         return null;
       },
@@ -133,10 +155,11 @@ export class ModerationLogger {
       { context: { channelId: Config.SERVER_LOG_CHANNEL_ID, server, messageId: server.message_id, reasons } }
     );
 
-    const errorResult = results.find(r => r && !r.success);
-    if (errorResult) Logger.error(`Failed to update server log: ${errorResult.error}`);
-
     const successResult = results.find(result => result && result.success);
+    if (!successResult) {
+      const errorResult = results.find(r => r && !r.success);
+      if (errorResult) Logger.error(`Failed to update server log: ${errorResult.error}`);
+    }
     return (successResult ? successResult.message : null) as Message | null;
   }
 
@@ -145,19 +168,24 @@ export class ModerationLogger {
       async (c, context) => {
         const ch = c.channels.cache.get(context.channelId);
         if (ch?.isTextBased()) {
-          const path = await import('path');
-          const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'reportView.js');
-          const { ReportView } = await import(viewPath);
+          try {
+            const path = await import('path');
+            const viewPath = path.join(process.cwd(), 'dist', 'views', 'moderation', 'reportView.js');
+            const { ReportView } = await import(viewPath);
 
-          const reportData = {
-            ...context.report,
-            created_at: context.report.created_at ? new Date(context.report.created_at) : undefined,
-            updated_at: context.report.updated_at ? new Date(context.report.updated_at) : undefined
-          };
+            const reportData = {
+              ...context.report,
+              created_at: context.report.created_at ? new Date(context.report.created_at) : undefined,
+              updated_at: context.report.updated_at ? new Date(context.report.updated_at) : undefined
+            };
 
-          const view = await ReportView(reportData);
-          const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
-          return sentMessage;
+            const view = await ReportView(reportData, null);
+            const sentMessage = await (ch as TextChannel).send(view as MessageCreateOptions);
+            return sentMessage;
+          } catch (err) {
+            console.error('[ModerationLogger] logReport failed on shard:', String(err));
+            return null;
+          }
         }
         return null;
       },
@@ -201,10 +229,11 @@ export class ModerationLogger {
       { context: { channelId: Config.REPORT_CHANNEL_ID, report, messageId: report.message_id, reasons } }
     );
 
-    const errorResult = results.find(r => r && !r.success);
-    if (errorResult) Logger.error(`Failed to update report log: ${errorResult.error}`);
-
     const successResult = results.find(result => result && result.success);
+    if (!successResult) {
+      const errorResult = results.find(r => r && !r.success);
+      if (errorResult) Logger.error(`Failed to update report log: ${errorResult.error}`);
+    }
     return (successResult ? successResult.message : null) as Message | null;
   }
 }
