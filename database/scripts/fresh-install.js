@@ -1,7 +1,13 @@
 const { Pool } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
-require('dotenv').config();
+const envMap = { '--dev': '.env.development', '--stage': '.env.staging', '--prod': '.env.production' };
+const envFlag = process.argv.find(a => envMap[a]);
+if (!envFlag) {
+  console.error('No environment selected. Use --dev, --stage, or --prod.');
+  process.exit(1);
+}
+require('dotenv').config({ path: path.resolve(process.cwd(), envMap[envFlag]) });
 
 /**
  * Fresh Install Script

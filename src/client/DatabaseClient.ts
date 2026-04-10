@@ -1,0 +1,61 @@
+type PathParams = Record<string, string | number>;
+
+export class DSError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = 'DSError';
+  }
+}
+
+export class DatabaseClient {
+  constructor(private baseUrl: string, private token: string) {}
+
+  private buildUrl(path: string, params?: PathParams): string {
+    if (!params) return path;
+    return Object.entries(params).reduce(
+      (url, [key, value]) => url.replace(`:${key}`, encodeURIComponent(String(value))),
+      path
+    );
+  }
+
+  private async request<T>(
+    method: string,
+    path: string,
+    params?: PathParams,
+    body?: unknown
+  ): Promise<T> {
+    const url = `${this.baseUrl}${this.buildUrl(path, params)}`;
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({ error: res.statusText }));
+      throw new DSError(res.status, payload.error ?? res.statusText);
+    }
+
+    return res.json() as Promise<T>;
+  }
+
+  async get<T>(path: string, params?: PathParams): Promise<T> {
+    return this.request<T>('GET', path, params);
+  }
+
+  async post<T>(path: string, params?: PathParams, body?: unknown): Promise<T> {
+    return this.request<T>('POST', path, params, body);
+  }
+
+  async patch<T>(path: string, params?: PathParams, body?: unknown): Promise<T> {
+    return this.request<T>('PATCH', path, params, body);
+  }
+
+  async delete<T>(path: string, params?: PathParams): Promise<T> {
+    return this.request<T>('DELETE', path, params);
+  }
+}
