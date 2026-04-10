@@ -2,8 +2,6 @@ import { Client, Collection } from 'discord.js';
 import { Handler, Command } from '../utils';
 import { Config } from '../config';
 import { BotModalInteraction, BotSelectMenuInteraction } from '../structures';
-import { DatabaseClient } from '../client/DatabaseClient';
-
 declare global {
     var client: Client;
     var commands: Collection<string, Command>;
@@ -11,7 +9,6 @@ declare global {
     var selects: Collection<string, Handler<BotSelectMenuInteraction>>;
     var modals: Collection<string, Handler<BotModalInteraction>>;
     var config: typeof Config;
-    var db: DatabaseClient;
 }
 
 export {};

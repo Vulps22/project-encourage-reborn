@@ -3,9 +3,8 @@ import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { Handler, Command, Logger } from './utils';
 import { EventHandler } from './types';
-import { Config, Urls } from './config';
+import { Config } from './config';
 import { BotButtonInteraction, BotModalInteraction, BotSelectMenuInteraction } from './structures';
-import { DatabaseClient } from './client/DatabaseClient';
 
 /**
  * Initialize global objects
@@ -13,7 +12,6 @@ import { DatabaseClient } from './client/DatabaseClient';
 function initializeGlobals(client: Client): void {
     global.client = client;
     global.config = Config;
-    global.db = new DatabaseClient(Urls.DS_URL, process.env.DS_TOKEN ?? '');
     global.commands = new Collection<string, Command>();
     global.buttons = new Collection<string, Handler<BotButtonInteraction>>();
     global.selects = new Collection<string, Handler<BotSelectMenuInteraction>>();

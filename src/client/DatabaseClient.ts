@@ -36,7 +36,7 @@ export class DatabaseClient {
     });
 
     if (!res.ok) {
-      const payload = await res.json().catch(() => ({ error: res.statusText }));
+      const payload = await res.json().catch(() => ({ error: res.statusText })) as { error?: string };
       throw new DSError(res.status, payload.error ?? res.statusText);
     }
 
