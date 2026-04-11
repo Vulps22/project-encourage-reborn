@@ -43,7 +43,7 @@ export const db = new DatabaseService({
 
 // Create service instances with dependency injection
 export const challengeService = new ChallengeService(db);
-export const configurationService = new ConfigurationService(db);
+export const configurationService = new ConfigurationService();
 export const moderationService = new ModerationService(db);
 export const questionService = new QuestionService(db);
 export const reportService = new ReportService(db);
