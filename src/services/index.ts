@@ -52,4 +52,4 @@ export const userService = new UserService(db);
 export const userTrackingService = new UserTrackingService(db);
 export const votingService = new VotingService();
 export const storableService = new StorableService();
-export const inventoryService = new InventoryService(db);
+export const inventoryService = new InventoryService();
