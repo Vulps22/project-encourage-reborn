@@ -1,6 +1,7 @@
 import { BotButtonInteraction } from '../../../structures';
 import { Handler, Logger } from '../../../utils';
 import { challengeService, configurationService, questionService, votingService } from '../../../services';
+import { DSError } from '../../../client';
 import { challengeEmbed } from '../../../views';
 
 const failed: Handler<BotButtonInteraction> = {
@@ -18,21 +19,24 @@ const failed: Handler<BotButtonInteraction> = {
 
             const challengeId = challenge.id;
 
-            if (await votingService.hasUserVoted(challengeId, userId)) {
-                await interaction.ephemeralReply('❌ You have already voted on this question.');
-                return;
-            }
-
             const challengeVote = await votingService.getVoteCount(challengeId);
             if (challengeVote.final_result !== null) {
                 await interaction.ephemeralReply('❌ This challenge has already been locked.');
                 return;
             }
 
-            await votingService.recordVote(challengeId, userId, 'failed');
-            let updated = await votingService.incrementCount(challengeId, 'failed');
-            const threshold = await configurationService.getVoteThreshold();
+            let updated;
+            try {
+                updated = await votingService.vote(challengeId, userId, 'failed');
+            } catch (error) {
+                if (error instanceof DSError && error.status === 409) {
+                    await interaction.ephemeralReply('❌ You have already voted on this question.');
+                    return;
+                }
+                throw error;
+            }
 
+            const threshold = await configurationService.getVoteThreshold();
             if (updated.failed_count >= threshold) {
                 updated = await votingService.finalizeChallenge(challengeId, 'failed');
             }

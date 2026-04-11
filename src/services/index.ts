@@ -50,6 +50,6 @@ export const reportService = new ReportService(db);
 export const serverService = new ServerService(db);
 export const userService = new UserService(db);
 export const userTrackingService = new UserTrackingService(db);
-export const votingService = new VotingService(db);
+export const votingService = new VotingService();
 export const storableService = new StorableService(db);
 export const inventoryService = new InventoryService(db);

@@ -1,8 +1,11 @@
-import { DatabaseService } from '../DatabaseService';
 import { VotingService } from '../VotingService';
+import { dsClient, DSError } from '../../client';
 import { ChallengeVote } from '../../interface';
 
-jest.mock('../DatabaseService');
+jest.mock('../../client', () => ({
+    dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+    DSError: jest.requireActual('../../client').DSError,
+}));
 
 const makeChallengeVote = (overrides: Partial<ChallengeVote> = {}): ChallengeVote => ({
     challenge_id: 1,
@@ -15,186 +18,107 @@ const makeChallengeVote = (overrides: Partial<ChallengeVote> = {}): ChallengeVot
 
 describe('VotingService', () => {
     let service: VotingService;
-    let mockDb: jest.Mocked<DatabaseService>;
 
     beforeEach(() => {
-        mockDb = new DatabaseService({
-            host: 'localhost',
-            user: 'test',
-            password: 'test',
-            database: 'test',
-        }) as jest.Mocked<DatabaseService>;
-
-        service = new VotingService(mockDb);
+        service = new VotingService();
         jest.clearAllMocks();
     });
 
     describe('addChallenge', () => {
-        it('should insert into vote.challenge_votes and return the record', async () => {
+        it('should post to /vote/:id and return the ChallengeVote', async () => {
             const cv = makeChallengeVote();
-            (mockDb.insert as jest.Mock).mockResolvedValue({ affectedRows: 1, rows: [cv] });
+            (dsClient.post as jest.Mock).mockResolvedValue(cv);
 
             const result = await service.addChallenge(1);
 
-            expect(mockDb.insert).toHaveBeenCalledWith('vote', 'challenge_votes', { challenge_id: 1 });
+            expect(dsClient.post).toHaveBeenCalledWith('/vote/:id', { id: 1 });
             expect(result).toEqual(cv);
         });
 
-        it('should throw when insert returns no rows', async () => {
-            (mockDb.insert as jest.Mock).mockResolvedValue({ affectedRows: 0, rows: [] });
+        it('should throw when DS returns an error', async () => {
+            (dsClient.post as jest.Mock).mockRejectedValue(new DSError(500, 'Failed'));
 
-            await expect(service.addChallenge(1)).rejects.toThrow('Failed to initialise vote tracking for challenge 1');
+            await expect(service.addChallenge(1)).rejects.toThrow('Failed');
         });
     });
 
-    describe('hasUserVoted', () => {
-        it('should return false when no vote row exists', async () => {
-            (mockDb.get as jest.Mock).mockResolvedValue(null);
-
-            const result = await service.hasUserVoted(1, '222');
-
-            expect(result).toBe(false);
-            expect(mockDb.get).toHaveBeenCalledWith('vote', 'user_votes', {
-                challenge_id: 1,
-                user_id: '222',
-            });
-        });
-
-        it('should return true when a vote row exists', async () => {
-            (mockDb.get as jest.Mock).mockResolvedValue({ challenge_id: 1, user_id: '222', vote_type: 'done' });
-
-            const result = await service.hasUserVoted(1, '222');
-
-            expect(result).toBe(true);
-        });
-    });
-
-    describe('recordVote', () => {
-        it('should insert into vote.user_votes with correct fields', async () => {
-            (mockDb.insert as jest.Mock).mockResolvedValue({ affectedRows: 1, rows: [] });
-
-            await service.recordVote(1, '222', 'done');
-
-            expect(mockDb.insert).toHaveBeenCalledWith('vote', 'user_votes', {
-                challenge_id: 1,
-                user_id: '222',
-                vote_type: 'done',
-            });
-        });
-
-        it('should insert with failed vote type', async () => {
-            (mockDb.insert as jest.Mock).mockResolvedValue({ affectedRows: 1, rows: [] });
-
-            await service.recordVote(1, '222', 'failed');
-
-            expect(mockDb.insert).toHaveBeenCalledWith('vote', 'user_votes', {
-                challenge_id: 1,
-                user_id: '222',
-                vote_type: 'failed',
-            });
-        });
-    });
-
-    describe('incrementCount', () => {
-        it('should increment done_count by 1 and return the updated ChallengeVote', async () => {
-            const cv = makeChallengeVote({ done_count: 2 });
-            const updated = makeChallengeVote({ done_count: 3 });
-            (mockDb.get as jest.Mock).mockResolvedValue(cv);
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1, rows: [updated] });
-
-            const result = await service.incrementCount(1, 'done');
-
-            expect(mockDb.update).toHaveBeenCalledWith(
-                'vote', 'challenge_votes',
-                { done_count: 3 },
-                { challenge_id: 1 }
-            );
-            expect(result).toEqual(updated);
-        });
-
-        it('should increment failed_count by 1 and return the updated ChallengeVote', async () => {
-            const cv = makeChallengeVote({ failed_count: 1 });
-            const updated = makeChallengeVote({ failed_count: 2 });
-            (mockDb.get as jest.Mock).mockResolvedValue(cv);
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1, rows: [updated] });
-
-            const result = await service.incrementCount(1, 'failed');
-
-            expect(mockDb.update).toHaveBeenCalledWith(
-                'vote', 'challenge_votes',
-                { failed_count: 2 },
-                { challenge_id: 1 }
-            );
-            expect(result).toEqual(updated);
-        });
-
-        it('should throw NO_TRACKING when challenge_votes row is missing', async () => {
-            (mockDb.get as jest.Mock).mockResolvedValue(null);
-
-            await expect(service.incrementCount(1, 'done')).rejects.toThrow('NO_TRACKING');
-            expect(mockDb.update).not.toHaveBeenCalled();
-        });
-
-        it('should throw when update returns no rows', async () => {
+    describe('vote', () => {
+        it('should post to /vote/:id/done for done votes', async () => {
             const cv = makeChallengeVote({ done_count: 1 });
-            (mockDb.get as jest.Mock).mockResolvedValue(cv);
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0, rows: [] });
+            (dsClient.post as jest.Mock).mockResolvedValue(cv);
 
-            await expect(service.incrementCount(1, 'done')).rejects.toThrow('Failed to increment done count for challenge 1');
+            const result = await service.vote(1, '222', 'done');
+
+            expect(dsClient.post).toHaveBeenCalledWith('/vote/:id/done', { id: 1 }, { user_id: '222' });
+            expect(result).toEqual(cv);
+        });
+
+        it('should post to /vote/:id/fail for failed votes', async () => {
+            const cv = makeChallengeVote({ failed_count: 1 });
+            (dsClient.post as jest.Mock).mockResolvedValue(cv);
+
+            const result = await service.vote(1, '222', 'failed');
+
+            expect(dsClient.post).toHaveBeenCalledWith('/vote/:id/fail', { id: 1 }, { user_id: '222' });
+            expect(result).toEqual(cv);
+        });
+
+        it('should throw DSError(409) when user has already voted', async () => {
+            (dsClient.post as jest.Mock).mockRejectedValue(new DSError(409, 'Already voted'));
+
+            await expect(service.vote(1, '222', 'done')).rejects.toThrow('Already voted');
         });
     });
 
     describe('getVoteCount', () => {
-        it('should return the ChallengeVote record', async () => {
+        it('should get from /vote/:id and return the ChallengeVote', async () => {
             const cv = makeChallengeVote({ done_count: 2, failed_count: 1 });
-            (mockDb.get as jest.Mock).mockResolvedValue(cv);
+            (dsClient.get as jest.Mock).mockResolvedValue(cv);
 
             const result = await service.getVoteCount(1);
 
+            expect(dsClient.get).toHaveBeenCalledWith('/vote/:id', { id: 1 });
             expect(result).toEqual(cv);
-            expect(mockDb.get).toHaveBeenCalledWith('vote', 'challenge_votes', { challenge_id: 1 });
         });
 
-        it('should throw NO_TRACKING when record is missing', async () => {
-            (mockDb.get as jest.Mock).mockResolvedValue(null);
+        it('should throw NO_TRACKING on 404', async () => {
+            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(404, 'Not found'));
 
             await expect(service.getVoteCount(1)).rejects.toThrow('NO_TRACKING');
+        });
+
+        it('should rethrow non-404 errors', async () => {
+            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(500, 'Internal error'));
+
+            await expect(service.getVoteCount(1)).rejects.toThrow('Internal error');
         });
     });
 
     describe('finalizeChallenge', () => {
-        it('should update final_result and return the updated ChallengeVote', async () => {
-            const updated = makeChallengeVote({ final_result: 'done', finalised_datetime: new Date() });
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1, rows: [updated] });
+        it('should patch /vote/:id/finalise with the result', async () => {
+            const cv = makeChallengeVote({ final_result: 'done', finalised_datetime: new Date() });
+            (dsClient.patch as jest.Mock).mockResolvedValue(cv);
 
             const result = await service.finalizeChallenge(1, 'done');
 
-            expect(mockDb.update).toHaveBeenCalledWith(
-                'vote', 'challenge_votes',
-                expect.objectContaining({ final_result: 'done' }),
-                { challenge_id: 1 }
-            );
-            expect(result).toEqual(updated);
+            expect(dsClient.patch).toHaveBeenCalledWith('/vote/:id/finalise', { id: 1 }, { result: 'done' });
+            expect(result).toEqual(cv);
         });
 
         it('should finalize as failed', async () => {
-            const updated = makeChallengeVote({ final_result: 'failed', finalised_datetime: new Date() });
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 1, changedRows: 1, rows: [updated] });
+            const cv = makeChallengeVote({ final_result: 'failed', finalised_datetime: new Date() });
+            (dsClient.patch as jest.Mock).mockResolvedValue(cv);
 
             const result = await service.finalizeChallenge(1, 'failed');
 
-            expect(mockDb.update).toHaveBeenCalledWith(
-                'vote', 'challenge_votes',
-                expect.objectContaining({ final_result: 'failed' }),
-                { challenge_id: 1 }
-            );
-            expect(result).toEqual(updated);
+            expect(dsClient.patch).toHaveBeenCalledWith('/vote/:id/finalise', { id: 1 }, { result: 'failed' });
+            expect(result).toEqual(cv);
         });
 
-        it('should throw when update returns no rows', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0, rows: [] });
+        it('should throw when DS returns an error', async () => {
+            (dsClient.patch as jest.Mock).mockRejectedValue(new DSError(404, 'Not found'));
 
-            await expect(service.finalizeChallenge(1, 'done')).rejects.toThrow('Failed to finalize challenge 1');
+            await expect(service.finalizeChallenge(1, 'done')).rejects.toThrow('Not found');
         });
     });
 });
