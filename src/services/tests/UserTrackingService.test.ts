@@ -1,177 +1,140 @@
-import { DatabaseService } from '../DatabaseService';
-import { DMInteractionError } from '../../errors';
 import { UserTrackingService } from '../UserTrackingService';
+import { dsClient } from '../../client';
+import { DMInteractionError } from '../../errors';
 
-// Mock DatabaseService
-jest.mock('../DatabaseService');
+jest.mock('../../client', () => ({
+    dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+}));
 
-// Mock interaction objects
-const createMockInteraction = (userId: string, guildId: string | null, guildName: string = 'Test Server', ownerId: string = '111222333') => ({
-  user: { id: userId },
-  guildId: guildId,
-  guild: guildId ? { name: guildName, ownerId: ownerId } : null
+const createMockInteraction = (
+    userId: string,
+    guildId: string | null,
+    ownerId: string = '111222333'
+) => ({
+    user: { id: userId },
+    guildId,
+    guild: guildId ? { ownerId } : null,
 });
 
 describe('UserTrackingService', () => {
-  let service: UserTrackingService;
-  let mockDb: jest.Mocked<DatabaseService>;
+    let service: UserTrackingService;
 
-  beforeEach(() => {
-    // Create fresh mocks
-    mockDb = new DatabaseService({
-      host: 'localhost',
-      user: 'test',
-      password: 'test',
-      database: 'test'
-    }) as jest.Mocked<DatabaseService>;
-
-    service = new UserTrackingService(mockDb);
-
-    // Reset mocks
-    jest.clearAllMocks();
-    
-    // Clear timers to prevent setInterval from running during tests
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  describe('trackInteraction', () => {
-    it('should throw DMInteractionError when guildId is null', async () => {
-      const interaction = createMockInteraction('123456789', null);
-      
-      await expect(service.trackInteraction(interaction as any))
-        .rejects
-        .toThrow(DMInteractionError);
-
-      expect(mockDb.query).not.toHaveBeenCalled();
+    beforeEach(() => {
+        jest.clearAllMocks();
+        jest.useFakeTimers();
+        service = new UserTrackingService();
     });
 
-    it('should successfully track interaction with valid user and server', async () => {
-      const interaction = createMockInteraction('123456789', '987654321', 'Test Server', '111222333');
-
-      (mockDb.query as jest.Mock).mockResolvedValue({ rows: [], rowCount: 0 });
-
-      await service.trackInteraction(interaction as any);
-
-      expect(mockDb.query).toHaveBeenCalledWith(
-        'SELECT "user".track_user_interaction($1, $2, $3)',
-        [
-          BigInt('123456789'),
-          BigInt('987654321'),
-          BigInt('111222333')
-        ]
-      );
+    afterEach(() => {
+        service.stopCleanup();
+        jest.useRealTimers();
     });
 
-    it('should throw error when guild is null despite guildId existing', async () => {
-      const interaction = {
-        user: { id: '123456789' },
-        guildId: '987654321',
-        guild: null
-      };
+    describe('trackInteraction', () => {
+        it('should throw DMInteractionError when guildId is null', async () => {
+            const interaction = createMockInteraction('123456789', null);
 
-      await expect(service.trackInteraction(interaction as any))
-        .rejects
-        .toThrow(DMInteractionError);
+            await expect(service.trackInteraction(interaction as any))
+                .rejects
+                .toThrow(DMInteractionError);
 
-      expect(mockDb.query).not.toHaveBeenCalled();
+            expect(dsClient.post).not.toHaveBeenCalled();
+        });
+
+        it('should throw DMInteractionError when guild is null despite guildId existing', async () => {
+            const interaction = { user: { id: '123456789' }, guildId: '987654321', guild: null };
+
+            await expect(service.trackInteraction(interaction as any))
+                .rejects
+                .toThrow(DMInteractionError);
+
+            expect(dsClient.post).not.toHaveBeenCalled();
+        });
+
+        it('should post to /track with correct ids', async () => {
+            const interaction = createMockInteraction('123456789', '987654321', '111222333');
+            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+
+            await service.trackInteraction(interaction as any);
+
+            expect(dsClient.post).toHaveBeenCalledWith('/track', undefined, {
+                user_id: '123456789',
+                server_id: '987654321',
+                server_owner_id: '111222333',
+            });
+        });
+
+        it('should throw when DS returns an error', async () => {
+            const interaction = createMockInteraction('123456789', '987654321', '111222333');
+            (dsClient.post as jest.Mock).mockRejectedValue(new Error('Service unavailable'));
+
+            await expect(service.trackInteraction(interaction as any))
+                .rejects
+                .toThrow('Database tracking failed: Service unavailable');
+        });
+
+        it('should handle unknown error types gracefully', async () => {
+            const interaction = createMockInteraction('123456789', '987654321', '111222333');
+            (dsClient.post as jest.Mock).mockRejectedValue('Unknown error type');
+
+            await expect(service.trackInteraction(interaction as any))
+                .rejects
+                .toThrow('Database tracking failed: Unknown error');
+        });
+
+        it('should cache and skip DS calls for the same user-server within 1 hour', async () => {
+            const interaction = createMockInteraction('123456789', '987654321', '111222333');
+            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+
+            await service.trackInteraction(interaction as any);
+            await service.trackInteraction(interaction as any);
+            await service.trackInteraction(interaction as any);
+
+            expect(dsClient.post).toHaveBeenCalledTimes(1);
+        });
+
+        it('should call DS again after the cache TTL expires', async () => {
+            const interaction = createMockInteraction('123456789', '987654321', '111222333');
+            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+
+            await service.trackInteraction(interaction as any);
+            expect(dsClient.post).toHaveBeenCalledTimes(1);
+
+            jest.advanceTimersByTime(60 * 60 * 1000 + 1);
+
+            await service.trackInteraction(interaction as any);
+            expect(dsClient.post).toHaveBeenCalledTimes(2);
+        });
+
+        it('should track different user-server combinations separately', async () => {
+            const i1 = createMockInteraction('123456789', '987654321', '111222333');
+            const i2 = createMockInteraction('123456789', '111222333', '444555666');
+            const i3 = createMockInteraction('999888777', '987654321', '111222333');
+            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+
+            await service.trackInteraction(i1 as any);
+            expect(dsClient.post).toHaveBeenCalledTimes(1);
+
+            await service.trackInteraction(i2 as any);
+            expect(dsClient.post).toHaveBeenCalledTimes(2);
+
+            await service.trackInteraction(i3 as any);
+            expect(dsClient.post).toHaveBeenCalledTimes(3);
+
+            await service.trackInteraction(i1 as any); // cached
+            expect(dsClient.post).toHaveBeenCalledTimes(3);
+        });
     });
 
-    it('should throw error when database query fails', async () => {
-      const interaction = createMockInteraction('123456789', '987654321', 'Test Server', '111222333');
+    describe('DMInteractionError', () => {
+        it('should have correct message and name', () => {
+            const error = new DMInteractionError();
+            expect(error.message).toBe("I'm sorry, DM interactions are not currently supported");
+            expect(error.name).toBe('DMInteractionError');
+        });
 
-      (mockDb.query as jest.Mock).mockRejectedValue(new Error('Database connection failed'));
-
-      await expect(service.trackInteraction(interaction as any))
-        .rejects
-        .toThrow('Database tracking failed: Database connection failed');
-
-      expect(mockDb.query).toHaveBeenCalled();
+        it('should be instanceof Error', () => {
+            expect(new DMInteractionError()).toBeInstanceOf(Error);
+        });
     });
-
-    it('should handle unknown errors gracefully', async () => {
-      const interaction = createMockInteraction('123456789', '987654321', 'Test Server', '111222333');
-
-      (mockDb.query as jest.Mock).mockRejectedValue('Unknown error type');
-
-      await expect(service.trackInteraction(interaction as any))
-        .rejects
-        .toThrow('Database tracking failed: Unknown error');
-    });
-
-    it('should cache tracking data and skip database calls for same user-server within 1 hour', async () => {
-      const interaction = createMockInteraction('123456789', '987654321', 'Test Server', '111222333');
-
-      (mockDb.query as jest.Mock).mockResolvedValue({ rows: [], rowCount: 0 });
-
-      // First call should hit database
-      await service.trackInteraction(interaction as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(1);
-
-      // Second call within TTL should be cached (no database call)
-      await service.trackInteraction(interaction as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(1); // Still only 1 call
-
-      // Third call should also be cached
-      await service.trackInteraction(interaction as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(1); // Still only 1 call
-    });
-
-    it('should call database again after cache expires (1 hour)', async () => {
-      const interaction = createMockInteraction('123456789', '987654321', 'Test Server', '111222333');
-
-      (mockDb.query as jest.Mock).mockResolvedValue({ rows: [], rowCount: 0 });
-
-      // First call
-      await service.trackInteraction(interaction as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(1);
-
-      // Advance time by 1 hour + 1ms
-      jest.advanceTimersByTime(60 * 60 * 1000 + 1);
-
-      // Second call after TTL should hit database again
-      await service.trackInteraction(interaction as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(2);
-    });
-
-    it('should track different user-server combinations separately', async () => {
-      const interaction1 = createMockInteraction('123456789', '987654321', 'Server 1', '111222333');
-      const interaction2 = createMockInteraction('123456789', '111222333', 'Server 2', '444555666');
-      const interaction3 = createMockInteraction('999888777', '987654321', 'Server 1', '111222333');
-
-      (mockDb.query as jest.Mock).mockResolvedValue({ rows: [], rowCount: 0 });
-
-      // Track user1 in server1
-      await service.trackInteraction(interaction1 as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(1);
-
-      // Track user1 in server2 (different server, should call DB)
-      await service.trackInteraction(interaction2 as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(2);
-
-      // Track user2 in server1 (different user, should call DB)
-      await service.trackInteraction(interaction3 as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(3);
-
-      // Track user1 in server1 again (cached, should NOT call DB)
-      await service.trackInteraction(interaction1 as any);
-      expect(mockDb.query).toHaveBeenCalledTimes(3); // Still 3
-    });
-  });
-
-  describe('DMInteractionError', () => {
-    it('should have correct error message', () => {
-      const error = new DMInteractionError();
-      expect(error.message).toBe("I'm sorry, DM interactions are not currently supported");
-      expect(error.name).toBe('DMInteractionError');
-    });
-
-    it('should be instanceof Error', () => {
-      const error = new DMInteractionError();
-      expect(error).toBeInstanceOf(Error);
-    });
-  });
 });

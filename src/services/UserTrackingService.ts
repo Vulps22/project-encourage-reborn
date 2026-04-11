@@ -1,26 +1,24 @@
 import { Interaction, Snowflake } from 'discord.js';
-import { DatabaseService } from './DatabaseService';
+import { dsClient } from '../client';
 import { Logger } from '../utils';
 import { DMInteractionError } from '../errors';
 import { TrackingCacheEntry } from '../interface';
 
 /**
  * UserTrackingService - Tracks user and server interactions
- * 
+ *
  * Ensures users, servers, and user-server relationships are recorded
  * in the database on every bot interaction.
- * 
+ *
  * Uses in-memory cache with 1-hour TTL to prevent repeated database
  * calls for the same user-server combination.
  */
 export class UserTrackingService {
-  private db: DatabaseService;
   private cache: Map<string, TrackingCacheEntry>;
   private cleanupTimer?: NodeJS.Timeout;
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-  constructor(db: DatabaseService) {
-    this.db = db;
+  constructor() {
     this.cache = new Map();
     
     // Clean up expired cache entries every 10 minutes
@@ -128,15 +126,12 @@ export class UserTrackingService {
       // Use guild data from interaction (already fetched by Discord.js)
       const serverOwner = interaction.guild.ownerId;
 
-      // Call stored procedure to track user interaction
-      await this.db.query(
-        'SELECT "user".track_user_interaction($1, $2, $3)',
-        [
-          BigInt(userId),
-          BigInt(serverId),
-          BigInt(serverOwner)
-        ]
-      );
+      // Call DS to track user interaction
+      await dsClient.post('/track', undefined, {
+        user_id: userId,
+        server_id: serverId,
+        server_owner_id: serverOwner,
+      });
 
       // Add to cache
       this.addToCache(userId, serverId);
