@@ -1,14 +1,17 @@
-import { DatabaseService } from './DatabaseService';
+import { dsClient, DSError } from '../client';
 import { Storable } from '../interface';
 
 export class StorableService {
-  constructor(private db: DatabaseService) {}
-
   async get(id: string): Promise<Storable | null> {
-    return this.db.get<Storable>('core', 'storables', { id });
+    try {
+      return await dsClient.get<Storable>('/storable/:id', { id });
+    } catch (error) {
+      if (error instanceof DSError && error.status === 404) return null;
+      throw error;
+    }
   }
 
   async list(): Promise<Storable[]> {
-    return this.db.list<Storable>('core', 'storables');
+    return await dsClient.get<Storable[]>('/storable');
   }
 }
