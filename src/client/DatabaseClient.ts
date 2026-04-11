@@ -1,4 +1,5 @@
 type PathParams = Record<string, string | number>;
+type QueryParams = Record<string, string | number | boolean>;
 
 export class DSError extends Error {
   constructor(public status: number, message: string) {
@@ -22,9 +23,16 @@ export class DatabaseClient {
     method: string,
     path: string,
     params?: PathParams,
-    body?: unknown
+    body?: unknown,
+    query?: QueryParams
   ): Promise<T> {
-    const url = `${this.baseUrl}${this.buildUrl(path, params)}`;
+    let url = `${this.baseUrl}${this.buildUrl(path, params)}`;
+    if (query) {
+      const qs = Object.entries(query)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+        .join('&');
+      if (qs) url += `?${qs}`;
+    }
 
     const res = await fetch(url, {
       method,
@@ -43,8 +51,8 @@ export class DatabaseClient {
     return res.json() as Promise<T>;
   }
 
-  async get<T>(path: string, params?: PathParams): Promise<T> {
-    return this.request<T>('GET', path, params);
+  async get<T>(path: string, params?: PathParams, query?: QueryParams): Promise<T> {
+    return this.request<T>('GET', path, params, undefined, query);
   }
 
   async post<T>(path: string, params?: PathParams, body?: unknown): Promise<T> {
