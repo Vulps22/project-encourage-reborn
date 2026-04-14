@@ -4,6 +4,7 @@ import { challengeService, inventoryService, questionService, votingService } fr
 import { challengeEmbed } from '../../../views';
 import { Storable } from '../../../types';
 
+
 const skip: Handler<BotButtonInteraction> = {
     name: 'skip',
     async execute(interaction: BotButtonInteraction): Promise<void> {

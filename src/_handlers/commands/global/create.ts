@@ -2,7 +2,7 @@ import { MessageFlags } from 'discord.js';
 import { questionService, serverService } from '../../../services';
 import { msClient } from '../../../client';
 import { BotCommandInteraction } from '@vulps22/bot-interactions';
-import { QuestionType } from '../../../types/QuestionType';
+import { QuestionType } from '@vulps22/project-encourage-types';
 import { Command, Logger } from '../../../utils';
 import { confirmNewQuestionEmbed } from '../../../views';
 

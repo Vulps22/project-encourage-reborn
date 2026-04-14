@@ -1,7 +1,7 @@
 import { BotModalInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { dsClient, msClient } from '../../../client';
-import { TargetType } from '../../../types';
+import { TargetType } from '@vulps22/project-encourage-types';
 
 const reportModal: Handler<BotModalInteraction> = {
     name: 'reportModal',

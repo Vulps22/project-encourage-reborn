@@ -4,7 +4,7 @@ import banServerButton from '../../moderation/banServer';
 import { moderationService } from '../../../../services';
 import { ServerProfileBuilder } from '../../../../builders/ServerProfileBuilder';
 import { serverView } from '../../../../views';
-import { TargetType } from '../../../../types';
+import { TargetType } from '../@vulps22/project-encourage-types';
 
 jest.mock('../../../../services');
 jest.mock('../../../../builders/ServerProfileBuilder');

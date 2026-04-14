@@ -3,7 +3,7 @@ import { Question, Server } from "../../../interface";
 import { dsClient, msClient } from "../../../client";
 import { BotCommandInteraction } from "@vulps22/bot-interactions";
 import { Command } from "../../../utils";
-import { TargetType } from "../../../types";
+import { TargetType } from "@vulps22/project-encourage-types";
 
 const report = new Command('report', 'Report Inappropriate Content')
     .setNSFW(false)

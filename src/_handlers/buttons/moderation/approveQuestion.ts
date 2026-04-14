@@ -1,7 +1,7 @@
 import { Handler, Logger, ModerationLogger } from "../../../utils";
 import { moderationService, questionService } from "../../../services";
 import { BotButtonInteraction } from "@vulps22/bot-interactions";
-import { QuestionType } from "../../../types";
+import { QuestionType } from "@vulps22/project-encourage-types";
 
 const approveQuestionButton: Handler<BotButtonInteraction> = {
     name: "approveQuestion",

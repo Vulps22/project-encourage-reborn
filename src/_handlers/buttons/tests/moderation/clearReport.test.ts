@@ -3,7 +3,7 @@ import { BotButtonInteraction } from '../@vulps22/bot-interactions';
 import clearReportButton from '../../moderation/clearReport';
 import { moderationService, reportService } from '../../../../services';
 import { ReportStatus } from '../../../../interface';
-import { TargetType } from '../../../../types';
+import { TargetType } from '../@vulps22/project-encourage-types';
 
 jest.mock('../../../../services');
 

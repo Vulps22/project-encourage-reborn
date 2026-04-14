@@ -6,4 +6,4 @@ export { QuestionType } from './QuestionType';
 export { TargetType } from './TargetType';
 export { UniversalMessage } from './UniversalMessage';
 export { VoteResult } from './VoteResult';
-export { Storable } from './Storable';
+export { Storables as Storable } from './Storable';

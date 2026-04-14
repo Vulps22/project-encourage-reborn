@@ -1,6 +1,4 @@
-/**
- * @deprecated Use Vulps22/project-encourage-types package instead
- */
-export enum Storable {
+
+export enum Storables {
   Skip = 'skip',
 }

@@ -1,7 +1,7 @@
 import { moderationService, questionService, reportService } from "../../../services";
 import { BotSelectMenuInteraction } from "@vulps22/bot-interactions";
 import { Handler, Logger, ModerationLogger } from "../../../utils";
-import { QuestionType } from "../../../types";
+import { QuestionType } from "@vulps22/project-encourage-types";
 
 const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "questionBanReasonSelected",

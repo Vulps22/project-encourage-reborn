@@ -1,7 +1,7 @@
 import { BotButtonInteraction } from '../@vulps22/bot-interactions';
 import skip from '../../question/skip';
 import { challengeService, inventoryService, questionService, votingService } from '../../../../services';
-import { Storable } from '../../../../types';
+import { Storable } from '../@vulps22/project-encourage-types';
 
 jest.mock('../../../../services', () => ({
     challengeService: { getChallengeByMessageId: jest.fn(), skip: jest.fn() },

@@ -1,6 +1,6 @@
 import { MessageFlags } from 'discord.js';
 import { Question } from '../../../interface';
-import { QuestionType } from '../../../types';
+import { QuestionType } from '@vulps22/project-encourage-types';
 import { confirmNewQuestionEmbed } from '../../question_views/confirmNewQuestionEmbed';
 
 describe('confirmNewQuestionEmbed', () => {

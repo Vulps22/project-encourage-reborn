@@ -1,7 +1,7 @@
 import { Handler, ModerationLogger } from "../../../utils";
 import { moderationService, questionService } from "../../../services";
 import { QuestionNotFoundError } from "../../../errors/QuestionNotFoundError";
-import { QuestionType, TargetType } from "../../../types";
+import { QuestionType, TargetType } from "@vulps22/project-encourage-types";
 import { BotButtonInteraction } from "@vulps22/bot-interactions";
 
 const approveQuestionButton: Handler<BotButtonInteraction> = {
