@@ -1,5 +1,6 @@
 import { MessageFlags } from 'discord.js';
-import { questionService, moderationService, serverService } from '../../../services';
+import { questionService, serverService } from '../../../services';
+import { msClient } from '../../../client';
 import { BotCommandInteraction } from '../../../structures';
 import { QuestionType } from '../../../types/QuestionType';
 import { Command, Logger } from '../../../utils';
@@ -45,11 +46,7 @@ const create = new Command('create', 'Submit a custom truth or dare question')
     }
 
     Logger.debug(`User ${interaction.user.id} submitted new question ID ${savedQuestion.id} for moderation`);
-    const messageId = await moderationService.sendToApprovalQueue(savedQuestion);
-
-    savedQuestion.message_id = messageId;
-
-    await questionService.updateQuestion(savedQuestion.id, savedQuestion)
+    await msClient.submitQuestion(savedQuestion.id);
 
     const response = confirmNewQuestionEmbed(savedQuestion);
 

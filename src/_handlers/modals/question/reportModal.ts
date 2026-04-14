@@ -1,7 +1,6 @@
 import { BotModalInteraction } from '../../../structures';
 import { Handler } from '../../../utils';
-import { db, reportService } from '../../../services';
-import { Question } from '../../../interface';
+import { dsClient, msClient } from '../../../client';
 import { TargetType } from '../../../types';
 
 const reportModal: Handler<BotModalInteraction> = {
@@ -14,7 +13,7 @@ const reportModal: Handler<BotModalInteraction> = {
             throw new Error('Invalid question ID when using Modal: question_reportModal');
         }
 
-        const question = await db.get<Question>('question', 'questions', { id: parseInt(questionId) });
+        const question = await dsClient.getQuestion(parseInt(questionId));
         if (!question) {
             await interaction.ephemeralReply('❌ Question not found.');
             return;
@@ -22,12 +21,12 @@ const reportModal: Handler<BotModalInteraction> = {
 
         const reason = interaction.fields.getTextInputValue('reason');
 
-        await reportService.createReport(
+        await msClient.submitReport(
             interaction.user.id,
             questionId,
-            question.question,
             TargetType.Question,
             interaction.guildId!,
+            question.question,
             reason
         );
 
