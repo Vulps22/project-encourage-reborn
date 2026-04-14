@@ -1,5 +1,8 @@
 import { TargetType } from "../types";
 
+/**
+ * @deprecated Use Vulps22/project-encourage-types instead
+ */
 export enum ReportStatus {
     PENDING = 'pending',
     ACTIONED = 'actioned',
@@ -7,6 +10,9 @@ export enum ReportStatus {
     CLEARED = 'cleared'
 }
 
+/**
+ * @deprecated Use Vulps22/project-encourage-types instead
+ */
 export interface Report {
     id?: number;
     type: TargetType;

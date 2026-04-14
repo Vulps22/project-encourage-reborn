@@ -1,4 +1,4 @@
-import { BotCommandInteraction } from '../../../../structures';
+import { BotCommandInteraction } from '../@vulps22/bot-interactions';
 import { questionService, serverService } from '../../../../services';
 import { confirmNewQuestionEmbed } from '../../../../views';
 import create from '../../global/create';

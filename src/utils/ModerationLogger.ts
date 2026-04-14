@@ -9,6 +9,7 @@ import { Logger } from './Logger';
  *
  * Uses channel.send() via shard broadcast so that messages carry the bot's application_id,
  * which is required for interactive buttons to fire back at the bot.
+ * @deprecated Use ModerationClient instead
  */
 export class ModerationLogger {
 

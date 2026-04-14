@@ -1,7 +1,7 @@
 import { NewsChannel, PermissionFlagsBits } from 'discord.js';
 import { Config } from '../../../config';
 import { serverService } from '../../../services';
-import { BotSelectMenuInteraction } from '../../../structures';
+import { BotSelectMenuInteraction } from '@vulps22/bot-interactions';
 import { Handler, Logger } from '../../../utils';
 import { setupCompleteView, setupFailedView } from '../../../views';
 

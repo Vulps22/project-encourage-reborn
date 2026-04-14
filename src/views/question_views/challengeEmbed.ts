@@ -2,7 +2,8 @@
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 import { Challenge, ChallengeVote, Question } from "../../interface";
-import { UniversalMessage, VoteResult } from "../../types";
+import { UniversalMessage } from "@vulps22/bot-interactions";
+import { VoteResult } from "../../types";
 
 function challengeEmbed(question: Question, challenge: Challenge, vote: ChallengeVote): UniversalMessage {
     // Main title showing the type (Truth/Dare) in a section with report accessory button

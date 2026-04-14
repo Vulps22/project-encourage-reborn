@@ -1,5 +1,5 @@
 import { ButtonInteraction, PermissionsBitField } from 'discord.js';
-import { BotButtonInteraction } from '../../../../structures';
+import { BotButtonInteraction } from '../@vulps22/bot-interactions';
 import { channelSelectView } from '../../../../views';
 import declineRulesButton from '../../setup/declineRules';
 

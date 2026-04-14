@@ -1,5 +1,5 @@
 import { moderationService, reportService } from "../../../services";
-import { BotSelectMenuInteraction } from "../../../structures";
+import { BotSelectMenuInteraction } from "@vulps22/bot-interactions";
 import { Handler, Logger, ModerationLogger } from "../../../utils";
 import { ServerProfileBuilder } from "../../../builders/ServerProfileBuilder";
 

@@ -1,5 +1,5 @@
 import { challengeService, questionService, votingService } from '../../../services';
-import { BotCommandInteraction } from '../../../structures';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { QuestionType } from '../../../types';
 import { Command } from '../../../utils';
 import { challengeEmbed } from '../../../views';

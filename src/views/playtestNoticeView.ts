@@ -2,7 +2,7 @@
 
 import { ContainerBuilder, SeparatorBuilder, TextDisplayBuilder, MessageFlags } from 'discord.js';
 import { Urls } from '../config';
-import { UniversalMessage } from '../types';
+import { UniversalMessage } from '@vulps22/bot-interactions';
 
 function playtestNoticeView(): UniversalMessage {
     const title = new TextDisplayBuilder()

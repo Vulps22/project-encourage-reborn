@@ -9,7 +9,7 @@ jest.mock('../../../utils/Logger', () => ({
 }));
 
 const { StringSelectInteractionEvent } = require('../../interactionEvents/StringSelectInteractionEvent');
-const { BotSelectMenuInteraction } = require('../../../structures');
+const { BotSelectMenuInteraction } = require('@vulps22/bot-interactions');
 const { Logger } = require('../../../utils');
 
 describe('StringSelectInteractionEvent', () => {

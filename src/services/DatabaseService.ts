@@ -54,6 +54,7 @@ export type TransactionCallback<T> = (db: DatabaseService) => Promise<T>;
  * - Comprehensive error handling
  * - TypeScript type safety
  * - Transaction support
+ * @deprecated Use Vulps22/database-service instead
  */
 export class DatabaseService {
   private pool: Pool;

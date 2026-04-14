@@ -1,4 +1,4 @@
-import { BotButtonInteraction } from '../../../../structures';
+import { BotButtonInteraction } from '../@vulps22/bot-interactions';
 import failed from '../../question/failed';
 
 describe.skip('failed button handler', () => {

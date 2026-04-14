@@ -4,6 +4,7 @@ import { BotComponentInteraction } from './BotComponentInteraction';
 /**
  * BotButtonInteraction - Wrapper for Discord button interactions
  * Adds button-specific properties like parsed customId params
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export class BotButtonInteraction extends BotComponentInteraction {
   protected readonly _interaction: ButtonInteraction;

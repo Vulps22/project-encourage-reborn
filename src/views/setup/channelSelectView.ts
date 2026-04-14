@@ -1,7 +1,7 @@
 /** Component V2 message for selecting announcement channel during setup */
 
 import { ActionRowBuilder, ChannelSelectMenuBuilder, ChannelType, ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { UniversalMessage } from "../../types";
+import { UniversalMessage } from "@vulps22/bot-interactions";;
 
 function channelSelectView(): UniversalMessage {
     const title = new TextDisplayBuilder()

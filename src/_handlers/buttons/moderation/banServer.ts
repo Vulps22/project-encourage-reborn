@@ -1,5 +1,5 @@
 import { ServerProfileBuilder } from "../../../builders/ServerProfileBuilder";
-import { BotButtonInteraction } from "../../../structures";
+import { BotButtonInteraction } from "@vulps22/bot-interactions";
 import { Handler } from "../../../utils";
 import { moderationService } from "../../../services";
 import { serverView } from "../../../views";

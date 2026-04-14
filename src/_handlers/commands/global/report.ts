@@ -1,7 +1,7 @@
 import { AutocompleteInteraction, MessageFlags } from "discord.js";
 import { Question, Server } from "../../../interface";
 import { dsClient, msClient } from "../../../client";
-import { BotCommandInteraction } from "../../../structures";
+import { BotCommandInteraction } from "@vulps22/bot-interactions";
 import { Command } from "../../../utils";
 import { TargetType } from "../../../types";
 

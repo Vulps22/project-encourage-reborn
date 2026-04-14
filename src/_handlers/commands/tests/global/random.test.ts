@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction } from 'discord.js';
 import { challengeService, questionService, votingService } from '../../../../services';
-import { BotCommandInteraction } from '../../../../structures';
+import { BotCommandInteraction } from '../@vulps22/bot-interactions';
 import { QuestionType } from '../../../../types';
 import { challengeEmbed } from '../../../../views';
 import random from '../../global/random';

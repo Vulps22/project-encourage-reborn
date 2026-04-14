@@ -1,4 +1,4 @@
-import { BotModalInteraction } from '../../../structures';
+import { BotModalInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { dsClient, msClient } from '../../../client';
 import { TargetType } from '../../../types';

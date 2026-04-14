@@ -1,4 +1,4 @@
-import { BotCommandInteraction } from '../../../structures';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import helpView from '../../../views/util/helpView';
 

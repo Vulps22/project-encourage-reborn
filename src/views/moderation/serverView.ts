@@ -1,7 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, TextDisplayBuilder } from "discord.js";
 import { ServerProfile } from "../../interface/ServerProfileInterface";
-import { UniversalMessage } from "../../types";
+import { UniversalMessage } from "@vulps22/bot-interactions";
 
+
+/**
+ * 
+ * @deprecated Use ModerationClient instead
+ */
 async function serverView(server: ServerProfile, banReasons: [] | null = null): Promise<UniversalMessage> {
 
     const title = new TextDisplayBuilder()

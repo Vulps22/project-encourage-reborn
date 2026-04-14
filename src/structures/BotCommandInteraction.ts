@@ -4,6 +4,7 @@ import { BotRepliableInteraction } from './BotRepliableInteraction';
 /**
  * BotCommandInteraction - Wrapper for Discord slash command interactions
  * Adds command-specific properties (options, commandName)
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export class BotCommandInteraction extends BotRepliableInteraction {
   protected readonly _interaction: ChatInputCommandInteraction;

@@ -1,11 +1,12 @@
 import { ChatInputCommandInteraction, ButtonInteraction, InteractionEditReplyOptions, InteractionReplyOptions, Message, MessageFlags, ModalSubmitInteraction } from 'discord.js';
-import { BotInteraction } from './BotInteraction';
-import { UniversalMessage } from '../types/UniversalMessage';
+import { BotInteraction, UniversalMessage } from '@vulps22/bot-interactions';
 import { AnySelectMenuInteraction } from '../types';
 
 /**
  * BotRepliableInteraction - Abstract base class for interactions that can be replied to
  * Includes slash commands, message components (buttons, select menus), and modal submissions
+ * Provides common reply methods (reply, editReply, deferReply) and properties (deferred, replied)
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export abstract class BotRepliableInteraction extends BotInteraction {
   protected declare readonly _interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction | ModalSubmitInteraction;

@@ -1,5 +1,5 @@
 import { ButtonInteraction } from 'discord.js';
-import { BotButtonInteraction } from '../../../../structures';
+import { BotButtonInteraction } from '../@vulps22/bot-interactions';
 import banServerButton from '../../moderation/banServer';
 import { moderationService } from '../../../../services';
 import { ServerProfileBuilder } from '../../../../builders/ServerProfileBuilder';

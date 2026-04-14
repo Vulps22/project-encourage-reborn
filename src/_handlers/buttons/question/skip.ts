@@ -1,4 +1,4 @@
-import { BotButtonInteraction } from '../../../structures';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler, Logger } from '../../../utils';
 import { challengeService, inventoryService, questionService, votingService } from '../../../services';
 import { challengeEmbed } from '../../../views';

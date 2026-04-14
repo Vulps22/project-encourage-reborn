@@ -1,5 +1,5 @@
 import { ModalSubmitInteraction } from 'discord.js';
-import { BotModalInteraction } from '../../../../structures';
+import { BotModalInteraction } from '../@vulps22/bot-interactions';
 import reportModal from '../../question/reportModal';
 import { db, reportService } from '../../../../services';
 import { TargetType } from '../../../../types';

@@ -1,5 +1,5 @@
 import serverBanReasonSelected from '../../moderation/serverBanReasonSelected';
-import { BotSelectMenuInteraction } from '../../../../structures';
+import { BotSelectMenuInteraction } from '../@vulps22/bot-interactions';
 import { moderationService } from '../../../../services';
 import { Logger, ModerationLogger } from '../../../../utils';
 import { ServerProfileBuilder } from '../../../../builders/ServerProfileBuilder';

@@ -1,4 +1,4 @@
-import { BotButtonInteraction } from '../../../structures';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler, Logger } from '../../../utils';
 import { challengeService, configurationService, questionService, votingService } from '../../../services';
 import { DSError } from '../../../client';

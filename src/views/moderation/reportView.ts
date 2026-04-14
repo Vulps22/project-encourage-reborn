@@ -3,6 +3,10 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, Message
 import { Report, ReportStatus } from "../../interface";
 import { TargetType, UniversalMessage } from "../../types";
 
+/**
+ * 
+ * @deprecated Use ModerationClient instead
+ */
 async function ReportView(report: Report, banReasons: [] | null ): Promise<UniversalMessage> {
     const title = new TextDisplayBuilder()
         .setContent(`## **New Report Submitted**`);

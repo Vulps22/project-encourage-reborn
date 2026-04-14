@@ -1,5 +1,5 @@
 import { MessageFlags } from 'discord.js';
-import { BotCommandInteraction } from '../../../structures';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import { rulesView } from '../../../views/setup/rulesView';
 
