@@ -46,7 +46,7 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             }
 
         } catch (error) {
-            Logger.error(`Error banning question: ${error}`);
+            Logger.error(`Error banning question: ${JSON.stringify(error)}`);
             await interaction.ephemeralFollowUp('❌ Failed to ban question. Please try again.');
         }
     }

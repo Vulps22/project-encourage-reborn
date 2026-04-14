@@ -9,7 +9,7 @@ function setupFailedView(error: string): InteractionUpdateOptions {
     const description = new TextDisplayBuilder()
         .setContent(
             `Your server configuration was saved, but we encountered an issue:\n\n` +
-            `**Error:** ${error}\n\n` +
+            `**Error:** ${JSON.stringify(error)}\n\n` +
             `**What this means:**\n` +
             `• Your server is configured and ready to use\n` +
             `• However, we couldn't subscribe your announcement channel to our official updates\n` +
