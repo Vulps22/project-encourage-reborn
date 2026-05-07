@@ -103,13 +103,10 @@ async function getServer(guildId: string): Promise<false | Server> {
     return server;
 }
 
-function getContent(content: Question | Server): string | null {
-    if(!content) return null;
+function getContent(content: Question | Server): string {
     if ('question' in content) {
         return content.question;
-    } else if ('name' in content) {
-        return content.name || null;
+    } else {
+        return content.name || `Server ${content.id}`;
     }
-
-    return null;
 }
