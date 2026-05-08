@@ -32,7 +32,7 @@ const skip: Handler<BotButtonInteraction> = {
             }
             const skips = await inventoryService.consume(userId, Storable.Skip, 1);
             if(!skips) {
-                await interaction.ephemeralReply('❌ You have no skips left! You can earn more by voting at [Top.gg](<https://top.gg/bot/1079207025315164331/vote>).');
+                await interaction.ephemeralReply(`❌ You have no skips left! You can earn more by voting at [Top.gg](<${process.env.TOPGG_URL}>).`);
                 return;
             }
 

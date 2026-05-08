@@ -92,8 +92,10 @@ async function getServer(guildId: string): Promise<false | Server> {
     return await dsClient.getServer(guildId) ?? false;
 }
 
-function getContent(content: Question | Server): string | null {
-    if ('question' in content) return content.question;
-    if ('name' in content) return content.name || null;
-    return null;
+function getContent(content: Question | Server): string {
+    if ('question' in content) {
+        return content.question;
+    } else {
+        return content.name || `Server ${content.id}`;
+    }
 }
