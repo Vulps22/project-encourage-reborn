@@ -1,7 +1,10 @@
 FROM node:20-alpine AS builder
+ARG NODE_AUTH_TOKEN
 WORKDIR /app
-COPY package*.json ./
+COPY package*.json .npmrc ./
+RUN echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
 RUN npm ci
+RUN rm .npmrc
 COPY . .
 RUN npm run build
 

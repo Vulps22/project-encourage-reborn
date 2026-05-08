@@ -30,6 +30,7 @@ jobs:
         with:
           context: .
           push: true
+          build-args: NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: |
             vulps23/project-encourage:latest
             vulps23/project-encourage:${{ github.ref_name }}
