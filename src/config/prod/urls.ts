@@ -4,6 +4,6 @@ export const Urls = {
     TERMS_OF_SERVICE: 'https://spicy.vulps.co.uk/terms',
     WIKI: 'http://github.com/Vulps22/truth-or-dare-discord-bot/wiki/',
     ADD_BOT: 'https://discord.com/oauth2/authorize?client_id=1079207025315164331',
-    DS_URL: 'https://ds.vulps.co.uk/api/v1',
-    MS_URL: 'https://ms.vulps.co.uk',
+    DS_URL: 'http://encourage_ds:3000/api/v1',
+    MS_URL: 'http://encourage_ms:4001',
 } as const;
