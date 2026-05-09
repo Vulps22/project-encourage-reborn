@@ -10,10 +10,14 @@ const done: Handler<BotButtonInteraction> = {
         const messageId = interaction.messageId;
         const userId = interaction.user.id;
 
+        let challenge: Awaited<ReturnType<typeof challengeService.getChallengeByMessageId>> | undefined;
+        let updated: Awaited<ReturnType<typeof votingService.vote>> | undefined;
+        let question: Awaited<ReturnType<typeof questionService.getQuestionById>> | undefined;
+
         try {
             await interaction.deferUpdate();
 
-            const challenge = await challengeService.getChallengeByMessageId(messageId);
+            challenge = await challengeService.getChallengeByMessageId(messageId);
             if (!challenge) {
                 await interaction.ephemeralFollowUp('❌ Could not find tracking data for this challenge.');
                 return;
@@ -27,7 +31,6 @@ const done: Handler<BotButtonInteraction> = {
                 return;
             }
 
-            let updated;
             try {
                 updated = await votingService.vote(challengeId, userId, 'done');
             } catch (error) {
@@ -43,13 +46,17 @@ const done: Handler<BotButtonInteraction> = {
                 updated = await votingService.finalizeChallenge(challengeId, 'done');
             }
 
-            const question = await questionService.getQuestionById(challenge.question_id);
+            question = await questionService.getQuestionById(challenge.question_id);
             if (question) {
                 await interaction.updateComponentMessage(null, challengeEmbed(question, challenge, updated));
             }
 
             await interaction.ephemeralFollowUp('✅ Voted DONE!');
         } catch (error) {
+            console.error('[done] raw error:', error);
+            console.error('[done] question:', question ?? 'undefined');
+            console.error('[done] challenge:', challenge ?? 'undefined');
+            console.error('[done] updated:', updated ?? 'undefined');
             Logger.error(`Done handler error for message ${messageId}: ${error instanceof Error ? error.message : String(error)}`);
             await interaction.ephemeralFollowUp('❌ Something went wrong. Please try again.');
         }
