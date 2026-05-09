@@ -1,6 +1,6 @@
 import { MessageFlags, StringSelectMenuInteraction } from "discord.js";
 import { InteractionEvent } from "./InteractionEvent";
-import { BotSelectMenuInteraction } from "../../structures";
+import { BotSelectMenuInteraction } from "@vulps22/bot-interactions";
 import { Handler, Logger } from "../../utils";
 
 class StringSelectInteractionEvent implements InteractionEvent<StringSelectMenuInteraction> {

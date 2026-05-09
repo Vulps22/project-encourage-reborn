@@ -1,5 +1,5 @@
 import { AutocompleteInteraction, SlashCommandBuilder } from 'discord.js';
-import { BotCommandInteraction } from '../structures';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 
 /**
  * Command handler structure for automatic registration

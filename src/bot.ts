@@ -4,7 +4,7 @@ import { join } from 'path';
 import { Handler, Command, Logger } from './utils';
 import { EventHandler } from './types';
 import { Config } from './config';
-import { BotButtonInteraction, BotModalInteraction, BotSelectMenuInteraction } from './structures';
+import { BotButtonInteraction, BotModalInteraction, BotSelectMenuInteraction } from '@vulps22/bot-interactions';
 
 /**
  * Initialize global objects
