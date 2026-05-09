@@ -133,11 +133,11 @@ async function loadEvents(client: Client): Promise<void> {
  * Register all commands with Discord API
  */
 async function registerCommands(): Promise<void> {
-    if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
+    if (!process.env.PE_DISCORD_TOKEN || !process.env.PE_CLIENT_ID) {
         throw new Error('Missing DISCORD_TOKEN or CLIENT_ID in environment variables');
     }
 
-    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+    const rest = new REST({ version: '10' }).setToken(process.env.PE_DISCORD_TOKEN);
 
     const globalCommands = await collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'global'));
     const modCommands = await collectCommandsFromDirectory(join(__dirname, '_handlers', 'commands', 'mod'));
@@ -177,7 +177,7 @@ async function registerGlobalCommands(rest: REST, commands: Command[]): Promise<
 
     try {
         await rest.put(
-            Routes.applicationCommands(process.env.CLIENT_ID!),
+            Routes.applicationCommands(process.env.PE_CLIENT_ID!),
             { body: commands.map(cmd => cmd.toJSON()) }
         );
         Logger.debug(`Registered ${commands.length} global commands`);
@@ -197,17 +197,17 @@ async function registerModCommands(rest: REST, commands: Command[]): Promise<voi
         return;
     }
 
-    if (!process.env.MOD_GUILD_ID) {
-        Logger.debug('MOD_GUILD_ID not set - mod commands will not be registered');
+    if (!process.env.GUILD_ID) {
+        Logger.debug('GUILD_ID not set - mod commands will not be registered');
         return;
     }
 
     try {
         await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID!, process.env.MOD_GUILD_ID),
+            Routes.applicationGuildCommands(process.env.PE_CLIENT_ID!, process.env.GUILD_ID),
             { body: commands.map(cmd => cmd.toJSON()) }
         );
-        Logger.debug(`Registered ${commands.length} mod commands to guild ${process.env.MOD_GUILD_ID}`);
+        Logger.debug(`Registered ${commands.length} mod commands to guild ${process.env.GUILD_ID}`);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         Logger.error(`Failed to register mod commands: ${errorMessage}`);
@@ -239,7 +239,7 @@ async function startBot(): Promise<void> {
         })();
     });
 
-    await client.login().catch((error: Error) => {
+    await client.login(process.env.PE_DISCORD_TOKEN).catch((error: Error) => {
         console.error('Failed to login:', error);
         process.exit(1);
     });

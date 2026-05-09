@@ -7,7 +7,7 @@ import { startVoteWebhook } from './webhook/VoteWebhook';
 // Initialize Logger with sensitive values from .env
 Logger.initialize();
 
-const token = process.env.DISCORD_TOKEN;
+const token = process.env.PE_DISCORD_TOKEN;
 
 if (!token) {
     console.error('DISCORD_TOKEN is not defined in environment variables');
@@ -74,7 +74,7 @@ async function startBot(): Promise<void> {
 }
 
 // Start vote webhook if configured
-const webhookPort = process.env.WEBHOOK_PORT ? parseInt(process.env.WEBHOOK_PORT) : 3000;
+const webhookPort = process.env.PE_PORT ? parseInt(process.env.PE_PORT) : 3000;
 const webhookAuth = process.env.TOPGG_WEBHOOK_AUTH;
 
 if (webhookAuth) {

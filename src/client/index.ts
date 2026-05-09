@@ -6,5 +6,5 @@ export { Client, ClientError } from './Client';
 export { DatabaseClient, DSError } from './DatabaseClient';
 export { ModerationClient, MSError } from './ModerationClient';
 
-export const dsClient = new DatabaseClient(Urls.DS_URL, process.env.DS_TOKEN ?? '');
-export const msClient = new ModerationClient(Urls.MS_URL, process.env.MS_TOKEN ?? '');
+export const dsClient = new DatabaseClient(Urls.DS_URL, process.env.DS_PE_API_SECRET ?? '');
+export const msClient = new ModerationClient(Urls.MS_URL, process.env.MS_PE_API_SECRET ?? '');
