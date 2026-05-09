@@ -1,4 +1,4 @@
-import { BotCommandInteraction } from '../../../structures';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import { inventoryService } from '../../../services';
 import { Storable } from '../../../types';
