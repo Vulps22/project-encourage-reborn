@@ -11,9 +11,11 @@ const done: Handler<BotButtonInteraction> = {
         const userId = interaction.user.id;
 
         try {
+            await interaction.deferUpdate();
+
             const challenge = await challengeService.getChallengeByMessageId(messageId);
             if (!challenge) {
-                await interaction.ephemeralReply('❌ Could not find tracking data for this challenge.');
+                await interaction.ephemeralFollowUp('❌ Could not find tracking data for this challenge.');
                 return;
             }
 
@@ -21,7 +23,7 @@ const done: Handler<BotButtonInteraction> = {
 
             const challengeVote = await votingService.getVoteCount(challengeId);
             if (challengeVote.final_result !== null) {
-                await interaction.ephemeralReply('❌ This challenge has already been locked.');
+                await interaction.ephemeralFollowUp('❌ This challenge has already been locked.');
                 return;
             }
 
@@ -30,7 +32,7 @@ const done: Handler<BotButtonInteraction> = {
                 updated = await votingService.vote(challengeId, userId, 'done');
             } catch (error) {
                 if (error instanceof DSError && error.status === 409) {
-                    await interaction.ephemeralReply('❌ You have already voted on this question.');
+                    await interaction.ephemeralFollowUp('❌ You have already voted on this question.');
                     return;
                 }
                 throw error;

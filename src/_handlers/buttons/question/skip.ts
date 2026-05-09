@@ -12,14 +12,16 @@ const skip: Handler<BotButtonInteraction> = {
         const userId = interaction.user.id;
 
         try {
+            await interaction.deferUpdate();
+
             const challenge = await challengeService.getChallengeByMessageId(messageId);
             if (!challenge) {
-                await interaction.ephemeralReply('❌ Could not find tracking data for this challenge.');
+                await interaction.ephemeralFollowUp('❌ Could not find tracking data for this challenge.');
                 return;
             }
 
             if (challenge.user_id !== userId) {
-                await interaction.ephemeralReply('❌ Only the challenge recipient can skip.');
+                await interaction.ephemeralFollowUp('❌ Only the challenge recipient can skip.');
                 return;
             }
 
@@ -27,12 +29,12 @@ const skip: Handler<BotButtonInteraction> = {
 
             const challengeVote = await votingService.getVoteCount(challengeId);
             if (challengeVote.final_result !== null) {
-                await interaction.ephemeralReply('❌ This challenge has already been locked.');
+                await interaction.ephemeralFollowUp('❌ This challenge has already been locked.');
                 return;
             }
             const skips = await inventoryService.consume(userId, Storable.Skip, 1);
             if(!skips) {
-                await interaction.ephemeralReply(`❌ You have no skips left! You can earn more by voting at [Top.gg](<${process.env.TOPGG_URL}>).`);
+                await interaction.ephemeralFollowUp(`❌ You have no skips left! You can earn more by voting at [Top.gg](<${process.env.TOPGG_URL}>).`);
                 return;
             }
 
