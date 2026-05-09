@@ -14,4 +14,4 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/database ./database
 COPY package.json .
-CMD ["node", "-r", "dotenv/config", "dist/index.js"]
+CMD ["node", "dist/index.js"]

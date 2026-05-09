@@ -11,7 +11,7 @@ function playtestNoticeView(): UniversalMessage {
     const intro = new TextDisplayBuilder()
         .setContent(
             `You are using a **playtest version** of the bot. ` +
-            `This playtest runs from <t:1775260800:F> to <t:1775347200:F>.\n\n` +
+            `This playtest runs from <t:1778299200:F> to <t:1780200000:F>.\n\n` +
             `When the playtest ends, **all data will be wiped** and the live version of the bot will be restored. ` +
             `You will need to run setup again at that point.`
         );
