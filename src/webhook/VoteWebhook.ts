@@ -30,15 +30,19 @@ interface TopGGVotePayload {
     };
 }
 
-function verifySignature(secret: string, rawBody: Buffer, signatureHeader: string): boolean {
+function verifySignature(secret: string, rawBody: Buffer, signatureHeader: string): string | null {
     // Header format: "t=<timestamp>,v1=<hmac>"
     const parts = Object.fromEntries(
-        signatureHeader.split(',').map(part => part.split('=') as [string, string])
+        signatureHeader.split(',').map(part => {
+            const idx = part.indexOf('=');
+            return [part.slice(0, idx), part.slice(idx + 1)] as [string, string];
+        })
     );
     const timestamp = parts['t'];
     const theirSignature = parts['v1'];
 
-    if (!timestamp || !theirSignature) return false;
+    if (!timestamp) return 'missing timestamp (t) in signature header';
+    if (!theirSignature) return 'missing signature (v1) in signature header';
 
     const message = `${timestamp}.${rawBody.toString('utf8')}`;
     const ourSignature = crypto.createHmac('sha256', secret).update(message).digest('hex');
@@ -46,9 +50,11 @@ function verifySignature(secret: string, rawBody: Buffer, signatureHeader: strin
     const ours = Buffer.from(ourSignature);
     const theirs = Buffer.from(theirSignature);
 
-    if (ours.length !== theirs.length) return false;
+    if (ours.length !== theirs.length) return `signature length mismatch (got ${theirs.length} bytes, expected ${ours.length})`;
 
-    return crypto.timingSafeEqual(ours, theirs);
+    if (!crypto.timingSafeEqual(ours, theirs)) return 'HMAC mismatch — secret may be wrong or body was modified in transit';
+
+    return null; // null = valid
 }
 
 export function createVoteWebhookApp(webhookSecret: string): express.Application {
@@ -65,8 +71,9 @@ export function createVoteWebhookApp(webhookSecret: string): express.Application
             return;
         }
 
-        if (!verifySignature(webhookSecret, req.body as Buffer, signatureHeader)) {
-            Logger.error(`[VoteWebhook] Invalid signature`);
+        const signatureError = verifySignature(webhookSecret, req.body as Buffer, signatureHeader);
+        if (signatureError !== null) {
+            Logger.error(`[VoteWebhook] Invalid signature — ${signatureError} (header: ${signatureHeader.substring(0, 60)}...)`);
             res.status(401).send('Unauthorized');
             return;
         }
