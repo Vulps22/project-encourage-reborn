@@ -6,6 +6,7 @@ import { AnySelectMenuInteraction } from '../types';
  * BotComponentInteraction - Abstract base class for message component interactions
  * (buttons, select menus, etc.)
  * Adds component-specific properties and methods (customId, update)
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export abstract class BotComponentInteraction extends BotRepliableInteraction {
   protected declare readonly _interaction: ButtonInteraction | AnySelectMenuInteraction;

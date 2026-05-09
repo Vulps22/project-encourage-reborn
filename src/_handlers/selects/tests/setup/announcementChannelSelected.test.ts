@@ -1,6 +1,6 @@
 import { ChannelSelectMenuInteraction, PermissionsBitField } from 'discord.js';
 import { serverService } from '../../../../services';
-import { BotSelectMenuInteraction } from '../../../../structures';
+import { BotSelectMenuInteraction } from '../@vulps22/bot-interactions';
 import { setupCompleteView } from '../../../../views';
 import announcementChannelSelected from '../../setup/announcementChannelSelected';
 

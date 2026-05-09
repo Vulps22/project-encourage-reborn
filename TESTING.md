@@ -45,6 +45,7 @@ Trigger: `/setup` (requires Manage Server permission)
 
 - [ ] `/help` — embed lists all available commands
 - [ ] `/rules` — ephemeral embed shows content submission rules
+- [ ] `/vote` — ephemeral information about current skips available, and where to vote
 
 ---
 
@@ -97,7 +98,7 @@ Trigger: `/setup` (requires Manage Server permission)
 - [ ] Click **Skip** — uses one Skip item from inventory *(needs a skip item — earn one via vote webhook or seed data)*
 - [ ] Click **Skip** with no skips remaining — error message shown
 
----
+--- 
 
 ## 6. Report Modal (from challenge)
 

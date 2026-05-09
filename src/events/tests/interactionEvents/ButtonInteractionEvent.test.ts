@@ -10,7 +10,7 @@ jest.mock('../../../utils/Logger', () => ({
 }));
 
 const { ButtonInteractionEvent } = require('../../interactionEvents/ButtonInteractionEvent')
-const { BotButtonInteraction } = require('../../../structures');
+const { BotButtonInteraction } = require('@vulps22/bot-interactions');
 const { Logger } = require('../../../utils');
 
 describe('ButtonInteractionEvent', () => {

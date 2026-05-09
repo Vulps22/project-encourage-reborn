@@ -1,3 +1,4 @@
-export enum Storable {
+
+export enum Storables {
   Skip = 'skip',
 }

@@ -4,6 +4,7 @@ import { Logger } from '../utils';
 /**
  * BotInteraction - Abstract base class for all Discord interaction wrappers
  * Contains only properties and methods common to ALL interaction types
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export abstract class BotInteraction {
   protected readonly _interaction: Interaction;

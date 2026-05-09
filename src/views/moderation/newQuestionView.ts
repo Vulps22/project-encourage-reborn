@@ -1,7 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, TextDisplayBuilder } from "discord.js";
 import { Question } from "../../interface";
-import { UniversalMessage } from "../../types";
+import { UniversalMessage } from "@vulps22/bot-interactions";
 
+/**
+@derecated Use ModerationClient instead
+**/
 async function newQuestionView(question: Question, banReasons: [] | null = null, prefetched?: { username?: string, guildName?: string }): Promise<UniversalMessage> {
 
 

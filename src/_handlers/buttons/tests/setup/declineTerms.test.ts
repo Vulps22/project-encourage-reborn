@@ -1,5 +1,5 @@
 import { ButtonInteraction, PermissionsBitField } from 'discord.js';
-import { BotButtonInteraction } from '../../../../structures';
+import { BotButtonInteraction } from '../@vulps22/bot-interactions';
 import declineTermsButton from '../../setup/declineTerms';
 
 describe('declineTerms button', () => {

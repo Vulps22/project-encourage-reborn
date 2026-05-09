@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use Vulps22/project-encourage-types instead
+ */
 export interface ChallengeVote {
   challenge_id: number;
   done_count: number;

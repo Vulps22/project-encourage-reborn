@@ -1,5 +1,5 @@
 import { PermissionFlagsBits } from 'discord.js';
-import { BotButtonInteraction } from '../../../structures';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 
 const declineTermsButton: Handler<BotButtonInteraction> = {

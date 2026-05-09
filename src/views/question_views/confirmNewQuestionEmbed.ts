@@ -1,8 +1,8 @@
 /** A ComponentV2 Embed for New Question Submission Confirmation */
 
 import { ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { Question } from "../../interface";
-import { UniversalMessage } from "../../types";
+import { Question } from "@vulps22/project-encourage-types";
+import { UniversalMessage } from "@vulps22/bot-interactions";
 
 function confirmNewQuestionEmbed(question: Question): UniversalMessage {
 

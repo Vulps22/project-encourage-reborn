@@ -1,5 +1,5 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
-import { BotCommandInteraction } from "../../structures";
+import { BotCommandInteraction } from "@vulps22/bot-interactions";
 import { Logger } from "../../utils";
 import { InteractionEvent } from "./InteractionEvent";
 

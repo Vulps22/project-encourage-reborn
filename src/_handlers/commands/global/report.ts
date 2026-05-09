@@ -1,9 +1,9 @@
 import { AutocompleteInteraction, MessageFlags } from "discord.js";
 import { Question, Server } from "../../../interface";
-import { db, reportService } from "../../../services";
-import { BotCommandInteraction } from "../../../structures";
+import { dsClient, msClient } from "../../../client";
+import { BotCommandInteraction } from "@vulps22/bot-interactions";
 import { Command } from "../../../utils";
-import { TargetType } from "../../../types";
+import { TargetType } from "@vulps22/project-encourage-types";
 
 const report = new Command('report', 'Report Inappropriate Content')
     .setNSFW(false)
@@ -22,22 +22,17 @@ const report = new Command('report', 'Report Inappropriate Content')
     .setAutoComplete(async (interaction: AutocompleteInteraction): Promise<void> => {
         const subcommand = interaction.options.getSubcommand();
         const focusedOption = interaction.options.getFocused(true);
-        
+
         if (focusedOption.name === 'id' && subcommand === 'question') {
             const searchValue = focusedOption.value || '';
-            
-            // Search questions by content
-            const result = await db.query<Question>(
-                'SELECT * FROM "question"."questions" WHERE question ILIKE $1 LIMIT 25',
-                [`%${searchValue}%`]
-            );
-            
-            // Format for Discord
+
+            const result = await dsClient.searchQuestions(searchValue);
+
             const choices = result.map(q => ({
                 name: `${q.id} - ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}`,
                 value: q.id.toString()
             }));
-            
+
             await interaction.respond(choices);
         } else {
             await interaction.respond([]);
@@ -45,12 +40,11 @@ const report = new Command('report', 'Report Inappropriate Content')
     })
     .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        
+
         const subcommand = interaction.options.getSubcommand();
         let content: Question | Server | false;
         let reportType: TargetType;
 
-        //check the reported content exists
         switch (subcommand) {
             case 'question':
                 reportType = TargetType.Question;
@@ -65,7 +59,7 @@ const report = new Command('report', 'Report Inappropriate Content')
                 return;
         }
 
-        if (!content || content === undefined || content === null) {
+        if (!content) {
             await interaction.ephemeralReply('❌ Content not found. If this is an Error, Please open a ticket on the [Official Server](https://discord.vulps.co.uk).');
             return;
         }
@@ -74,33 +68,28 @@ const report = new Command('report', 'Report Inappropriate Content')
             ? interaction.guildId!
             : interaction.options.getString('id')!;
 
-        await reportService.createReport(
+        await msClient.submitReport(
             interaction.user.id,
             offenderId,
-            getContent(content),
             reportType,
             interaction.guildId!,
-            interaction.options.getString('reason') || 'No reason provided'
+            getContent(content),
+            interaction.options.getString('reason') ?? 'No reason provided'
         );
 
         await interaction.ephemeralReply('✅ Report submitted successfully.');
-        
     });
 
 export default report;
 
 async function getQuestion(id: number): Promise<false | Question> {
     if (id < 1) return false;
-    const question = await db.get<Question>('question', 'questions', { id: id });
-    if (!question) return false;
-    return question;
+    return await dsClient.getQuestion(id) ?? false;
 }
 
 async function getServer(guildId: string): Promise<false | Server> {
     if (!guildId || guildId.length < 17 || guildId.length > 19) return false;
-    const server = await db.get<Server>('server', 'servers', { id: BigInt(guildId) });
-    if (!server) return false;
-    return server;
+    return await dsClient.getServer(guildId) ?? false;
 }
 
 function getContent(content: Question | Server): string {

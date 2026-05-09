@@ -4,6 +4,7 @@ import { AnySelectMenuInteraction } from '../types/AnySelectMenuInteraction';
 /**
  * BotSelectMenuInteraction - Wrapper for Discord select menu interactions
  * Adds select menu-specific properties like values and parsed customId params
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export class BotSelectMenuInteraction extends BotComponentInteraction {
   protected readonly _interaction: AnySelectMenuInteraction;

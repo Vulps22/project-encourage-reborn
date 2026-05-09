@@ -1,6 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { serverService } from '../../../services';
-import { BotCommandInteraction } from '../../../structures';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import { termsView } from '../../../views';
 

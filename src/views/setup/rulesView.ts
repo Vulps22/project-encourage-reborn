@@ -1,7 +1,7 @@
 /** Component V2 message for displaying submission rules during setup */
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { UniversalMessage } from "../../types";
+import { UniversalMessage } from "@vulps22/bot-interactions";
 
 function rulesView(showButtons: boolean = true): UniversalMessage {
     const title = new TextDisplayBuilder()

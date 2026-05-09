@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { BotButtonInteraction } from '../../../structures';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 
 const reportButton: Handler<BotButtonInteraction> = {

@@ -3,6 +3,7 @@ import { BotCommandInteraction } from '../structures';
 
 /**
  * Command handler structure for automatic registration
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export interface CommandHandler {
   data: SlashCommandBuilder;

@@ -1,4 +1,4 @@
-import { DatabaseService } from './DatabaseService';
+import { dsClient } from '../client';
 import { Logger } from '../utils';
 import { CoreConfig } from '../interface';
 
@@ -8,8 +8,6 @@ export class ConfigurationService {
   private cache: CoreConfig | null = null;
   private cacheExpiresAt: number = 0;
 
-  constructor(private db: DatabaseService) {}
-
   async getConfig(): Promise<CoreConfig> {
     const now = Date.now();
 
@@ -17,13 +15,9 @@ export class ConfigurationService {
       return this.cache;
     }
 
-    Logger.debug('ConfigurationService: cache miss, fetching from database');
+    Logger.debug('ConfigurationService: cache miss, fetching from DS');
 
-    const config = await this.db.get<CoreConfig>('core', 'config', { id: 'config' });
-
-    if (!config) {
-      throw new Error('core.config row is missing — run db:install');
-    }
+    const config = await dsClient.get<CoreConfig>('/config');
 
     this.cache = config;
     this.cacheExpiresAt = now + CACHE_TTL_MS;

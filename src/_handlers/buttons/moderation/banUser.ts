@@ -1,9 +1,9 @@
 import { UserProfileBuilder } from "../../../builders/UserProfileBuilder";
-import { BotButtonInteraction } from "../../../structures";
+import { BotButtonInteraction } from "@vulps22/bot-interactions";
 import { Handler } from "../../../utils";
 import { moderationService } from "../../../services";
 import { userProfileView } from "../../../views";
-import { TargetType } from "../../../types";
+import { TargetType } from "@vulps22/project-encourage-types";
 
 const banUserButton: Handler<BotButtonInteraction> = {
     name: "banUser",

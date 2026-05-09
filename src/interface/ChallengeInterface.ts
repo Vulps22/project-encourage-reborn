@@ -1,6 +1,9 @@
 import { Snowflake } from 'discord.js';
 import { QuestionType } from '../types';
 
+/**
+ * @deprecated Use Vulps22/project-encourage-types instead
+ */
 export interface Challenge {
   id: number;
   message_id?: Snowflake;

@@ -1,5 +1,8 @@
 import { Snowflake } from 'discord.js';
 
+/**
+ * @deprecated Use Vulps22/project-encourage-types instead
+ */
 export interface ServerProfile {
     id: Snowflake;
     name: string | null;

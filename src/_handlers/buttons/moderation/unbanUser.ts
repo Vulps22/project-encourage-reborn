@@ -1,5 +1,5 @@
 import { UserProfileBuilder } from "../../../builders/UserProfileBuilder";
-import { BotButtonInteraction } from "../../../structures";
+import { BotButtonInteraction } from "@vulps22/bot-interactions";
 import { Handler, Logger } from "../../../utils";
 import { questionService, serverService, userService } from "../../../services";
 import { userProfileView } from "../../../views";

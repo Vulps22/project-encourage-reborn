@@ -1,5 +1,5 @@
 import { moderationService, reportService } from '../../../services';
-import { BotButtonInteraction } from '../../../structures';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 
 /**

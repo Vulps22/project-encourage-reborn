@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use Vulps22/project-encourage-types instead
+ */
 export interface UserProfile {
     id: string;
     //Do not use 'username' here as that database field is deprecated

@@ -1,8 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, StringSelectMenuBuilder, TextDisplayBuilder } from "discord.js";
 import { UserProfile } from "../../interface";
-import { UniversalMessage } from "../../types";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { UniversalMessage } from "@vulps22/bot-interactions";
+/**
+ * 
+ * @deprecated Use ModerationClient instead
+ */
 async function userProfileView(profile: UserProfile, banReasons: any[] | null = null): Promise<UniversalMessage> {
     const client = global.client;
 

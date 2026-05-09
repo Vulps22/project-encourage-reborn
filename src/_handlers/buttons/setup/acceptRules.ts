@@ -1,6 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { serverService } from '../../../services';
-import { BotButtonInteraction } from '../../../structures';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { channelSelectView } from '../../../views';
 

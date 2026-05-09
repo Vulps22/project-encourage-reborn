@@ -2,7 +2,7 @@
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
 import { Urls } from "../../config";
-import { UniversalMessage } from "../../types";
+import { UniversalMessage } from "@vulps22/bot-interactions";
 
 function termsView(): UniversalMessage {
     const playtestNote = new TextDisplayBuilder()

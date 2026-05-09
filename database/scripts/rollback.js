@@ -4,7 +4,11 @@ const path = require('path');
 
 const envMap = { '--dev': '.env.development', '--stage': '.env.staging', '--prod': '.env.production' };
 const envFlag = process.argv.find(a => envMap[a]);
-require('dotenv').config({ path: path.resolve(process.cwd(), envFlag ? envMap[envFlag] : '.env') });
+if (!envFlag) {
+  console.error('No environment selected. Use --dev, --stage, or --prod.');
+  process.exit(1);
+}
+require('dotenv').config({ path: path.resolve(process.cwd(), envMap[envFlag]) });
 
 /**
  * Rollback Script
@@ -15,7 +19,7 @@ require('dotenv').config({ path: path.resolve(process.cwd(), envFlag ? envMap[en
  * If in applied/: Execute rollback, move files back to migrations/
  */
 async function rollback() {
-  const issueNumber = process.argv[2];
+  const issueNumber = process.argv.slice(2).find(a => !a.startsWith('--'));
   const pool = new Pool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 5432,

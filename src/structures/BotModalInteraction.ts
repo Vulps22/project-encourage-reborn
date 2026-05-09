@@ -4,6 +4,7 @@ import { BotRepliableInteraction } from './BotRepliableInteraction';
 /**
  * BotModalInteraction - Wrapper for Discord modal submit interactions
  * Adds modal-specific properties like fields and parsed customId params
+ * @deprecated Use Vulps22/bot-interactions package instead
  */
 export class BotModalInteraction extends BotRepliableInteraction {
   protected readonly _interaction: ModalSubmitInteraction;

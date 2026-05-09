@@ -42,14 +42,14 @@ export const db = new DatabaseService({
 });
 
 // Create service instances with dependency injection
-export const challengeService = new ChallengeService(db);
-export const configurationService = new ConfigurationService(db);
+export const challengeService = new ChallengeService();
+export const configurationService = new ConfigurationService();
 export const moderationService = new ModerationService(db);
 export const questionService = new QuestionService(db);
 export const reportService = new ReportService(db);
 export const serverService = new ServerService(db);
 export const userService = new UserService(db);
-export const userTrackingService = new UserTrackingService(db);
-export const votingService = new VotingService(db);
-export const storableService = new StorableService(db);
-export const inventoryService = new InventoryService(db);
+export const userTrackingService = new UserTrackingService();
+export const votingService = new VotingService();
+export const storableService = new StorableService();
+export const inventoryService = new InventoryService();

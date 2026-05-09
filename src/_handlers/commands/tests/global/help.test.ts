@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { BotCommandInteraction } from '../../../../structures';
+import { BotCommandInteraction } from '../@vulps22/bot-interactions';
 import helpView from '../../../../views/util/helpView';
 import help from '../../global/help';
 
