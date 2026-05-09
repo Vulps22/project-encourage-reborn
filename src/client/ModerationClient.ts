@@ -17,7 +17,9 @@ export class ModerationClient extends Client {
 
   /** Notify MS of a newly created question so it can post it to the moderation log. */
   async submitQuestion(questionId: number): Promise<void> {
-    await this.post<{ success: boolean; questionId: number }>('/question', undefined, { questionId });
+    console.log(`[DEBUG PE/ModerationClient] submitQuestion — POSTing questionId=${questionId} to MS /question`);
+    const result = await this.post<{ success: boolean; questionId: number }>('/question', undefined, { questionId });
+    console.log(`[DEBUG PE/ModerationClient] MS responded — success=${result.success} questionId=${result.questionId}`);
   }
 
   // ===== REPORT =====

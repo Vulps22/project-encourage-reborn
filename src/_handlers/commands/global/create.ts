@@ -17,16 +17,21 @@ const create = new Command('create', 'Submit a custom truth or dare question')
   .setNSFW(true)
   .setAdministrator(false)
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
+    console.log(`[DEBUG /create] Command received — user=${interaction.user.id} guild=${interaction.guildId}`);
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (!interaction.guildId) {
+      console.log(`[DEBUG /create] Rejected: no guildId`);
       await interaction.editReply({
         content: '❌ This command can only be used in a server.',
       });
       return;
     }
 
-    if (!await serverService.canCreate(interaction.guildId)) {
+    console.log(`[DEBUG /create] Checking canCreate for guild=${interaction.guildId}`);
+    const canCreate = await serverService.canCreate(interaction.guildId);
+    console.log(`[DEBUG /create] canCreate=${canCreate}`);
+    if (!canCreate) {
       await interaction.editReply({
         content: '❌ This server is not allowed to create questions. It has either been blocked or has not accepted the rules yet.',
       });
@@ -35,8 +40,11 @@ const create = new Command('create', 'Submit a custom truth or dare question')
 
     const type = interaction.options.getString('type', true);
     const question = interaction.options.getString('question', true);
+    console.log(`[DEBUG /create] Options — type=${type} question="${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`);
 
+    console.log(`[DEBUG /create] Calling questionService.createQuestion`);
     const savedQuestion = await questionService.createQuestion(type as QuestionType, question, interaction.user.id, interaction.guildId);
+    console.log(`[DEBUG /create] questionService.createQuestion returned: ${typeof savedQuestion === 'string' ? `error="${savedQuestion}"` : `id=${savedQuestion.id}`}`);
 
     if (typeof savedQuestion === 'string') {
       await interaction.editReply({
@@ -46,12 +54,15 @@ const create = new Command('create', 'Submit a custom truth or dare question')
     }
 
     Logger.debug(`User ${interaction.user.id} submitted new question ID ${savedQuestion.id} for moderation`);
+    console.log(`[DEBUG /create] Calling msClient.submitQuestion(${savedQuestion.id})`);
     await msClient.submitQuestion(savedQuestion.id);
+    console.log(`[DEBUG /create] msClient.submitQuestion completed — question ${savedQuestion.id} handed to MS`);
 
     const response = confirmNewQuestionEmbed(savedQuestion);
 
     // For now, just acknowledge
     await interaction.sendReply(null, response);
+    console.log(`[DEBUG /create] Ephemeral confirmation sent to user ${interaction.user.id}`);
   });
 
 export default create;
