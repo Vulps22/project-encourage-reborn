@@ -10,6 +10,7 @@ jest.mock('../../client', () => ({
 const makeConfig = (overrides: Partial<CoreConfig> = {}): CoreConfig => ({
     id: 'config',
     vote_threshold: 5,
+    is_locked: false,
     ...overrides,
 });
 

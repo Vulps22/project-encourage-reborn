@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, CommandInteractionOptionResolver } from 'discord.js';
-import { BotCommandInteraction } from '../BotCommandInteraction';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 
 describe('BotCommandInteraction', () => {
   let mockInteraction: any;

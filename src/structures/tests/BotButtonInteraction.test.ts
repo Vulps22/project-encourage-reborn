@@ -1,5 +1,5 @@
 import { ButtonInteraction } from 'discord.js';
-import { BotButtonInteraction } from '../BotButtonInteraction';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 
 describe('BotButtonInteraction', () => {
   let mockInteraction: any;

@@ -1,7 +1,7 @@
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import skip from '../../question/skip';
 import { challengeService, inventoryService, questionService, votingService } from '../../../../services';
-import { Storable } from '@vulps22/project-encourage-types';
+import { Storable } from '../../../../types';
 
 jest.mock('../../../../services', () => ({
     challengeService: { getChallengeByMessageId: jest.fn(), skip: jest.fn() },
@@ -32,6 +32,7 @@ describe('skip button handler', () => {
         mockInteraction = {
             messageId: 'msg-1',
             user: { id: 'user-123' },
+            deferUpdate: jest.fn().mockResolvedValue(undefined),
             ephemeralReply: jest.fn().mockResolvedValue(undefined),
             ephemeralFollowUp: jest.fn().mockResolvedValue(undefined),
             updateComponentMessage: jest.fn().mockResolvedValue(undefined),
@@ -54,7 +55,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('Could not find tracking data'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('Could not find tracking data'));
     });
 
     it('should reply with error when user is not the challenge owner', async () => {
@@ -62,7 +63,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('Only the challenge recipient'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('Only the challenge recipient'));
     });
 
     it('should reply with error when challenge is already locked', async () => {
@@ -70,7 +71,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('already been locked'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('already been locked'));
     });
 
     it('should reply with no skips message when consume returns false', async () => {
@@ -78,7 +79,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith(expect.stringContaining('no skips left'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('no skips left'));
     });
 
     it('should finalize and confirm on happy path', async () => {

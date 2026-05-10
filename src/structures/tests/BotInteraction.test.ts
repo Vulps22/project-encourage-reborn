@@ -1,9 +1,8 @@
 import { Interaction, PermissionsBitField, PermissionFlagsBits } from 'discord.js';
-import { BotInteraction } from '../BotInteraction';
-import { Logger } from '../../utils';
+import { BotInteraction } from '@vulps22/bot-interactions';
+import { Logger } from '@vulps22/logger';
 
-// Mock Logger
-jest.mock('../../utils', () => ({
+jest.mock('@vulps22/logger', () => ({
   Logger: {
     updateExecution: jest.fn().mockResolvedValue(undefined),
   },
