@@ -44,6 +44,13 @@ export class ModerationClient extends Client {
     return res.reportId;
   }
 
+  // ===== SERVER =====
+
+  /** Notify MS that PE joined a new server so it can log and upsert it. */
+  async notifyServerJoined(id: string, name: string, userId: string): Promise<void> {
+    await this.post<{ success: boolean }>('/server', undefined, { id, name, user_id: userId });
+  }
+
   // ===== PING =====
 
   async ping(): Promise<boolean> {
