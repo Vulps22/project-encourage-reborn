@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/webhook/**'
+      - 'src/routes/api/v1/**'
       - 'package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/webhook/**'
+      - 'src/routes/api/v1/**'
       - 'package*.json'
   workflow_dispatch:
 
@@ -38,4 +38,4 @@ jobs:
         run: npm ci
 
       - name: Run webhook tests
-        run: npm test -- src/webhook
+        run: npm test -- src/routes/api/v1
