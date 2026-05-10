@@ -14,18 +14,13 @@
     "test:watch": "jest --watch",
     "coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "db:install": "node database/scripts/fresh-install.js",
-    "db:rollout": "node database/scripts/rollout.js",
-    "db:rollback": "node database/scripts/rollback.js",
-    "db:migrate": "node database/scripts/migrate-mysql-to-postgres.js"
+    "lint:fix": "eslint src --ext .ts --fix"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.14",
-    "@types/pg": "^8.11.11",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
@@ -47,8 +42,6 @@
     "@vulps22/project-encourage-types": "^1.0.0",
     "discord.js": "^14.16.3",
     "express": "^5.0.1",
-    "mysql2": "^3.11.5",
-    "pg": "^8.13.3",
     "tslib": "^2.8.1"
   }
 }
