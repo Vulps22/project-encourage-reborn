@@ -51,14 +51,4 @@ export class ModerationClient extends Client {
     await this.post<{ success: boolean }>('/server', undefined, { id, name, user_id: userId });
   }
 
-  // ===== PING =====
-
-  async ping(): Promise<boolean> {
-    try {
-      await this.get<{ message: string }>('/ping');
-      return true;
-    } catch {
-      return false;
-    }
-  }
 }

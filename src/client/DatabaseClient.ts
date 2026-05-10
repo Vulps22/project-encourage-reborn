@@ -7,7 +7,6 @@ import { ChallengeVote } from '../interface/ChallengeVoteInterface';
 import { CoreConfig } from '../interface/CoreConfigInterface';
 import { Storable } from '../interface/StorableInterface';
 import { InventoryItem } from '../interface/InventoryInterface';
-import { Report, ReportStatus } from '../interface/ReportInterface';
 import { QuestionType } from '../types';
 
 export class DSError extends ClientError {
@@ -46,41 +45,6 @@ export class DatabaseClient extends Client {
     return this.patch<User>(`/user/${id}/unban`, undefined, {});
   }
 
-  async getUserServerCount(id: string): Promise<number> {
-    const result = await this.get<{ count: number }>(`/user/${id}/server-count`);
-    return result?.count ?? 0;
-  }
-
-  async getUserOwnedServerCount(id: string): Promise<number> {
-    const result = await this.get<{ count: number }>(`/user/${id}/owned-server-count`);
-    return result?.count ?? 0;
-  }
-
-  async getUserBannedServerCount(id: string): Promise<number> {
-    const result = await this.get<{ count: number }>(`/user/${id}/banned-server-count`);
-    return result?.count ?? 0;
-  }
-
-  async banUserQuestions(id: string, moderatorId: string): Promise<number> {
-    const result = await this.post<{ count: number }>(`/user/${id}/ban-questions`, undefined, { moderator_id: moderatorId });
-    return result.count;
-  }
-
-  async unbanUserQuestions(id: string): Promise<number> {
-    const result = await this.post<{ count: number }>(`/user/${id}/unban-questions`);
-    return result.count;
-  }
-
-  async banUserServers(id: string, reason: string): Promise<number> {
-    const result = await this.post<{ count: number }>(`/user/${id}/ban-servers`, undefined, { reason });
-    return result.count;
-  }
-
-  async unbanUserServers(id: string): Promise<number> {
-    const result = await this.post<{ count: number }>(`/user/${id}/unban-servers`);
-    return result.count;
-  }
-
   // ===== INVENTORY =====
 
   async getInventoryItem(userId: string, storableId: string): Promise<InventoryItem | null> {
@@ -114,38 +78,6 @@ export class DatabaseClient extends Client {
     return this.patch<Server>(`/server/${id}`, undefined, data);
   }
 
-  async banServer(id: string, moderatorId: string, banReason: string): Promise<Server | null> {
-    return this.patch<Server>(`/server/${id}/ban`, undefined, { moderator_id: moderatorId, ban_reason: banReason });
-  }
-
-  async unbanServer(id: string): Promise<Server | null> {
-    return this.patch<Server>(`/server/${id}/unban`, undefined, {});
-  }
-
-  async deleteServer(id: string): Promise<boolean> {
-    const result = await this.delete<{ success: boolean }>(`/server/${id}`);
-    return result?.success ?? false;
-  }
-
-  async getServerUserCount(id: string): Promise<number> {
-    const result = await this.get<{ count: number }>(`/server/${id}/user-count`);
-    return result?.count ?? 0;
-  }
-
-  async getServerBannedUserCount(id: string): Promise<number> {
-    const result = await this.get<{ count: number }>(`/server/${id}/banned-user-count`);
-    return result?.count ?? 0;
-  }
-
-  async addServerUser(serverId: string, userId: string): Promise<void> {
-    await this.post(`/server/${serverId}/users`, undefined, { user_id: userId });
-  }
-
-  async removeServerUser(serverId: string, userId: string): Promise<boolean> {
-    const result = await this.delete<{ success: boolean }>(`/server/${serverId}/users/${userId}`);
-    return result?.success ?? false;
-  }
-
   // ===== QUESTION =====
 
   async getQuestion(id: number): Promise<Question | null> {
@@ -170,38 +102,10 @@ export class DatabaseClient extends Client {
     return this.patch<Question>(`/question/${id}`, undefined, data);
   }
 
-  async approveQuestion(id: number, moderatorId: string): Promise<Question | null> {
-    return this.patch<Question>(`/question/${id}/approve`, undefined, { moderator_id: moderatorId });
-  }
-
-  async banQuestion(id: number, moderatorId: string, banReason: string): Promise<Question | null> {
-    return this.patch<Question>(`/question/${id}/ban`, undefined, { moderator_id: moderatorId, ban_reason: banReason });
-  }
-
-  async countQuestionsByUser(userId: string, approved?: boolean, banned?: boolean): Promise<number> {
-    const query: Record<string, string> = { userId };
-    if (approved !== undefined) query.approved = String(approved);
-    if (banned !== undefined) query.banned = String(banned);
-    const result = await this.get<{ count: number }>('/question/count', undefined, query);
-    return result?.count ?? 0;
-  }
-
-  async countQuestionsByServer(serverId: string, approved?: boolean, banned?: boolean): Promise<number> {
-    const query: Record<string, string> = { serverId };
-    if (approved !== undefined) query.approved = String(approved);
-    if (banned !== undefined) query.banned = String(banned);
-    const result = await this.get<{ count: number }>('/question/count', undefined, query);
-    return result?.count ?? 0;
-  }
-
   // ===== CHALLENGE =====
 
   async createChallenge(userId: string, questionId: number, serverId: string, channelId: string | null, username: string, type: QuestionType): Promise<Challenge> {
     return this.post<Challenge>('/challenge', undefined, { user_id: userId, question_id: questionId, server_id: serverId, channel_id: channelId, username, type });
-  }
-
-  async getChallenge(id: number): Promise<Challenge | null> {
-    return this.get<Challenge>(`/challenge/${id}`);
   }
 
   async getChallengeByMessageId(messageId: string): Promise<Challenge | null> {
@@ -248,11 +152,6 @@ export class DatabaseClient extends Client {
     return this.patch<ChallengeVote>(`/vote/${challengeId}/finalise`, undefined, { result });
   }
 
-  async hasUserVoted(challengeId: number, userId: string): Promise<boolean> {
-    const result = await this.get<{ voted: boolean }>(`/vote/${challengeId}/check`, undefined, { userId });
-    return result?.voted ?? false;
-  }
-
   // ===== CONFIG =====
 
   async getConfig(): Promise<CoreConfig | null> {
@@ -267,40 +166,6 @@ export class DatabaseClient extends Client {
 
   async listStorables(): Promise<Storable[]> {
     return (await this.get<Storable[]>('/storable')) ?? [];
-  }
-
-  // ===== REPORT =====
-
-  async getReport(id: number): Promise<Report | null> {
-    return this.get<Report>(`/report/${id}`);
-  }
-
-  async listReports(offenderId: string, statuses?: ReportStatus[]): Promise<Report[]> {
-    const query: Record<string, string> = { offenderId };
-    if (statuses?.length) query.status = statuses.join(',');
-    return (await this.get<Report[]>('/report', undefined, query)) ?? [];
-  }
-
-  async createReport(data: {
-    type: string;
-    reason: string;
-    content?: string | null;
-    sender_id: string;
-    offender_id: string;
-    server_id: string;
-    moderator_id?: string | null;
-    ban_reason?: string | null;
-  }): Promise<Report> {
-    return this.post<Report>('/report', undefined, data as Record<string, unknown>);
-  }
-
-  async updateReport(id: number, data: Partial<{
-    status: ReportStatus;
-    moderator_id: string | null;
-    message_id: string | null;
-    ban_reason: string | null;
-  }>): Promise<Report | null> {
-    return this.patch<Report>(`/report/${id}`, undefined, data as Record<string, unknown>);
   }
 
   // ===== TRACK =====
