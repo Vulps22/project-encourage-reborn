@@ -3,6 +3,7 @@ import { BaseInteraction } from 'discord.js';
 /**
  * Logger - Webhook-based utility for logging bot execution.
  * * VERBOSE DEBUG MODE ACTIVE *
+ * @deprecated use @vulps22/logger instead
  */
 export class Logger {
   private static sensitiveValues: Set<string> = new Set();

@@ -1,7 +1,8 @@
 import { Client, Collection, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { Handler, Command, Logger } from './utils';
+import { Handler, Command } from './utils';
+import { Logger } from '@vulps22/logger';
 import { EventHandler } from './types';
 import { Config } from './config';
 import { BotButtonInteraction, BotModalInteraction, BotSelectMenuInteraction } from '@vulps22/bot-interactions';
