@@ -1,6 +1,6 @@
 import { Interaction, Snowflake } from 'discord.js';
 import { dsClient } from '../client';
-import { Logger } from '../utils';
+import { Logger } from '@vulps22/logger';
 import { DMInteractionError } from '../errors';
 import { TrackingCacheEntry } from '../interface';
 

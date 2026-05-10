@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ApiRoute, rawBody } from '@vulps22/dynamic-endpoint-router';
 import { Logger } from '@vulps22/logger';
 import { inventoryService, userService } from '../../../services';
-import { Storable } from '@vulps22/project-encourage-types';
+import { Storable } from '../../../types';
 
 interface TopGGUser {
     id: string;

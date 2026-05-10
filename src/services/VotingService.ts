@@ -1,6 +1,6 @@
 import { Snowflake } from 'discord.js';
 import { dsClient, DSError } from '../client';
-import { Logger } from '../utils';
+import { Logger } from '@vulps22/logger';
 import { ChallengeVote, VoteType } from '@vulps22/project-encourage-types';
 
 export class VotingService {

@@ -1,5 +1,5 @@
 import { dsClient } from '../client';
-import { Logger } from '../utils';
+import { Logger } from '@vulps22/logger';
 import { CoreConfig } from '@vulps22/project-encourage-types';
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
