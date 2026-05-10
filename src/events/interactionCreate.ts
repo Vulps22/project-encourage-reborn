@@ -1,6 +1,7 @@
 import { GuildTextBasedChannel, Interaction, MessageCreateOptions, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
-import { moderationService, serverService, userService, userTrackingService } from '../services';
+import { serverService, userService, userTrackingService } from '../services';
+import { banReasons } from '../config';
 import { EventHandler, TargetType } from '../types';
 import { Logger } from '../utils';
 import { CommandInteractionEvent, ButtonInteractionEvent, ModalInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
@@ -66,7 +67,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
 
     if (banReason) {
       await interaction.reply({
-        content: `This server is banned from using the bot. Reason: ${moderationService.getBanReasonLabel(TargetType.Server, banReason)}`
+        content: `This server is banned from using the bot. Reason: ${getBanReasonLabel(TargetType.Server, banReason)}`
       })
       return;
     }
@@ -74,7 +75,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
     const userBanReason = await userService.isUserBanned(interaction.user.id);
     if (userBanReason) {
       await interaction.reply({
-        content: `You are banned from using this bot. Reason: ${moderationService.getBanReasonLabel(TargetType.User, userBanReason)}`,
+        content: `You are banned from using this bot. Reason: ${getBanReasonLabel(TargetType.User, userBanReason)}`,
         flags: MessageFlags.Ephemeral
       });
       return;
@@ -118,3 +119,9 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
 };
 
 export default interactionCreate;
+
+function getBanReasonLabel(type: TargetType, value: string): string {
+  const reasons = banReasons[type] as { label: string; value: string }[];
+  const label = reasons.find(r => r.value === value)?.label ?? value;
+  return label.replace(/^\d+ - /, '');
+}

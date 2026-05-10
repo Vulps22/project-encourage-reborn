@@ -2,9 +2,7 @@
 import { DatabaseService } from './DatabaseService';
 import { ChallengeService } from './ChallengeService';
 import { ConfigurationService } from './ConfigurationService';
-import { ModerationService } from './ModerationService';
 import { QuestionService } from './QuestionService';
-import { ReportService } from './ReportService';
 import { ServerService } from './ServerService';
 import { UserService } from './UserService';
 import { UserTrackingService } from './UserTrackingService';
@@ -15,9 +13,7 @@ import { InventoryService } from './InventoryService';
 export { ChallengeService } from './ChallengeService';
 export { ConfigurationService } from './ConfigurationService';
 export { DatabaseService } from './DatabaseService';
-export { ModerationService } from './ModerationService';
 export { QuestionService } from './QuestionService';
-export { ReportService } from './ReportService';
 export { ServerService } from './ServerService';
 export { UserService } from './UserService';
 export { UserTrackingService } from './UserTrackingService';
@@ -44,9 +40,7 @@ export const db = new DatabaseService({
 // Create service instances with dependency injection
 export const challengeService = new ChallengeService();
 export const configurationService = new ConfigurationService();
-export const moderationService = new ModerationService(db);
 export const questionService = new QuestionService(db);
-export const reportService = new ReportService(db);
 export const serverService = new ServerService(db);
 export const userService = new UserService(db);
 export const userTrackingService = new UserTrackingService();
