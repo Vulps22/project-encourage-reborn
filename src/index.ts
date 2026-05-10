@@ -1,7 +1,6 @@
 import { ShardingManager } from 'discord.js';
 import path from 'path';
 import { createServer } from '@vulps22/dynamic-endpoint-router';
-import { DatabaseService } from './services/DatabaseService';
 import { Logger } from './utils/Logger';
 
 // Initialize Logger with sensitive values from .env
@@ -14,49 +13,10 @@ if (!token) {
     process.exit(1);
 }
 
-// Verify required database environment variables
-const dbHost = process.env.DB_HOST;
-const dbUser = process.env.DB_USER;
-const dbPassword = process.env.DB_PASSWORD;
-const dbName = process.env.DB_NAME;
-
-if (!dbHost || !dbUser || !dbPassword || !dbName) {
-    console.error('Missing required database environment variables (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME)');
-    process.exit(1);
-}
-
-/**
- * Test database connection before starting shards
- */
-async function testDatabaseConnection(): Promise<void> {
-    Logger.debug('Testing database connection...');
-    
-    const db = new DatabaseService({
-        host: dbHost!,
-        port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
-        user: dbUser!,
-        password: dbPassword!,
-        database: dbName!,
-    });
-
-    try {
-        await db.testConnection();
-        Logger.debug('✓ Database connection successful');
-        await db.close();
-    } catch (error) {
-        console.error('✗ Database connection failed:', error instanceof Error ? error.message : String(error));
-        console.error('Please ensure the database is running and credentials are correct');
-        process.exit(1);
-    }
-}
-
 /**
  * Start the bot by spawning shards
  */
 async function startBot(): Promise<void> {
-    // Test database connection first
-    await testDatabaseConnection();
-
     Logger.debug('Starting bot...');
 
     // Create sharding manager
