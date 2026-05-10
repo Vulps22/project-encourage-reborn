@@ -1,8 +1,8 @@
 import banQuestionButton from '../../moderation/banQuestion';
-import { BotButtonInteraction } from '../@vulps22/bot-interactions';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { moderationService, questionService } from '../../../../services';
 import { ModerationLogger } from '../../../../utils/ModerationLogger';
-import { TargetType } from '../@vulps22/project-encourage-types';
+import { TargetType } from '@vulps22/project-encourage-types';
 import { QuestionNotFoundError } from '../../../../errors/QuestionNotFoundError';
 
 // Mock the services and Logger

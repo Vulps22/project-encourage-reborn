@@ -1,5 +1,5 @@
 import { StringSelectMenuInteraction } from 'discord.js';
-import { BotSelectMenuInteraction } from '../@vulps22/bot-interactions';
+import { BotSelectMenuInteraction } from '@vulps22/bot-interactions';
 import userBanReasonSelected from '../../moderation/userBanReasonSelected';
 import { moderationService, questionService, reportService, serverService, userService } from '../../../../services';
 import { UserProfileBuilder } from '../../../../builders/UserProfileBuilder';
