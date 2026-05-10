@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, PermissionsBitField } from 'discord.js';
 import { serverService } from '../../../../services';
-import { BotCommandInteraction } from '../@vulps22/bot-interactions';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { termsView } from '../../../../views';
 import setup from '../../global/setup';
 

@@ -4,7 +4,8 @@
   "description": "A Discord bot for playing Truth or Dare with voting, XP systems, and user-submitted questions",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "start": "node --env-file=.env dist/index.js",
     "dev": "npm run build && node --env-file=../.env.development --watch dist/index.js",
     "stage": "node --env-file=.env.staging dist/index.js",
@@ -42,6 +43,7 @@
   },
   "dependencies": {
     "@vulps22/bot-interactions": "^1.0.3",
+    "@vulps22/dynamic-endpoint-router": "^1.0.1",
     "@vulps22/project-encourage-types": "^1.0.0",
     "discord.js": "^14.16.3",
     "express": "^5.0.1",

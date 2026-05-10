@@ -72,7 +72,7 @@ export class ReportService {
       await user.send(message);
       Logger.debug(`Notified reporter ${report.sender_id} for report ${report.id}`);
     } catch (error) {
-      Logger.debug(`Could not notify reporter ${report.sender_id} for report ${report.id}: ${JSON.stringify(error)}`);
+      Logger.debug(`Could not notify reporter ${report.sender_id} for report ${report.id}: ${error}`);
     }
   }
 }

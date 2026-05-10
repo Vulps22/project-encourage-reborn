@@ -1,11 +1,16 @@
-import { BotCommandInteraction } from '../@vulps22/bot-interactions';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { questionService, serverService } from '../../../../services';
 import { confirmNewQuestionEmbed } from '../../../../views';
 import create from '../../global/create';
-import { QuestionType } from '../@vulps22/project-encourage-types';
+import { QuestionType } from '@vulps22/project-encourage-types';
 import { MessageFlags } from 'discord.js';
 
 // Mock dependencies
+jest.mock('../../../../client', () => ({
+  msClient: { submitQuestion: jest.fn().mockResolvedValue(undefined) },
+  dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+}));
+
 jest.mock('../../../../services', () => ({
   questionService: {
     createQuestion: jest.fn(),

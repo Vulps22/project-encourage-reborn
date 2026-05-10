@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  packages: read
 
 jobs:
   rollout:
@@ -25,6 +26,9 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+
+      - name: Configure npm for private packages
+        run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
 
       - run: npm ci
 

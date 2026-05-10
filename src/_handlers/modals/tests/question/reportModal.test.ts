@@ -1,10 +1,13 @@
 import { ModalSubmitInteraction } from 'discord.js';
-import { BotModalInteraction } from '../@vulps22/bot-interactions';
+import { BotModalInteraction } from '@vulps22/bot-interactions';
 import reportModal from '../../question/reportModal';
-import { db, reportService } from '../../../../services';
-import { TargetType } from '../@vulps22/project-encourage-types';
+import { dsClient, msClient } from '../../../../client';
+import { TargetType } from '@vulps22/project-encourage-types';
 
-jest.mock('../../../../services');
+jest.mock('../../../../client', () => ({
+    dsClient: { getQuestion: jest.fn() },
+    msClient: { submitReport: jest.fn() },
+}));
 
 describe('reportModal', () => {
     let mockInteraction: any;
@@ -21,6 +24,7 @@ describe('reportModal', () => {
             user: { id: '111222333' },
             reply: jest.fn().mockResolvedValue(undefined),
             editReply: jest.fn().mockResolvedValue(undefined),
+            followUp: jest.fn().mockResolvedValue(undefined),
             fields: {
                 getTextInputValue: jest.fn().mockReturnValue('This is an inappropriate question.'),
             },
@@ -31,7 +35,8 @@ describe('reportModal', () => {
             'exec-123'
         );
 
-        (reportService.createReport as jest.Mock).mockResolvedValue({ id: 1 });
+        (dsClient.getQuestion as jest.Mock).mockResolvedValue({ id: 42, question: 'Test question?' });
+        (msClient.submitReport as jest.Mock).mockResolvedValue(undefined);
     });
 
     it('should have correct name and params', () => {
@@ -40,17 +45,15 @@ describe('reportModal', () => {
     });
 
     it('should create a report with the provided reason and confirm to user', async () => {
-        (db.get as jest.Mock).mockResolvedValue({ id: 42, question: 'Test question?' });
-
         await reportModal.execute(botInteraction);
 
-        expect(db.get).toHaveBeenCalledWith('question', 'questions', { id: 42 });
-        expect(reportService.createReport).toHaveBeenCalledWith(
+        expect(dsClient.getQuestion).toHaveBeenCalledWith(42);
+        expect(msClient.submitReport).toHaveBeenCalledWith(
             '111222333',
             '42',
-            'Test question?',
             TargetType.Question,
             '987654321',
+            'Test question?',
             'This is an inappropriate question.'
         );
         expect(mockInteraction.reply).toHaveBeenCalledWith(
@@ -65,15 +68,15 @@ describe('reportModal', () => {
         await expect(reportModal.execute(botInteraction)).rejects.toThrow(
             'Invalid question ID when using Modal: question_reportModal'
         );
-        expect(reportService.createReport).not.toHaveBeenCalled();
+        expect(msClient.submitReport).not.toHaveBeenCalled();
     });
 
     it('should handle question not found', async () => {
-        (db.get as jest.Mock).mockResolvedValue(null);
+        (dsClient.getQuestion as jest.Mock).mockResolvedValue(null);
 
         await reportModal.execute(botInteraction);
 
-        expect(reportService.createReport).not.toHaveBeenCalled();
+        expect(msClient.submitReport).not.toHaveBeenCalled();
         expect(mockInteraction.reply).toHaveBeenCalledWith(
             expect.objectContaining({ content: '❌ Question not found.' })
         );

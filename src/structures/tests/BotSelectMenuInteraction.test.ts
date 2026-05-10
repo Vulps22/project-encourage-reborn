@@ -1,5 +1,5 @@
 import { StringSelectMenuInteraction } from 'discord.js';
-import { BotSelectMenuInteraction } from '../BotSelectMenuInteraction';
+import { BotSelectMenuInteraction } from '@vulps22/bot-interactions';
 
 describe('BotSelectMenuInteraction', () => {
   let mockInteraction: any;

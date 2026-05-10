@@ -1,5 +1,5 @@
 import { ButtonInteraction } from 'discord.js';
-import { BotComponentInteraction } from '../BotComponentInteraction';
+import { BotComponentInteraction } from '@vulps22/bot-interactions';
 
 // Create a concrete test class since BotComponentInteraction is abstract
 class TestBotComponentInteraction extends BotComponentInteraction {

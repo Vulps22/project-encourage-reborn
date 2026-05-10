@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, InteractionReplyOptions, MessageFlags } from 'discord.js';
-import { BotRepliableInteraction } from '../BotRepliableInteraction';
+import { BotRepliableInteraction } from '@vulps22/bot-interactions';
 
 // Create a concrete test class since BotRepliableInteraction is abstract
 class TestBotRepliableInteraction extends BotRepliableInteraction {

@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction } from 'discord.js';
 import { challengeService, questionService, votingService } from '../../../../services';
-import { BotCommandInteraction } from '../@vulps22/bot-interactions';
-import { QuestionType } from '../@vulps22/project-encourage-types';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
+import { QuestionType } from '@vulps22/project-encourage-types';
 import { challengeEmbed } from '../../../../views';
 import dare from '../../global/dare';
 

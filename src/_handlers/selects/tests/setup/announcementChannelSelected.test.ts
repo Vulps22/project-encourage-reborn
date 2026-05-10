@@ -1,6 +1,6 @@
 import { ChannelSelectMenuInteraction, PermissionsBitField } from 'discord.js';
 import { serverService } from '../../../../services';
-import { BotSelectMenuInteraction } from '../@vulps22/bot-interactions';
+import { BotSelectMenuInteraction } from '@vulps22/bot-interactions';
 import { setupCompleteView } from '../../../../views';
 import announcementChannelSelected from '../../setup/announcementChannelSelected';
 
@@ -40,6 +40,7 @@ describe('announcementChannelSelected select menu', () => {
       editReply: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue(undefined),
       deferUpdate: jest.fn().mockResolvedValue(undefined),
+      followUp: jest.fn().mockResolvedValue(undefined),
       customId: 'setup_announcementChannelSelected',
       values: ['123456789012345678'],
       user: { id: '123456789' },
@@ -77,7 +78,7 @@ describe('announcementChannelSelected select menu', () => {
 
   it('should reject non-admin users', async () => {
     mockInteraction.member.permissions = new PermissionsBitField([]);
-    botInteraction.ephemeralReply = jest.fn().mockResolvedValue(undefined);
+    botInteraction.ephemeralFollowUp = jest.fn().mockResolvedValue(undefined);
 
     await announcementChannelSelected.execute(botInteraction);
 
@@ -86,7 +87,7 @@ describe('announcementChannelSelected select menu', () => {
 
   it('should reject if no guild', async () => {
     mockInteraction.guildId = null;
-    botInteraction.ephemeralReply = jest.fn().mockResolvedValue(undefined);
+    botInteraction.ephemeralFollowUp = jest.fn().mockResolvedValue(undefined);
 
     await announcementChannelSelected.execute(botInteraction);
 
@@ -95,7 +96,7 @@ describe('announcementChannelSelected select menu', () => {
 
   it('should reject if no channel selected', async () => {
     mockInteraction.values = [];
-    botInteraction.ephemeralReply = jest.fn().mockResolvedValue(undefined);
+    botInteraction.ephemeralFollowUp = jest.fn().mockResolvedValue(undefined);
 
     await announcementChannelSelected.execute(botInteraction);
 

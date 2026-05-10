@@ -1,8 +1,8 @@
 import { ShardingManager } from 'discord.js';
 import path from 'path';
+import { createServer } from '@vulps22/dynamic-endpoint-router';
 import { DatabaseService } from './services/DatabaseService';
 import { Logger } from './utils/Logger';
-import { startVoteWebhook } from './webhook/VoteWebhook';
 
 // Initialize Logger with sensitive values from .env
 Logger.initialize();
@@ -73,15 +73,12 @@ async function startBot(): Promise<void> {
     await manager.spawn();
 }
 
-// Start vote webhook if configured
+// Start webhook server
 const webhookPort = process.env.PE_PORT ? parseInt(process.env.PE_PORT) : 3000;
-const webhookAuth = process.env.TOPGG_WEBHOOK_AUTH;
-
-if (webhookAuth) {
-    startVoteWebhook(webhookPort, webhookAuth);
-} else {
-    console.warn('TOPGG_WEBHOOK_AUTH not set — vote webhook will not start');
-}
+createServer({
+    port: webhookPort,
+    routesPath: path.join(__dirname, 'routes'),
+}).catch(console.error);
 
 // Start the bot
 startBot().catch((error: Error) => {

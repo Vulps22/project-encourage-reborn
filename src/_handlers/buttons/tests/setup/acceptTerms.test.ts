@@ -1,6 +1,6 @@
 import { ButtonInteraction, PermissionsBitField } from 'discord.js';
 import { serverService } from '../../../../services';
-import { BotButtonInteraction } from '../@vulps22/bot-interactions';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { rulesView } from '../../../../views';
 import acceptTermsButton from '../../setup/acceptTerms';
 

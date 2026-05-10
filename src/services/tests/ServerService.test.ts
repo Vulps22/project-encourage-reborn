@@ -12,7 +12,8 @@ jest.mock('../../client', () => ({
 jest.mock('../DatabaseService');
 jest.mock('../../utils');
 jest.mock('../../config', () => ({
-    Config: { OFFICIAL_GUILD_ID: '1079206786021732412' }
+    Config: { OFFICIAL_GUILD_ID: '1079206786021732412' },
+    Urls: { DS_URL: 'http://localhost:3000/api/v1', MS_URL: 'http://localhost:3001' },
 }));
 
 const makeServer = (overrides: Partial<Server> = {}): Server => ({
