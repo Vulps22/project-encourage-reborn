@@ -1,10 +1,8 @@
 import { Snowflake } from 'discord.js';
-import { DatabaseService } from './DatabaseService';
 import { dsClient, DSError } from '../client';
 import { Question, QuestionType } from '@vulps22/project-encourage-types';
 
 export class QuestionService {
-  constructor(private db: DatabaseService) {}
 
   async getQuestionById(id: number): Promise<Question | null> {
     try {
@@ -51,72 +49,4 @@ export class QuestionService {
     await dsClient.patch<Question>('/question/:id', { id }, data);
   }
 
-  // TODO: Needs DS endpoint — used by profile builders
-  async getUserQuestionCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('question', 'questions', { user_id: BigInt(userId) });
-  }
-
-  async getUserApprovedQuestionCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('question', 'questions', {
-      user_id: BigInt(userId),
-      is_approved: true,
-      is_banned: false
-    });
-  }
-
-  async getUserBannedQuestionCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('question', 'questions', {
-      user_id: BigInt(userId),
-      is_banned: true
-    });
-  }
-
-  async getServerQuestionCount(serverId: Snowflake): Promise<number> {
-    return await this.db.count('question', 'questions', { server_id: BigInt(serverId) });
-  }
-
-  async getServerApprovedQuestionCount(serverId: Snowflake): Promise<number> {
-    return await this.db.count('question', 'questions', {
-      server_id: BigInt(serverId),
-      is_approved: true,
-      is_banned: false
-    });
-  }
-
-  async getServerBannedQuestionCount(serverId: Snowflake): Promise<number> {
-    return await this.db.count('question', 'questions', {
-      server_id: BigInt(serverId),
-      is_banned: true
-    });
-  }
-
-  // TODO: Needs DS endpoint — used by moderation handlers
-  async banAllUserQuestions(userId: Snowflake, moderatorId: Snowflake): Promise<number> {
-    const result = await this.db.update('question', 'questions', {
-      is_banned: true,
-      banned_by: BigInt(moderatorId),
-      ban_reason: 'User Banned',
-      datetime_banned: new Date()
-    }, {
-      user_id: BigInt(userId),
-      is_banned: false
-    });
-
-    return result.affectedRows;
-  }
-
-  async unbanUserBannedQuestions(userId: Snowflake): Promise<number> {
-    const result = await this.db.update('question', 'questions', {
-      is_banned: false,
-      banned_by: null,
-      ban_reason: null,
-      datetime_banned: null
-    }, {
-      user_id: BigInt(userId),
-      is_banned: true,
-      ban_reason: 'User Banned'
-    });
-
-    return result.affectedRows;
-  }
 }
