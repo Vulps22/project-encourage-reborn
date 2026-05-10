@@ -2,7 +2,7 @@ import { Snowflake } from 'discord.js';
 import { DatabaseService } from './DatabaseService';
 import { dsClient, DSError } from '../client';
 import { Logger } from '../utils';
-import { Server } from '../interface';
+import { Server } from '@vulps22/project-encourage-types';
 import { Config } from '../config';
 
 export class ServerService {

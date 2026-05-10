@@ -1,5 +1,5 @@
 import { dsClient, DSError } from '../client';
-import { Storable } from '../interface';
+import { Storable } from '@vulps22/project-encourage-types';
 
 export class StorableService {
   async get(id: string): Promise<Storable | null> {

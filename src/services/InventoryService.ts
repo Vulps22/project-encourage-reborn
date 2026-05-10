@@ -1,7 +1,6 @@
 import { Snowflake } from 'discord.js';
 import { dsClient, DSError } from '../client';
-import { InventoryItem } from '../interface';
-import { Storable } from '../types';
+import { Storable, InventoryItem} from '@vulps22/project-encourage-types';
 
 export class InventoryService {
   async get(userId: Snowflake, storableId: Storable): Promise<InventoryItem | null> {

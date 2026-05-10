@@ -1,7 +1,7 @@
 /** A ComponentV2 message for displaying a Truth or Dare question with voting buttons */
 
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, SectionBuilder, SeparatorBuilder, TextDisplayBuilder } from "discord.js";
-import { Challenge, ChallengeVote, Question } from "../../interface";
+import { Challenge, ChallengeVote, Question } from '@vulps22/project-encourage-types';
 import { UniversalMessage } from "@vulps22/bot-interactions";
 import { VoteResult } from "../../types";
 

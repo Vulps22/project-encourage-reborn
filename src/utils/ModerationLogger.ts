@@ -1,8 +1,7 @@
 import { Message, MessageCreateOptions, Snowflake, TextChannel } from 'discord.js';
-import { Question, Report } from '../interface';
-import { ServerProfile } from '../interface/ServerProfileInterface';
+import { Question, Report, ServerProfile} from '@vulps22/project-encourage-types';
 import { Config } from '../config';
-import { Logger } from './Logger';
+import { Logger } from '@vulps22/logger';
 
 /**
  * ModerationLogger - Handles logging for moderation messages (questions, reports, servers).
