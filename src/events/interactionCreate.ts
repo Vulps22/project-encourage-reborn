@@ -2,7 +2,8 @@ import { GuildTextBasedChannel, Interaction, MessageCreateOptions, MessageFlags 
 import { DMInteractionError } from '../errors';
 import { serverService, userService, userTrackingService } from '../services';
 import { banReasons } from '../config';
-import { EventHandler, TargetType } from '../types';
+import { EventHandler } from '../types';
+import { TargetType } from '@vulps22/project-encourage-types';
 import { Logger } from '../utils';
 import { CommandInteractionEvent, ButtonInteractionEvent, ModalInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';

@@ -1,5 +1,5 @@
 
-import { TargetType } from '../types';
+import { TargetType } from '@vulps22/project-encourage-types';
 
 const questionBanReasonList = [
         { label: "1 - Dangerous or Illegal Content", value: "dangerous_illegal" },

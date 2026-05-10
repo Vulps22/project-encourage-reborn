@@ -1,5 +1,5 @@
 import { Client, ClientError } from './Client';
-import { TargetType } from '../types';
+import { TargetType } from '@vulps22/project-encourage-types';
 
 export class MSError extends ClientError {
   constructor(status: number, message: string) {

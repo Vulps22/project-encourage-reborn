@@ -1,7 +1,7 @@
 import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import { inventoryService } from '../../../services';
-import { Storable } from '../../../types';
+import { Storable } from '@vulps22/project-encourage-types';
 
 const vote = new Command('vote', 'Check your skips and vote for the bot on Top.gg')
     .setNSFW(false)

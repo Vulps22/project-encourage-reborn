@@ -1,13 +1,5 @@
 import { Client, ClientError } from './Client';
-import { User } from '../interface/UserInterface';
-import { Server } from '../interface/ServerInterface';
-import { Question } from '../interface/QuestionInterface';
-import { Challenge } from '../interface/ChallengeInterface';
-import { ChallengeVote } from '../interface/ChallengeVoteInterface';
-import { CoreConfig } from '../interface/CoreConfigInterface';
-import { Storable } from '../interface/StorableInterface';
-import { InventoryItem } from '../interface/InventoryInterface';
-import { QuestionType } from '../types';
+import { User, Server, Question, Challenge, ChallengeVote, CoreConfig, Storable, InventoryItem, QuestionType } from '@vulps22/project-encourage-types';
 
 export class DSError extends ClientError {
   constructor(status: number, message: string) {
