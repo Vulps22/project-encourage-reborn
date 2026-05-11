@@ -1,10 +1,9 @@
 import { Snowflake } from 'discord.js';
 import { dsClient, DSError } from '../client';
-import { InventoryItem } from '../interface';
-import { Storable } from '../types';
+import { InventoryItem } from '@vulps22/project-encourage-types';
 
 export class InventoryService {
-  async get(userId: Snowflake, storableId: Storable): Promise<InventoryItem | null> {
+  async get(userId: Snowflake, storableId: string): Promise<InventoryItem | null> {
     try {
       return await dsClient.get<InventoryItem>('/user/:id/inventory/:storableId', {
         id: userId,
@@ -16,14 +15,14 @@ export class InventoryService {
     }
   }
 
-  async add(userId: Snowflake, storableId: Storable, amount: number): Promise<InventoryItem> {
+  async add(userId: Snowflake, storableId: string, amount: number): Promise<InventoryItem> {
     return await dsClient.post<InventoryItem>('/user/:id/inventory/:storableId', {
       id: userId,
       storableId,
     }, { amount });
   }
 
-  async consume(userId: Snowflake, storableId: Storable, amount: number): Promise<InventoryItem | false> {
+  async consume(userId: Snowflake, storableId: string, amount: number): Promise<InventoryItem | false> {
     try {
       return await dsClient.post<InventoryItem>('/user/:id/inventory/:storableId/consume', {
         id: userId,

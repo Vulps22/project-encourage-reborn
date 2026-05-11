@@ -1,7 +1,6 @@
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import skip from '../../question/skip';
 import { challengeService, inventoryService, questionService, votingService } from '../../../../services';
-import { Storable } from '../../../../types';
 
 jest.mock('../../../../services', () => ({
     challengeService: { getChallengeByMessageId: jest.fn(), skip: jest.fn() },
@@ -14,7 +13,7 @@ jest.mock('../../../../views', () => ({
     challengeEmbed: jest.fn().mockReturnValue({}),
 }));
 
-jest.mock('../../../../utils', () => ({
+jest.mock('@vulps22/logger', () => ({
     Logger: { error: jest.fn(), debug: jest.fn() },
 }));
 
@@ -85,7 +84,7 @@ describe('skip button handler', () => {
     it('should finalize and confirm on happy path', async () => {
         await skip.execute(mockInteraction);
 
-        expect(inventoryService.consume).toHaveBeenCalledWith('user-123', Storable.Skip, 1);
+        expect(inventoryService.consume).toHaveBeenCalledWith('user-123', 'skip', 1);
         expect(challengeService.skip).toHaveBeenCalledWith(1);
         expect(votingService.finalizeChallenge).toHaveBeenCalledWith(1, 'skipped');
         expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('skipped'));

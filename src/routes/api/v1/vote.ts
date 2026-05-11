@@ -1,9 +1,8 @@
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { ApiRoute, rawBody } from '@vulps22/dynamic-endpoint-router';
-import { Logger } from '../../../utils';
+import { Logger } from '@vulps22/logger';
 import { inventoryService, userService } from '../../../services';
-import { Storable } from '../../../types';
 
 interface TopGGUser {
     id: string;
@@ -109,14 +108,14 @@ export const route: ApiRoute = {
             return;
         }
 
-        const skips = await inventoryService.get(discordUserId, Storable.Skip);
+        const skips = await inventoryService.get(discordUserId, 'skip');
         if (skips && skips.qty >= 10) {
             Logger.log(`[VoteWebhook] User ${discordUserId} already has the maximum number of skips.`);
             res.status(200).send('OK');
             return;
         }
 
-        void inventoryService.add(discordUserId, Storable.Skip, 1);
+        void inventoryService.add(discordUserId, 'skip', 1);
 
         Logger.log(`[VoteWebhook] Vote received — user: ${discordUserId}, weight: ${payload.data.weight ?? 1}`);
 

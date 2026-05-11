@@ -1,11 +1,9 @@
 import { Snowflake } from 'discord.js';
-import { DatabaseService } from './DatabaseService';
 import { dsClient, DSError } from '../client';
-import { User } from '../interface';
-import { Logger } from '../utils';
+import { User } from '@vulps22/project-encourage-types';
+import { Logger } from '@vulps22/logger';
 
 export class UserService {
-  constructor(private db: DatabaseService) {}
 
   async getUser(userId: Snowflake): Promise<User | null> {
     Logger.debug(`Fetching user ${userId}`);
@@ -52,16 +50,4 @@ export class UserService {
     return user && user.is_banned ? user.ban_reason || 'No reason provided' : false;
   }
 
-  // TODO: Needs DS endpoint — used by profile builders
-  async getUserServerCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('server', 'server_users', { user_id: BigInt(userId) });
-  }
-
-  async getUserBannedServerCount(userId: Snowflake): Promise<number> {
-    const result = await this.db.query<{ count: string }>(
-      `SELECT COUNT(*) FROM "server"."servers" WHERE "user_id" = $1 AND "is_banned" = true`,
-      [BigInt(userId)]
-    );
-    return parseInt(result[0]?.count || '0');
-  }
 }

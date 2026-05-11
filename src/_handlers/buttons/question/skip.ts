@@ -1,8 +1,8 @@
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
-import { Handler, Logger } from '../../../utils';
+import { Handler } from '../../../utils';
+import { Logger } from '@vulps22/logger';
 import { challengeService, inventoryService, questionService, votingService } from '../../../services';
 import { challengeEmbed } from '../../../views';
-import { Storable } from '../../../types';
 
 
 const skip: Handler<BotButtonInteraction> = {
@@ -32,7 +32,7 @@ const skip: Handler<BotButtonInteraction> = {
                 await interaction.ephemeralFollowUp('❌ This challenge has already been locked.');
                 return;
             }
-            const skips = await inventoryService.consume(userId, Storable.Skip, 1);
+            const skips = await inventoryService.consume(userId, 'skip', 1);
             if(!skips) {
                 await interaction.ephemeralFollowUp(`❌ You have no skips left! You can earn more by voting at [Top.gg](<${process.env.TOPGG_URL}>).`);
                 return;

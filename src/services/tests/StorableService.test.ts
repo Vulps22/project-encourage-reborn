@@ -1,6 +1,6 @@
 import { StorableService } from '../StorableService';
 import { dsClient, DSError } from '../../client';
-import { Storable } from '../../interface';
+import { Storable } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },

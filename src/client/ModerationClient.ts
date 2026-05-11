@@ -1,5 +1,5 @@
 import { Client, ClientError } from './Client';
-import { TargetType } from '../types';
+import { TargetType } from '@vulps22/project-encourage-types';
 
 export class MSError extends ClientError {
   constructor(status: number, message: string) {
@@ -44,14 +44,11 @@ export class ModerationClient extends Client {
     return res.reportId;
   }
 
-  // ===== PING =====
+  // ===== SERVER =====
 
-  async ping(): Promise<boolean> {
-    try {
-      await this.get<{ message: string }>('/ping');
-      return true;
-    } catch {
-      return false;
-    }
+  /** Notify MS that PE joined a new server so it can log and upsert it. */
+  async notifyServerJoined(id: string, name: string, userId: string): Promise<void> {
+    await this.post<{ success: boolean }>('/server', undefined, { id, name, user_id: userId });
   }
+
 }

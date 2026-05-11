@@ -1,6 +1,7 @@
 import { ButtonInteraction, MessageFlags } from "discord.js";
 import { InteractionEvent } from "./InteractionEvent";
-import { Handler, Logger } from "../../utils";
+import { Handler } from "../../utils";
+import { Logger } from "@vulps22/logger";
 import { BotButtonInteraction } from "@vulps22/bot-interactions";
 
 class ButtonInteractionEvent implements InteractionEvent<ButtonInteraction> {

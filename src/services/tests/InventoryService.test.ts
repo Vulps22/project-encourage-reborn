@@ -1,7 +1,6 @@
 import { InventoryService } from '../InventoryService';
 import { dsClient, DSError } from '../../client';
-import { InventoryItem } from '../../interface';
-import { Storable } from '../../types';
+import { InventoryItem } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
@@ -11,7 +10,7 @@ jest.mock('../../client', () => ({
 const makeInventoryItem = (overrides: Partial<InventoryItem> = {}): InventoryItem => ({
     id: 1,
     user_id: '123',
-    storable_id: Storable.Skip,
+    storable_id: { id: 'skip', name: 'Skip' },
     qty: 3,
     ...overrides,
 });
@@ -29,11 +28,11 @@ describe('InventoryService', () => {
             const item = makeInventoryItem();
             (dsClient.get as jest.Mock).mockResolvedValue(item);
 
-            const result = await service.get('123', Storable.Skip);
+            const result = await service.get('123', 'skip');
 
             expect(dsClient.get).toHaveBeenCalledWith('/user/:id/inventory/:storableId', {
                 id: '123',
-                storableId: Storable.Skip,
+                storableId: 'skip',
             });
             expect(result).toEqual(item);
         });
@@ -41,7 +40,7 @@ describe('InventoryService', () => {
         it('should return null on 404', async () => {
             (dsClient.get as jest.Mock).mockRejectedValue(new DSError(404, 'Not found'));
 
-            const result = await service.get('123', Storable.Skip);
+            const result = await service.get('123', 'skip');
 
             expect(result).toBeNull();
         });
@@ -49,7 +48,7 @@ describe('InventoryService', () => {
         it('should rethrow non-404 errors', async () => {
             (dsClient.get as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
 
-            await expect(service.get('123', Storable.Skip)).rejects.toThrow('Server error');
+            await expect(service.get('123', 'skip')).rejects.toThrow('Server error');
         });
     });
 
@@ -58,11 +57,11 @@ describe('InventoryService', () => {
             const item = makeInventoryItem({ qty: 4 });
             (dsClient.post as jest.Mock).mockResolvedValue(item);
 
-            const result = await service.add('123', Storable.Skip, 1);
+            const result = await service.add('123', 'skip', 1);
 
             expect(dsClient.post).toHaveBeenCalledWith(
                 '/user/:id/inventory/:storableId',
-                { id: '123', storableId: Storable.Skip },
+                { id: '123', storableId: 'skip' },
                 { amount: 1 }
             );
             expect(result).toEqual(item);
@@ -71,7 +70,7 @@ describe('InventoryService', () => {
         it('should throw when DS returns an error', async () => {
             (dsClient.post as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
 
-            await expect(service.add('123', Storable.Skip, 1)).rejects.toThrow('Server error');
+            await expect(service.add('123', 'skip', 1)).rejects.toThrow('Server error');
         });
     });
 
@@ -80,11 +79,11 @@ describe('InventoryService', () => {
             const item = makeInventoryItem({ qty: 2 });
             (dsClient.post as jest.Mock).mockResolvedValue(item);
 
-            const result = await service.consume('123', Storable.Skip, 1);
+            const result = await service.consume('123', 'skip', 1);
 
             expect(dsClient.post).toHaveBeenCalledWith(
                 '/user/:id/inventory/:storableId/consume',
-                { id: '123', storableId: Storable.Skip },
+                { id: '123', storableId: 'skip' },
                 { amount: 1 }
             );
             expect(result).toEqual(item);
@@ -93,7 +92,7 @@ describe('InventoryService', () => {
         it('should return false on 409 (insufficient quantity)', async () => {
             (dsClient.post as jest.Mock).mockRejectedValue(new DSError(409, 'Insufficient quantity'));
 
-            const result = await service.consume('123', Storable.Skip, 5);
+            const result = await service.consume('123', 'skip', 5);
 
             expect(result).toBe(false);
         });
@@ -101,7 +100,7 @@ describe('InventoryService', () => {
         it('should rethrow non-409 errors', async () => {
             (dsClient.post as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
 
-            await expect(service.consume('123', Storable.Skip, 1)).rejects.toThrow('Server error');
+            await expect(service.consume('123', 'skip', 1)).rejects.toThrow('Server error');
         });
     });
 });

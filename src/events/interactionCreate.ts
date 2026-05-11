@@ -1,8 +1,10 @@
 import { GuildTextBasedChannel, Interaction, MessageCreateOptions, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
-import { moderationService, serverService, userService, userTrackingService } from '../services';
-import { EventHandler, TargetType } from '../types';
-import { Logger } from '../utils';
+import { serverService, userService, userTrackingService } from '../services';
+import { banReasons } from '../config';
+import { EventHandler } from '../types';
+import { TargetType } from '@vulps22/project-encourage-types';
+import { Logger } from '@vulps22/logger';
 import { CommandInteractionEvent, ButtonInteractionEvent, ModalInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';
 import { playtestNoticeView } from '../views/playtestNoticeView';
@@ -66,7 +68,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
 
     if (banReason) {
       await interaction.reply({
-        content: `This server is banned from using the bot. Reason: ${moderationService.getBanReasonLabel(TargetType.Server, banReason)}`
+        content: `This server is banned from using the bot. Reason: ${getBanReasonLabel(TargetType.Server, banReason)}`
       })
       return;
     }
@@ -74,7 +76,7 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
     const userBanReason = await userService.isUserBanned(interaction.user.id);
     if (userBanReason) {
       await interaction.reply({
-        content: `You are banned from using this bot. Reason: ${moderationService.getBanReasonLabel(TargetType.User, userBanReason)}`,
+        content: `You are banned from using this bot. Reason: ${getBanReasonLabel(TargetType.User, userBanReason)}`,
         flags: MessageFlags.Ephemeral
       });
       return;
@@ -118,3 +120,9 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
 };
 
 export default interactionCreate;
+
+function getBanReasonLabel(type: TargetType, value: string): string {
+  const reasons = banReasons[type] as { label: string; value: string }[];
+  const label = reasons.find(r => r.value === value)?.label ?? value;
+  return label.replace(/^\d+ - /, '');
+}

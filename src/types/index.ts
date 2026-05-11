@@ -1,9 +1,4 @@
-// Barrel file for types
-export { AnySelectMenuInteraction } from './AnySelectMenuInteraction';
+// Barrel file for PE-specific types
 export { CommandHandler } from './CommandHandler';
 export { EventHandler } from './EventHandler';
-export { QuestionType } from './QuestionType';
-export { TargetType } from './TargetType';
-export { UniversalMessage } from './UniversalMessage';
 export { VoteResult } from './VoteResult';
-export { Storables as Storable } from './Storable';

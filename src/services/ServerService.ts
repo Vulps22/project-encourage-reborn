@@ -1,12 +1,10 @@
 import { Snowflake } from 'discord.js';
-import { DatabaseService } from './DatabaseService';
 import { dsClient, DSError } from '../client';
-import { Logger } from '../utils';
-import { Server } from '../interface';
+import { Logger } from '@vulps22/logger';
+import { Server } from '@vulps22/project-encourage-types';
 import { Config } from '../config';
 
 export class ServerService {
-  constructor(private db: DatabaseService) {}
 
   /**
    * Get or create a server record. Upserts when ownerId is provided,
@@ -81,53 +79,4 @@ export class ServerService {
     return !!(server && server.can_create && !server.is_banned);
   }
 
-  // TODO: Needs DS endpoint — used by moderation handlers
-  async banUserServers(userId: Snowflake, reason: string): Promise<number> {
-    Logger.debug(`Banning all servers owned by user ${userId} with reason: ${reason}`);
-
-    const result = await this.db.update('server', 'servers', {
-      is_banned: true,
-      ban_reason: reason
-    }, {
-      user_id: BigInt(userId),
-      is_banned: false
-    });
-
-    Logger.debug(`Banned ${result.affectedRows} servers owned by user ${userId}`);
-    return result.affectedRows;
-  }
-
-  async unbanUserServers(userId: Snowflake): Promise<number> {
-    Logger.debug(`Unbanning all servers owned by user ${userId}`);
-
-    const result = await this.db.update('server', 'servers', {
-      is_banned: false,
-      ban_reason: null
-    }, {
-      user_id: BigInt(userId),
-      is_banned: true
-    });
-
-    Logger.debug(`Unbanned ${result.affectedRows} servers owned by user ${userId}`);
-    return result.affectedRows;
-  }
-
-  // TODO: Needs DS endpoint — used by profile builders
-  async getUserOwnedServerCount(userId: Snowflake): Promise<number> {
-    return await this.db.count('server', 'servers', { user_id: BigInt(userId) });
-  }
-
-  async getServerUserCount(serverId: Snowflake): Promise<number> {
-    return await this.db.count('server', 'server_users', { server_id: BigInt(serverId) });
-  }
-
-  async getServerBannedUserCount(serverId: Snowflake): Promise<number> {
-    const result = await this.db.query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM "server"."server_users" su
-       JOIN "user"."users" u ON su.user_id = u.id
-       WHERE su.server_id = $1 AND u.is_banned = true`,
-      [BigInt(serverId)]
-    );
-    return parseInt(result[0]?.count || '0');
-  }
 }

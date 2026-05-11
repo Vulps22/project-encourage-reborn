@@ -2,7 +2,8 @@ import { NewsChannel, PermissionFlagsBits } from 'discord.js';
 import { Config } from '../../../config';
 import { serverService } from '../../../services';
 import { BotSelectMenuInteraction } from '@vulps22/bot-interactions';
-import { Handler, Logger } from '../../../utils';
+import { Handler } from '../../../utils';
+import { Logger } from '@vulps22/logger';
 import { setupCompleteView, setupFailedView } from '../../../views';
 
 const announcementChannelSelected: Handler<BotSelectMenuInteraction> = {

@@ -1,5 +1,5 @@
 import { banReasons, questionBanReasonList, serverBanReasonList, userBanReasonList } from '../banReasons';
-import { TargetType } from '../../types';
+import { TargetType } from '@vulps22/project-encourage-types';
 
 describe('banReasons configuration', () => {
     describe('questionBanReasonList', () => {

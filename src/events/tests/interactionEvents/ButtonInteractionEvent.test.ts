@@ -1,7 +1,7 @@
 import { ButtonInteraction } from 'discord.js';
 
 // Mock the Logger before importing ButtonInteractionEvent
-jest.mock('../../../utils/Logger', () => ({
+jest.mock('@vulps22/logger', () => ({
     Logger: {
         debug: jest.fn(),
         error: jest.fn(),
@@ -11,7 +11,7 @@ jest.mock('../../../utils/Logger', () => ({
 
 const { ButtonInteractionEvent } = require('../../interactionEvents/ButtonInteractionEvent')
 const { BotButtonInteraction } = require('@vulps22/bot-interactions');
-const { Logger } = require('../../../utils');
+const { Logger } = require('@vulps22/logger');
 
 describe('ButtonInteractionEvent', () => {
     let buttonInteractionEvent: InstanceType<typeof ButtonInteractionEvent>;

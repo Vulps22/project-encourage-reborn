@@ -1,16 +1,16 @@
 import { ServerService } from '../ServerService';
-import { DatabaseService } from '../DatabaseService';
 import { dsClient, DSError } from '../../client';
-import { Logger } from '../../utils';
-import { Server } from '../../interface';
+import { Logger } from '@vulps22/logger';
+import { Server } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
     DSError: jest.requireActual('../../client').DSError,
 }));
 
-jest.mock('../DatabaseService');
-jest.mock('../../utils');
+jest.mock('@vulps22/logger', () => ({
+    Logger: { debug: jest.fn(), error: jest.fn() },
+}));
 jest.mock('../../config', () => ({
     Config: { OFFICIAL_GUILD_ID: '1079206786021732412' },
     Urls: { DS_URL: 'http://localhost:3000/api/v1', MS_URL: 'http://localhost:3001' },
@@ -46,12 +46,10 @@ const makeServer = (overrides: Partial<Server> = {}): Server => ({
 
 describe('ServerService', () => {
     let serverService: ServerService;
-    let mockDb: jest.Mocked<DatabaseService>;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockDb = { update: jest.fn(), count: jest.fn(), query: jest.fn() } as any;
-        serverService = new ServerService(mockDb);
+        serverService = new ServerService();
     });
 
     describe('getOrCreateServer', () => {
@@ -268,66 +266,4 @@ describe('ServerService', () => {
         });
     });
 
-    describe('banUserServers', () => {
-        it('should ban all non-banned servers owned by user', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 2, changedRows: 2 });
-
-            const result = await serverService.banUserServers('123456789012345678', 'Spam');
-
-            expect(mockDb.update).toHaveBeenCalledWith('server', 'servers', {
-                is_banned: true,
-                ban_reason: 'Spam'
-            }, {
-                user_id: BigInt('123456789012345678'),
-                is_banned: false
-            });
-            expect(result).toBe(2);
-        });
-
-        it('should return 0 when user owns no unbanned servers', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0 });
-
-            const result = await serverService.banUserServers('123456789012345678', 'Spam');
-
-            expect(result).toBe(0);
-        });
-    });
-
-    describe('unbanUserServers', () => {
-        it('should unban all banned servers owned by user', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 3, changedRows: 3 });
-
-            const result = await serverService.unbanUserServers('123456789012345678');
-
-            expect(mockDb.update).toHaveBeenCalledWith('server', 'servers', {
-                is_banned: false,
-                ban_reason: null
-            }, {
-                user_id: BigInt('123456789012345678'),
-                is_banned: true
-            });
-            expect(result).toBe(3);
-        });
-
-        it('should return 0 when user owns no banned servers', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0 });
-
-            const result = await serverService.unbanUserServers('123456789012345678');
-
-            expect(result).toBe(0);
-        });
-    });
-
-    describe('getUserOwnedServerCount', () => {
-        it('should return count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(5);
-
-            const result = await serverService.getUserOwnedServerCount('123456789012345678');
-
-            expect(mockDb.count).toHaveBeenCalledWith('server', 'servers', {
-                user_id: BigInt('123456789012345678')
-            });
-            expect(result).toBe(5);
-        });
-    });
 });

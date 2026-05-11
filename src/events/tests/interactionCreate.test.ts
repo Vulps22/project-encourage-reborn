@@ -1,7 +1,7 @@
 import { MessageFlags } from 'discord.js';
-import { Logger } from '../../utils';
+import { Logger } from '@vulps22/logger';
 
-jest.mock('../../utils', () => ({
+jest.mock('@vulps22/logger', () => ({
   Logger: {
     logInteractionReceived: jest.fn(),
     error: jest.fn(),

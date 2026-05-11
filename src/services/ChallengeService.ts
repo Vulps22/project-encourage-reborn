@@ -1,7 +1,6 @@
 import { Snowflake } from 'discord.js';
-import { Logger } from '../utils';
-import { Challenge } from '../interface';
-import { QuestionType } from '../types';
+import { Logger } from '@vulps22/logger';
+import { Challenge, QuestionType } from '@vulps22/project-encourage-types';
 import { dsClient, DSError } from '../client';
 
 export class ChallengeService {
