@@ -1,6 +1,6 @@
 import { ConfigurationService } from '../ConfigurationService';
 import { dsClient, DSError } from '../../client';
-import { CoreConfig } from '../../interface';
+import { CoreConfig } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
@@ -10,7 +10,6 @@ jest.mock('../../client', () => ({
 const makeConfig = (overrides: Partial<CoreConfig> = {}): CoreConfig => ({
     id: 'config',
     vote_threshold: 5,
-    is_locked: false,
     ...overrides,
 });
 

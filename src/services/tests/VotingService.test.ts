@@ -1,6 +1,6 @@
 import { VotingService } from '../VotingService';
 import { dsClient, DSError } from '../../client';
-import { ChallengeVote } from '../../interface';
+import { ChallengeVote } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },

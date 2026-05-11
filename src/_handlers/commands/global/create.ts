@@ -3,7 +3,8 @@ import { questionService, serverService } from '../../../services';
 import { msClient } from '../../../client';
 import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { QuestionType } from '@vulps22/project-encourage-types';
-import { Command, Logger } from '../../../utils';
+import { Command } from '../../../utils';
+import { Logger } from '@vulps22/logger';
 import { confirmNewQuestionEmbed } from '../../../views';
 
 const create = new Command('create', 'Submit a custom truth or dare question')

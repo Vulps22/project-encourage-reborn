@@ -1,6 +1,6 @@
 import { StringSelectMenuInteraction } from 'discord.js';
 
-jest.mock('../../../utils/Logger', () => ({
+jest.mock('@vulps22/logger', () => ({
     Logger: {
         debug: jest.fn(),
         error: jest.fn(),
@@ -10,7 +10,7 @@ jest.mock('../../../utils/Logger', () => ({
 
 const { StringSelectInteractionEvent } = require('../../interactionEvents/StringSelectInteractionEvent');
 const { BotSelectMenuInteraction } = require('@vulps22/bot-interactions');
-const { Logger } = require('../../../utils');
+const { Logger } = require('@vulps22/logger');
 
 describe('StringSelectInteractionEvent', () => {
     let stringSelectInteractionEvent: InstanceType<typeof StringSelectInteractionEvent>;

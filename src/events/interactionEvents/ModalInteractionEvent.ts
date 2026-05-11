@@ -1,6 +1,7 @@
 import { MessageFlags, ModalSubmitInteraction } from 'discord.js';
 import { InteractionEvent } from './InteractionEvent';
-import { Handler, Logger } from '../../utils';
+import { Handler } from '../../utils';
+import { Logger } from '@vulps22/logger';
 import { BotModalInteraction } from '@vulps22/bot-interactions';
 
 class ModalInteractionEvent implements InteractionEvent<ModalSubmitInteraction> {

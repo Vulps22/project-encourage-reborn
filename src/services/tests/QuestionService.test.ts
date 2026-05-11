@@ -1,15 +1,11 @@
 import { QuestionService } from '../QuestionService';
-import { DatabaseService } from '../DatabaseService';
 import { dsClient, DSError } from '../../client';
-import { Question } from '../../interface';
-import { QuestionType } from '../../types';
+import { Question, QuestionType } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
     DSError: jest.requireActual('../../client').DSError,
 }));
-
-jest.mock('../DatabaseService');
 
 const makeQuestion = (overrides: Partial<Question> = {}): Question => ({
     id: 42,
@@ -33,12 +29,10 @@ const makeQuestion = (overrides: Partial<Question> = {}): Question => ({
 
 describe('QuestionService', () => {
     let questionService: QuestionService;
-    let mockDb: jest.Mocked<DatabaseService>;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockDb = { count: jest.fn(), update: jest.fn() } as any;
-        questionService = new QuestionService(mockDb);
+        questionService = new QuestionService();
     });
 
     describe('getQuestionById', () => {
@@ -170,138 +164,4 @@ describe('QuestionService', () => {
         });
     });
 
-    describe('getUserQuestionCount', () => {
-        it('should return count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(5);
-
-            const result = await questionService.getUserQuestionCount('123456789012345678');
-
-            expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', { user_id: BigInt('123456789012345678') });
-            expect(result).toBe(5);
-        });
-    });
-
-    describe('getUserApprovedQuestionCount', () => {
-        it('should return approved question count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(3);
-
-            const result = await questionService.getUserApprovedQuestionCount('123456789012345678');
-
-            expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', {
-                user_id: BigInt('123456789012345678'),
-                is_approved: true,
-                is_banned: false,
-            });
-            expect(result).toBe(3);
-        });
-    });
-
-    describe('getUserBannedQuestionCount', () => {
-        it('should return banned question count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(2);
-
-            const result = await questionService.getUserBannedQuestionCount('123456789012345678');
-
-            expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', {
-                user_id: BigInt('123456789012345678'),
-                is_banned: true,
-            });
-            expect(result).toBe(2);
-        });
-    });
-
-    describe('getServerQuestionCount', () => {
-        it('should return server question count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(10);
-
-            const result = await questionService.getServerQuestionCount('987654321098765432');
-
-            expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', { server_id: BigInt('987654321098765432') });
-            expect(result).toBe(10);
-        });
-    });
-
-    describe('getServerApprovedQuestionCount', () => {
-        it('should return server approved question count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(8);
-
-            const result = await questionService.getServerApprovedQuestionCount('987654321098765432');
-
-            expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', {
-                server_id: BigInt('987654321098765432'),
-                is_approved: true,
-                is_banned: false,
-            });
-            expect(result).toBe(8);
-        });
-    });
-
-    describe('getServerBannedQuestionCount', () => {
-        it('should return server banned question count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(1);
-
-            const result = await questionService.getServerBannedQuestionCount('987654321098765432');
-
-            expect(mockDb.count).toHaveBeenCalledWith('question', 'questions', {
-                server_id: BigInt('987654321098765432'),
-                is_banned: true,
-            });
-            expect(result).toBe(1);
-        });
-    });
-
-    describe('banAllUserQuestions', () => {
-        it('should ban all non-banned questions from a user', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 3, changedRows: 3 });
-
-            const result = await questionService.banAllUserQuestions('123456789012345678', '999888777666555444');
-
-            expect(mockDb.update).toHaveBeenCalledWith('question', 'questions', {
-                is_banned: true,
-                banned_by: BigInt('999888777666555444'),
-                ban_reason: 'User Banned',
-                datetime_banned: expect.any(Date),
-            }, {
-                user_id: BigInt('123456789012345678'),
-                is_banned: false,
-            });
-            expect(result).toBe(3);
-        });
-
-        it('should return 0 when no questions to ban', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0 });
-
-            const result = await questionService.banAllUserQuestions('123456789012345678', '999888777666555444');
-
-            expect(result).toBe(0);
-        });
-    });
-
-    describe('unbanUserBannedQuestions', () => {
-        it('should unban questions with "User Banned" reason', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 2, changedRows: 2 });
-
-            const result = await questionService.unbanUserBannedQuestions('123456789012345678');
-
-            expect(mockDb.update).toHaveBeenCalledWith('question', 'questions', {
-                is_banned: false,
-                banned_by: null,
-                ban_reason: null,
-                datetime_banned: null,
-            }, {
-                user_id: BigInt('123456789012345678'),
-                is_banned: true,
-                ban_reason: 'User Banned',
-            });
-            expect(result).toBe(2);
-        });
-
-        it('should return 0 when no questions match', async () => {
-            (mockDb.update as jest.Mock).mockResolvedValue({ affectedRows: 0, changedRows: 0 });
-
-            const result = await questionService.unbanUserBannedQuestions('123456789012345678');
-
-            expect(result).toBe(0);
-        });
-    });
 });

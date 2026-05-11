@@ -1,16 +1,14 @@
 import { UserService } from '../UserService';
-import { DatabaseService } from '../DatabaseService';
 import { dsClient, DSError } from '../../client';
-import { Logger } from '../../utils';
-import { User } from '../../interface';
+import { Logger } from '@vulps22/logger';
+import { User } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
     DSError: jest.requireActual('../../client').DSError,
 }));
 
-jest.mock('../DatabaseService');
-jest.mock('../../utils', () => ({
+jest.mock('@vulps22/logger', () => ({
     Logger: { debug: jest.fn(), error: jest.fn() },
 }));
 
@@ -32,12 +30,10 @@ const makeUser = (overrides: Partial<User> = {}): User => ({
 
 describe('UserService', () => {
     let userService: UserService;
-    let mockDb: jest.Mocked<DatabaseService>;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockDb = { count: jest.fn(), query: jest.fn() } as any;
-        userService = new UserService(mockDb);
+        userService = new UserService();
     });
 
     describe('getUser', () => {
@@ -159,38 +155,4 @@ describe('UserService', () => {
         });
     });
 
-    describe('getUserServerCount', () => {
-        it('should return count from db', async () => {
-            (mockDb.count as jest.Mock).mockResolvedValue(5);
-
-            const result = await userService.getUserServerCount('123456789012345678');
-
-            expect(mockDb.count).toHaveBeenCalledWith('server', 'server_users', {
-                user_id: BigInt('123456789012345678')
-            });
-            expect(result).toBe(5);
-        });
-    });
-
-    describe('getUserBannedServerCount', () => {
-        it('should return banned server count from db', async () => {
-            (mockDb.query as jest.Mock).mockResolvedValue([{ count: '3' }]);
-
-            const result = await userService.getUserBannedServerCount('123456789012345678');
-
-            expect(mockDb.query).toHaveBeenCalledWith(
-                expect.stringContaining('SELECT COUNT(*)'),
-                [BigInt('123456789012345678')]
-            );
-            expect(result).toBe(3);
-        });
-
-        it('should return 0 when query returns empty result', async () => {
-            (mockDb.query as jest.Mock).mockResolvedValue([]);
-
-            const result = await userService.getUserBannedServerCount('123456789012345678');
-
-            expect(result).toBe(0);
-        });
-    });
 });

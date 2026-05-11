@@ -4,7 +4,7 @@ import { serverService, userService, userTrackingService } from '../services';
 import { banReasons } from '../config';
 import { EventHandler } from '../types';
 import { TargetType } from '@vulps22/project-encourage-types';
-import { Logger } from '../utils';
+import { Logger } from '@vulps22/logger';
 import { CommandInteractionEvent, ButtonInteractionEvent, ModalInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';
 import { playtestNoticeView } from '../views/playtestNoticeView';

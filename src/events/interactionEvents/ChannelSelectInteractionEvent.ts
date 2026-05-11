@@ -1,7 +1,8 @@
 import { ChannelSelectMenuInteraction, MessageFlags } from "discord.js";
 import { InteractionEvent } from "./InteractionEvent";
 import { BotSelectMenuInteraction } from "@vulps22/bot-interactions";
-import { Handler, Logger } from "../../utils";
+import { Handler } from "../../utils";
+import { Logger } from "@vulps22/logger";
 
 class ChannelSelectInteractionEvent implements InteractionEvent<ChannelSelectMenuInteraction> {
 

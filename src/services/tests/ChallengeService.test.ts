@@ -1,7 +1,6 @@
 import { ChallengeService } from '../ChallengeService';
 import { dsClient, DSError } from '../../client';
-import { Challenge } from '../../interface';
-import { QuestionType } from '../../types';
+import { Challenge, QuestionType} from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
     dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },

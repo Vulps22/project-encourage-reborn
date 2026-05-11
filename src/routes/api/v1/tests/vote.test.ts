@@ -2,11 +2,10 @@ import crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import request from 'supertest';
 import { route } from '../vote';
-import { Logger } from '../../../../utils';
+import { Logger } from '@vulps22/logger';
 import { inventoryService, userService } from '../../../../services';
-import { Storable } from '../../../../types';
 
-jest.mock('../../../../utils', () => ({
+jest.mock('@vulps22/logger', () => ({
     Logger: {
         log: jest.fn(),
         error: jest.fn(),
@@ -128,7 +127,7 @@ describe('POST /api/v1/vote', () => {
             .send(body);
 
         expect(res.status).toBe(200);
-        expect(inventoryService.add).toHaveBeenCalledWith(DISCORD_USER_ID, Storable.Skip, 1);
+        expect(inventoryService.add).toHaveBeenCalledWith(DISCORD_USER_ID, 'skip', 1);
     });
 
     it('should return 200 and skip the add when user is at the skip cap', async () => {

@@ -1,5 +1,5 @@
 import { MessageFlags } from 'discord.js';
-import { Question } from '../../../interface';
+import { Question } from '@vulps22/project-encourage-types';
 import { QuestionType } from '@vulps22/project-encourage-types';
 import { confirmNewQuestionEmbed } from '../../question_views/confirmNewQuestionEmbed';
 

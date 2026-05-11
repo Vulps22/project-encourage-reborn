@@ -1,5 +1,6 @@
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
-import { Handler, Logger } from '../../../utils';
+import { Handler } from '../../../utils';
+import { Logger } from '@vulps22/logger';
 import { challengeService, configurationService, questionService, votingService } from '../../../services';
 import { DSError } from '../../../client';
 import { challengeEmbed } from '../../../views';
