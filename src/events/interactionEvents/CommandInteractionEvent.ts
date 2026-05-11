@@ -1,6 +1,6 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
 import { BotCommandInteraction } from "@vulps22/bot-interactions";
-import { Logger } from "../../utils";
+import { Logger } from "@vulps22/logger";
 import { InteractionEvent } from "./InteractionEvent";
 
 export class CommandInteractionEvent implements InteractionEvent<ChatInputCommandInteraction> {

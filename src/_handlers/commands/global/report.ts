@@ -1,9 +1,8 @@
 import { AutocompleteInteraction, MessageFlags } from "discord.js";
-import { Question, Server } from "../../../interface";
 import { dsClient, msClient } from "../../../client";
 import { BotCommandInteraction } from "@vulps22/bot-interactions";
 import { Command } from "../../../utils";
-import { TargetType } from "@vulps22/project-encourage-types";
+import { TargetType, Question, Server } from "@vulps22/project-encourage-types";
 
 const report = new Command('report', 'Report Inappropriate Content')
     .setNSFW(false)
