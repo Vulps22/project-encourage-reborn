@@ -5,10 +5,7 @@ import { InventoryItem } from '@vulps22/project-encourage-types';
 export class InventoryService {
   async get(userId: Snowflake, storableId: string): Promise<InventoryItem | null> {
     try {
-      return await dsClient.get<InventoryItem>('/user/:id/inventory/:storableId', {
-        id: userId,
-        storableId,
-      });
+      return await dsClient.getInventoryItem(userId, storableId);
     } catch (error) {
       if (error instanceof DSError && error.status === 404) return null;
       throw error;
@@ -16,21 +13,10 @@ export class InventoryService {
   }
 
   async add(userId: Snowflake, storableId: string, amount: number): Promise<InventoryItem> {
-    return await dsClient.post<InventoryItem>('/user/:id/inventory/:storableId', {
-      id: userId,
-      storableId,
-    }, { amount });
+    return await dsClient.addInventoryItem(userId, storableId, amount);
   }
 
   async consume(userId: Snowflake, storableId: string, amount: number): Promise<InventoryItem | false> {
-    try {
-      return await dsClient.post<InventoryItem>('/user/:id/inventory/:storableId/consume', {
-        id: userId,
-        storableId,
-      }, { amount });
-    } catch (error) {
-      if (error instanceof DSError && error.status === 409) return false;
-      throw error;
-    }
+    return dsClient.consumeInventoryItem(userId, storableId, amount);
   }
 }

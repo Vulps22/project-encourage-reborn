@@ -6,7 +6,7 @@ export class QuestionService {
 
   async getQuestionById(id: number): Promise<Question | null> {
     try {
-      return await dsClient.get<Question>('/question/:id', { id });
+      return await dsClient.getQuestion(id);
     } catch (error) {
       if (error instanceof DSError && error.status === 404) return null;
       throw error;
@@ -15,7 +15,7 @@ export class QuestionService {
 
   async getRandomQuestion(type: QuestionType): Promise<Question | null> {
     try {
-      return await dsClient.get<Question>('/question/random', undefined, { type });
+      return await dsClient.getRandomQuestion(type);
     } catch (error) {
       if (error instanceof DSError && error.status === 404) return null;
       throw error;
@@ -35,18 +35,13 @@ export class QuestionService {
     }
 
     console.log(`[DEBUG PE/QuestionService] POSTing to DS /question`);
-    const result = await dsClient.post<Question>('/question', undefined, {
-      type,
-      question,
-      user_id: userId,
-      server_id: serverId,
-    });
+    const result = await dsClient.createQuestion(type, question, userId, serverId);
     console.log(`[DEBUG PE/QuestionService] DS responded — question.id=${result.id}`);
     return result;
   }
 
   async updateQuestion(id: number, data: Partial<Question>): Promise<void> {
-    await dsClient.patch<Question>('/question/:id', { id }, data);
+    await dsClient.updateQuestion(id, data);
   }
 
 }

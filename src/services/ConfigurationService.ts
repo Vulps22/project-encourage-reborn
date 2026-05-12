@@ -17,7 +17,7 @@ export class ConfigurationService {
 
     Logger.debug('ConfigurationService: cache miss, fetching from DS');
 
-    const config = await dsClient.get<CoreConfig>('/config');
+    const config = await dsClient.getConfig();
 
     this.cache = config;
     this.cacheExpiresAt = now + CACHE_TTL_MS;

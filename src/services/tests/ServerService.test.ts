@@ -4,7 +4,11 @@ import { Logger } from '@vulps22/logger';
 import { Server } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
-    dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+    dsClient: {
+        upsertServer: jest.fn(),
+        getServer: jest.fn(),
+        updateServer: jest.fn(),
+    },
     DSError: jest.requireActual('../../client').DSError,
 }));
 
@@ -13,7 +17,7 @@ jest.mock('@vulps22/logger', () => ({
 }));
 jest.mock('../../config', () => ({
     Config: { OFFICIAL_GUILD_ID: '1079206786021732412' },
-    Urls: { DS_URL: 'http://localhost:3000/api/v1', MS_URL: 'http://localhost:3001' },
+    Urls: { DS_URL: 'http://localhost:3000', MS_URL: 'http://localhost:3001' },
 }));
 
 const makeServer = (overrides: Partial<Server> = {}): Server => ({
@@ -55,29 +59,21 @@ describe('ServerService', () => {
     describe('getOrCreateServer', () => {
         it('should upsert via DS when ownerId is provided', async () => {
             const server = makeServer();
-            (dsClient.post as jest.Mock).mockResolvedValue(server);
+            (dsClient.upsertServer as jest.Mock).mockResolvedValue(server);
 
             const result = await serverService.getOrCreateServer('987654321', 'Test Server', '111222333');
 
-            expect(dsClient.post).toHaveBeenCalledWith('/server', undefined, {
-                id: '987654321',
-                name: 'Test Server',
-                user_id: '111222333',
-            });
+            expect(dsClient.upsertServer).toHaveBeenCalledWith('987654321', 'Test Server', '111222333');
             expect(result).toEqual(server);
         });
 
         it('should pass null name when not provided', async () => {
             const server = makeServer({ name: null });
-            (dsClient.post as jest.Mock).mockResolvedValue(server);
+            (dsClient.upsertServer as jest.Mock).mockResolvedValue(server);
 
             await serverService.getOrCreateServer('987654321', undefined, '111222333');
 
-            expect(dsClient.post).toHaveBeenCalledWith('/server', undefined, {
-                id: '987654321',
-                name: null,
-                user_id: '111222333',
-            });
+            expect(dsClient.upsertServer).toHaveBeenCalledWith('987654321', null, '111222333');
         });
 
         it('should fetch existing server when no ownerId provided', async () => {
@@ -87,7 +83,7 @@ describe('ServerService', () => {
             const result = await serverService.getOrCreateServer('987654321');
 
             expect(result).toEqual(server);
-            expect(dsClient.post).not.toHaveBeenCalled();
+            expect(dsClient.upsertServer).not.toHaveBeenCalled();
         });
 
         it('should throw when no ownerId and server not found', async () => {
@@ -102,16 +98,16 @@ describe('ServerService', () => {
     describe('getServerSettings', () => {
         it('should return server when found', async () => {
             const server = makeServer();
-            (dsClient.get as jest.Mock).mockResolvedValue(server);
+            (dsClient.getServer as jest.Mock).mockResolvedValue(server);
 
             const result = await serverService.getServerSettings('987654321');
 
-            expect(dsClient.get).toHaveBeenCalledWith('/server/:id', { id: '987654321' });
+            expect(dsClient.getServer).toHaveBeenCalledWith('987654321');
             expect(result).toEqual(server);
         });
 
         it('should return null on 404', async () => {
-            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(404, 'Server not found'));
+            (dsClient.getServer as jest.Mock).mockRejectedValue(new DSError(404, 'Server not found'));
 
             const result = await serverService.getServerSettings('987654321');
 
@@ -119,7 +115,7 @@ describe('ServerService', () => {
         });
 
         it('should rethrow non-404 errors', async () => {
-            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(500, 'Internal error'));
+            (dsClient.getServer as jest.Mock).mockRejectedValue(new DSError(500, 'Internal error'));
 
             await expect(serverService.getServerSettings('987654321')).rejects.toThrow('Internal error');
         });
@@ -137,45 +133,45 @@ describe('ServerService', () => {
     });
 
     describe('updateServerSettings', () => {
-        it('should patch server excluding id and user_id', async () => {
-            (dsClient.patch as jest.Mock).mockResolvedValue(makeServer({ has_accepted: true }));
+        it('should call updateServer excluding id and user_id', async () => {
+            (dsClient.updateServer as jest.Mock).mockResolvedValue(makeServer({ has_accepted: true }));
 
             await serverService.updateServerSettings('987654321', { has_accepted: true, id: '987654321', user_id: '111' });
 
-            expect(dsClient.patch).toHaveBeenCalledWith('/server/:id', { id: '987654321' }, { has_accepted: true });
+            expect(dsClient.updateServer).toHaveBeenCalledWith('987654321', { has_accepted: true });
         });
     });
 
     describe('acceptTerms', () => {
         it('should set has_accepted to true', async () => {
-            (dsClient.patch as jest.Mock).mockResolvedValue(makeServer());
+            (dsClient.updateServer as jest.Mock).mockResolvedValue(makeServer());
 
             await serverService.acceptTerms('987654321');
 
             expect(Logger.debug).toHaveBeenCalledWith('Server 987654321 accepted terms');
-            expect(dsClient.patch).toHaveBeenCalledWith('/server/:id', { id: '987654321' }, { has_accepted: true });
+            expect(dsClient.updateServer).toHaveBeenCalledWith('987654321', { has_accepted: true });
         });
     });
 
     describe('acceptRules', () => {
         it('should set can_create to true', async () => {
-            (dsClient.patch as jest.Mock).mockResolvedValue(makeServer());
+            (dsClient.updateServer as jest.Mock).mockResolvedValue(makeServer());
 
             await serverService.acceptRules('987654321');
 
             expect(Logger.debug).toHaveBeenCalledWith('Server 987654321 accepted rules');
-            expect(dsClient.patch).toHaveBeenCalledWith('/server/:id', { id: '987654321' }, { can_create: true });
+            expect(dsClient.updateServer).toHaveBeenCalledWith('987654321', { can_create: true });
         });
     });
 
     describe('setAnnouncementChannel', () => {
         it('should set announcement_channel', async () => {
-            (dsClient.patch as jest.Mock).mockResolvedValue(makeServer());
+            (dsClient.updateServer as jest.Mock).mockResolvedValue(makeServer());
 
             await serverService.setAnnouncementChannel('987654321', '111222333');
 
             expect(Logger.debug).toHaveBeenCalledWith('Setting announcement channel for server 987654321 to 111222333');
-            expect(dsClient.patch).toHaveBeenCalledWith('/server/:id', { id: '987654321' }, { announcement_channel: '111222333' });
+            expect(dsClient.updateServer).toHaveBeenCalledWith('987654321', { announcement_channel: '111222333' });
         });
     });
 
@@ -184,7 +180,7 @@ describe('ServerService', () => {
             const result = await serverService.isServerBanned('1079206786021732412');
 
             expect(result).toBe(false);
-            expect(dsClient.get).not.toHaveBeenCalled();
+            expect(dsClient.getServer).not.toHaveBeenCalled();
         });
 
         it('should return ban reason when server is banned', async () => {
@@ -265,5 +261,4 @@ describe('ServerService', () => {
             expect(result).toBe(false);
         });
     });
-
 });

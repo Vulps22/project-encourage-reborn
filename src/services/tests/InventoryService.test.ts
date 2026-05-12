@@ -3,7 +3,11 @@ import { dsClient, DSError } from '../../client';
 import { InventoryItem } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
-    dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+    dsClient: {
+        getInventoryItem: jest.fn(),
+        addInventoryItem: jest.fn(),
+        consumeInventoryItem: jest.fn(),
+    },
     DSError: jest.requireActual('../../client').DSError,
 }));
 
@@ -26,19 +30,16 @@ describe('InventoryService', () => {
     describe('get', () => {
         it('should return the inventory item when found', async () => {
             const item = makeInventoryItem();
-            (dsClient.get as jest.Mock).mockResolvedValue(item);
+            (dsClient.getInventoryItem as jest.Mock).mockResolvedValue(item);
 
             const result = await service.get('123', 'skip');
 
-            expect(dsClient.get).toHaveBeenCalledWith('/user/:id/inventory/:storableId', {
-                id: '123',
-                storableId: 'skip',
-            });
+            expect(dsClient.getInventoryItem).toHaveBeenCalledWith('123', 'skip');
             expect(result).toEqual(item);
         });
 
         it('should return null on 404', async () => {
-            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(404, 'Not found'));
+            (dsClient.getInventoryItem as jest.Mock).mockRejectedValue(new DSError(404, 'Not found'));
 
             const result = await service.get('123', 'skip');
 
@@ -46,51 +47,43 @@ describe('InventoryService', () => {
         });
 
         it('should rethrow non-404 errors', async () => {
-            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
+            (dsClient.getInventoryItem as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
 
             await expect(service.get('123', 'skip')).rejects.toThrow('Server error');
         });
     });
 
     describe('add', () => {
-        it('should post the amount and return the updated item', async () => {
+        it('should call addInventoryItem and return the updated item', async () => {
             const item = makeInventoryItem({ qty: 4 });
-            (dsClient.post as jest.Mock).mockResolvedValue(item);
+            (dsClient.addInventoryItem as jest.Mock).mockResolvedValue(item);
 
             const result = await service.add('123', 'skip', 1);
 
-            expect(dsClient.post).toHaveBeenCalledWith(
-                '/user/:id/inventory/:storableId',
-                { id: '123', storableId: 'skip' },
-                { amount: 1 }
-            );
+            expect(dsClient.addInventoryItem).toHaveBeenCalledWith('123', 'skip', 1);
             expect(result).toEqual(item);
         });
 
         it('should throw when DS returns an error', async () => {
-            (dsClient.post as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
+            (dsClient.addInventoryItem as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
 
             await expect(service.add('123', 'skip', 1)).rejects.toThrow('Server error');
         });
     });
 
     describe('consume', () => {
-        it('should post and return the updated item when qty is sufficient', async () => {
+        it('should call consumeInventoryItem and return the updated item when qty is sufficient', async () => {
             const item = makeInventoryItem({ qty: 2 });
-            (dsClient.post as jest.Mock).mockResolvedValue(item);
+            (dsClient.consumeInventoryItem as jest.Mock).mockResolvedValue(item);
 
             const result = await service.consume('123', 'skip', 1);
 
-            expect(dsClient.post).toHaveBeenCalledWith(
-                '/user/:id/inventory/:storableId/consume',
-                { id: '123', storableId: 'skip' },
-                { amount: 1 }
-            );
+            expect(dsClient.consumeInventoryItem).toHaveBeenCalledWith('123', 'skip', 1);
             expect(result).toEqual(item);
         });
 
-        it('should return false on 409 (insufficient quantity)', async () => {
-            (dsClient.post as jest.Mock).mockRejectedValue(new DSError(409, 'Insufficient quantity'));
+        it('should return false when qty is insufficient', async () => {
+            (dsClient.consumeInventoryItem as jest.Mock).mockResolvedValue(false);
 
             const result = await service.consume('123', 'skip', 5);
 
@@ -98,7 +91,7 @@ describe('InventoryService', () => {
         });
 
         it('should rethrow non-409 errors', async () => {
-            (dsClient.post as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
+            (dsClient.consumeInventoryItem as jest.Mock).mockRejectedValue(new DSError(500, 'Server error'));
 
             await expect(service.consume('123', 'skip', 1)).rejects.toThrow('Server error');
         });

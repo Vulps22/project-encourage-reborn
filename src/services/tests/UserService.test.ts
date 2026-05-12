@@ -4,7 +4,12 @@ import { Logger } from '@vulps22/logger';
 import { User } from '@vulps22/project-encourage-types';
 
 jest.mock('../../client', () => ({
-    dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+    dsClient: {
+        getUser: jest.fn(),
+        upsertUser: jest.fn(),
+        banUser: jest.fn(),
+        unbanUser: jest.fn(),
+    },
     DSError: jest.requireActual('../../client').DSError,
 }));
 
@@ -39,17 +44,17 @@ describe('UserService', () => {
     describe('getUser', () => {
         it('should return user when found', async () => {
             const user = makeUser();
-            (dsClient.get as jest.Mock).mockResolvedValue(user);
+            (dsClient.getUser as jest.Mock).mockResolvedValue(user);
 
             const result = await userService.getUser('123456789012345678');
 
-            expect(dsClient.get).toHaveBeenCalledWith('/user/:id', { id: '123456789012345678' });
+            expect(dsClient.getUser).toHaveBeenCalledWith('123456789012345678');
             expect(result).toEqual(user);
             expect(Logger.debug).toHaveBeenCalledWith('User 123456789012345678 retrieved successfully');
         });
 
         it('should return null on 404', async () => {
-            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(404, 'User not found'));
+            (dsClient.getUser as jest.Mock).mockRejectedValue(new DSError(404, 'User not found'));
 
             const result = await userService.getUser('999999999999999999');
 
@@ -58,7 +63,7 @@ describe('UserService', () => {
         });
 
         it('should rethrow non-404 errors', async () => {
-            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(500, 'Internal error'));
+            (dsClient.getUser as jest.Mock).mockRejectedValue(new DSError(500, 'Internal error'));
 
             await expect(userService.getUser('123456789012345678')).rejects.toThrow('Internal error');
         });
@@ -67,20 +72,17 @@ describe('UserService', () => {
     describe('setUser', () => {
         it('should upsert and return the user', async () => {
             const user = makeUser();
-            (dsClient.post as jest.Mock).mockResolvedValue(user);
+            (dsClient.upsertUser as jest.Mock).mockResolvedValue(user);
 
             const result = await userService.setUser({ id: '123456789012345678', username: 'testuser' });
 
-            expect(dsClient.post).toHaveBeenCalledWith('/user', undefined, {
-                id: '123456789012345678',
-                username: 'testuser',
-            });
+            expect(dsClient.upsertUser).toHaveBeenCalledWith('123456789012345678', 'testuser');
             expect(result).toEqual(user);
             expect(Logger.debug).toHaveBeenCalledWith('User 123456789012345678 upserted successfully');
         });
 
         it('should throw when DS returns an error', async () => {
-            (dsClient.post as jest.Mock).mockRejectedValue(new DSError(500, 'Failed'));
+            (dsClient.upsertUser as jest.Mock).mockRejectedValue(new DSError(500, 'Failed'));
 
             await expect(userService.setUser({ id: '123', username: 'u' })).rejects.toThrow('Failed');
         });
@@ -88,42 +90,37 @@ describe('UserService', () => {
 
     describe('banUser', () => {
         it('should ban user with reason', async () => {
-            (dsClient.patch as jest.Mock).mockResolvedValue(makeUser({ is_banned: true }));
+            (dsClient.banUser as jest.Mock).mockResolvedValue(makeUser({ is_banned: true }));
 
             await userService.banUser('123456789012345678', 'Spam');
 
-            expect(dsClient.patch).toHaveBeenCalledWith('/user/:id/ban', { id: '123456789012345678' }, {
-                ban_reason: 'Spam',
-            });
+            expect(dsClient.banUser).toHaveBeenCalledWith('123456789012345678', 'Spam', undefined);
             expect(Logger.debug).toHaveBeenCalledWith('User 123456789012345678 banned successfully');
         });
 
         it('should include ban_message_id when provided', async () => {
-            (dsClient.patch as jest.Mock).mockResolvedValue(makeUser({ is_banned: true }));
+            (dsClient.banUser as jest.Mock).mockResolvedValue(makeUser({ is_banned: true }));
 
             await userService.banUser('123456789012345678', 'Spam', '999888777666555444');
 
-            expect(dsClient.patch).toHaveBeenCalledWith('/user/:id/ban', { id: '123456789012345678' }, {
-                ban_reason: 'Spam',
-                ban_message_id: '999888777666555444',
-            });
+            expect(dsClient.banUser).toHaveBeenCalledWith('123456789012345678', 'Spam', '999888777666555444');
         });
     });
 
     describe('unbanUser', () => {
-        it('should call unban endpoint', async () => {
-            (dsClient.patch as jest.Mock).mockResolvedValue(makeUser());
+        it('should call unbanUser', async () => {
+            (dsClient.unbanUser as jest.Mock).mockResolvedValue(makeUser());
 
             await userService.unbanUser('123456789012345678');
 
-            expect(dsClient.patch).toHaveBeenCalledWith('/user/:id/unban', { id: '123456789012345678' });
+            expect(dsClient.unbanUser).toHaveBeenCalledWith('123456789012345678');
             expect(Logger.debug).toHaveBeenCalledWith('User 123456789012345678 unbanned successfully');
         });
     });
 
     describe('isUserBanned', () => {
         it('should return ban reason when user is banned', async () => {
-            (dsClient.get as jest.Mock).mockResolvedValue(makeUser({ is_banned: true, ban_reason: 'Harassment' }));
+            (dsClient.getUser as jest.Mock).mockResolvedValue(makeUser({ is_banned: true, ban_reason: 'Harassment' }));
 
             const result = await userService.isUserBanned('123456789012345678');
 
@@ -131,7 +128,7 @@ describe('UserService', () => {
         });
 
         it('should return default reason when banned with no reason', async () => {
-            (dsClient.get as jest.Mock).mockResolvedValue(makeUser({ is_banned: true, ban_reason: null }));
+            (dsClient.getUser as jest.Mock).mockResolvedValue(makeUser({ is_banned: true, ban_reason: null }));
 
             const result = await userService.isUserBanned('123456789012345678');
 
@@ -139,7 +136,7 @@ describe('UserService', () => {
         });
 
         it('should return false when user is not banned', async () => {
-            (dsClient.get as jest.Mock).mockResolvedValue(makeUser({ is_banned: false }));
+            (dsClient.getUser as jest.Mock).mockResolvedValue(makeUser({ is_banned: false }));
 
             const result = await userService.isUserBanned('123456789012345678');
 
@@ -147,12 +144,11 @@ describe('UserService', () => {
         });
 
         it('should return false when user does not exist', async () => {
-            (dsClient.get as jest.Mock).mockRejectedValue(new DSError(404, 'Not found'));
+            (dsClient.getUser as jest.Mock).mockRejectedValue(new DSError(404, 'Not found'));
 
             const result = await userService.isUserBanned('123456789012345678');
 
             expect(result).toBe(false);
         });
     });
-
 });

@@ -9,18 +9,19 @@ export class VotingService {
    */
   async addChallenge(challengeId: number): Promise<ChallengeVote> {
     Logger.debug(`Adding challenge ${challengeId} to vote tracking`);
-    return await dsClient.post<ChallengeVote>('/vote/:id', { id: challengeId });
+    return await dsClient.initVote(challengeId);
   }
 
   /**
    * Record a vote atomically — inserts the user vote and increments the
-   * relevant count in a single DS operation. Throws DSError(409) if the
+   * relevant count in a single DS operation. Throws Error('ALREADY_VOTED') if the
    * user has already voted on this challenge.
    */
   async vote(challengeId: number, userId: Snowflake, voteType: VoteType): Promise<ChallengeVote> {
     Logger.debug(`Recording ${voteType} vote from user ${userId} on challenge ${challengeId}`);
-    const endpoint = voteType === 'done' ? '/vote/:id/done' : '/vote/:id/fail';
-    return await dsClient.post<ChallengeVote>(endpoint, { id: challengeId }, { user_id: userId });
+    return voteType === 'done'
+      ? dsClient.recordVoteDone(challengeId, userId)
+      : dsClient.recordVoteFail(challengeId, userId);
   }
 
   /**
@@ -28,7 +29,7 @@ export class VotingService {
    */
   async getVoteCount(challengeId: number): Promise<ChallengeVote> {
     try {
-      return await dsClient.get<ChallengeVote>('/vote/:id', { id: challengeId });
+      return await dsClient.getVotes(challengeId);
     } catch (error) {
       if (error instanceof DSError && error.status === 404) throw new Error('NO_TRACKING');
       throw error;
@@ -40,6 +41,6 @@ export class VotingService {
    */
   async finalizeChallenge(challengeId: number, result: 'done' | 'failed' | 'skipped'): Promise<ChallengeVote> {
     Logger.debug(`Finalizing challenge ${challengeId} as ${result}`);
-    return await dsClient.patch<ChallengeVote>('/vote/:id/finalise', { id: challengeId }, { result });
+    return await dsClient.finalizeVote(challengeId, result);
   }
 }

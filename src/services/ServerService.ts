@@ -14,11 +14,7 @@ export class ServerService {
     Logger.debug(`Getting or creating server ${serverId}`);
 
     if (ownerId) {
-      return await dsClient.post<Server>('/server', undefined, {
-        id: serverId,
-        name: serverName ?? null,
-        user_id: ownerId,
-      });
+      return await dsClient.upsertServer(serverId, serverName ?? null, ownerId);
     }
 
     const existing = await this.getServerSettings(serverId);
@@ -34,7 +30,7 @@ export class ServerService {
 
   async getServerSettings(serverId: Snowflake): Promise<Server | null> {
     try {
-      return await dsClient.get<Server>('/server/:id', { id: serverId });
+      return await dsClient.getServer(serverId);
     } catch (error) {
       if (error instanceof DSError && error.status === 404) return null;
       throw error;
@@ -44,7 +40,7 @@ export class ServerService {
   async updateServerSettings(serverId: Snowflake, settings: Partial<Server>): Promise<void> {
     Logger.debug(`Updating server settings for ${serverId}`);
     const { id: _id, user_id: _userId, ...updateData } = settings;
-    await dsClient.patch<Server>('/server/:id', { id: serverId }, updateData);
+    await dsClient.updateServer(serverId, updateData);
     Logger.debug(`Updated server settings for ${serverId}`);
   }
 

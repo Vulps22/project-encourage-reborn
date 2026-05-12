@@ -14,14 +14,7 @@ export class ChallengeService {
   ): Promise<Challenge> {
     Logger.debug(`Creating challenge for user ${userId}`);
 
-    const challenge = await dsClient.post<Challenge>('/challenge', undefined, {
-      user_id: userId,
-      question_id: questionId,
-      server_id: serverId,
-      channel_id: channelId,
-      username,
-      type,
-    });
+    const challenge = await dsClient.createChallenge(userId, questionId, serverId, channelId, username, type);
 
     Logger.debug(`Challenge created with id ${challenge.id}`);
     return challenge;
@@ -29,12 +22,12 @@ export class ChallengeService {
 
   async setMessageId(challengeId: number, messageId: Snowflake): Promise<void> {
     Logger.debug(`Setting message_id ${messageId} on challenge ${challengeId}`);
-    await dsClient.patch('/challenge/:id/message', { id: challengeId }, { message_id: messageId });
+    await dsClient.setChallengeMessageId(challengeId, messageId);
   }
 
   async getChallengeByMessageId(messageId: Snowflake): Promise<Challenge | null> {
     try {
-      return await dsClient.get<Challenge>('/challenge/message/:messageId', { messageId });
+      return await dsClient.getChallengeByMessageId(messageId);
     } catch (error) {
       if (error instanceof DSError && error.status === 404) return null;
       throw error;
@@ -42,6 +35,6 @@ export class ChallengeService {
   }
 
   async skip(challengeId: number): Promise<Challenge> {
-    return dsClient.patch<Challenge>('/challenge/:id/skip', { id: challengeId });
+    return dsClient.skipChallenge(challengeId);
   }
 }
