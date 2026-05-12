@@ -45,7 +45,7 @@ export abstract class Client {
 
     if (!res.ok) {
       const payload = await res.json().catch(() => ({ error: res.statusText })) as { error?: string };
-      throw this.makeError(res.status, payload.error ?? res.statusText);
+      throw this.makeError(res.status, `${url}: ${payload.error ?? res.statusText}`);
     }
 
     return res.json() as Promise<T>;
