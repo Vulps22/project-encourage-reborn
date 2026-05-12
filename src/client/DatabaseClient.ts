@@ -123,21 +123,11 @@ export class DatabaseClient extends Client {
   }
 
   async recordVoteDone(challengeId: number, userId: string): Promise<ChallengeVote> {
-    try {
-      return await this.post<ChallengeVote>(`/api/v1/vote/${challengeId}/done`, undefined, { user_id: userId });
-    } catch (e) {
-      if (e instanceof DSError && e.status === 409) throw new Error('ALREADY_VOTED');
-      throw e;
-    }
+    return this.post<ChallengeVote>(`/api/v1/vote/${challengeId}/done`, undefined, { user_id: userId });
   }
 
   async recordVoteFail(challengeId: number, userId: string): Promise<ChallengeVote> {
-    try {
-      return await this.post<ChallengeVote>(`/api/v1/vote/${challengeId}/fail`, undefined, { user_id: userId });
-    } catch (e) {
-      if (e instanceof DSError && e.status === 409) throw new Error('ALREADY_VOTED');
-      throw e;
-    }
+    return this.post<ChallengeVote>(`/api/v1/vote/${challengeId}/fail`, undefined, { user_id: userId });
   }
 
   async finalizeVote(challengeId: number, result: 'done' | 'failed' | 'skipped'): Promise<ChallengeVote | null> {

@@ -14,7 +14,7 @@ export class VotingService {
 
   /**
    * Record a vote atomically — inserts the user vote and increments the
-   * relevant count in a single DS operation. Throws Error('ALREADY_VOTED') if the
+   * relevant count in a single DS operation. Throws DSError(409) if the
    * user has already voted on this challenge.
    */
   async vote(challengeId: number, userId: Snowflake, voteType: VoteType): Promise<ChallengeVote> {

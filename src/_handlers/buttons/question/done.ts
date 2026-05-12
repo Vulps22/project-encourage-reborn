@@ -1,8 +1,8 @@
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { Logger } from '@vulps22/logger';
-import { challengeService, configurationService, questionService, votingService } from '../../../services';
 import { DSError } from '../../../client';
+import { challengeService, configurationService, questionService, votingService } from '../../../services';
 import { challengeEmbed } from '../../../views';
 
 const done: Handler<BotButtonInteraction> = {

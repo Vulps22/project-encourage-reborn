@@ -69,10 +69,10 @@ describe('VotingService', () => {
             expect(result).toEqual(cv);
         });
 
-        it('should throw ALREADY_VOTED when user has already voted', async () => {
-            (dsClient.recordVoteDone as jest.Mock).mockRejectedValue(new Error('ALREADY_VOTED'));
+        it('should propagate DSError(409) when user has already voted', async () => {
+            (dsClient.recordVoteDone as jest.Mock).mockRejectedValue(new DSError(409, 'Already voted'));
 
-            await expect(service.vote(1, '222', 'done')).rejects.toThrow('ALREADY_VOTED');
+            await expect(service.vote(1, '222', 'done')).rejects.toThrow('Already voted');
         });
     });
 
