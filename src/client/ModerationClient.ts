@@ -17,8 +17,8 @@ export class ModerationClient extends Client {
 
   /** Notify MS of a newly created question so it can post it to the moderation log. */
   async submitQuestion(questionId: number): Promise<void> {
-    console.log(`[DEBUG PE/ModerationClient] submitQuestion — POSTing questionId=${questionId} to MS /question`);
-    const result = await this.post<{ success: boolean; questionId: number }>('/question', undefined, { questionId });
+    console.log(`[DEBUG PE/ModerationClient] submitQuestion — POSTing questionId=${questionId} to MS /api/v1/question`);
+    const result = await this.post<{ success: boolean; questionId: number }>('/api/v1/question', undefined, { questionId });
     console.log(`[DEBUG PE/ModerationClient] MS responded — success=${result.success} questionId=${result.questionId}`);
   }
 
@@ -33,7 +33,7 @@ export class ModerationClient extends Client {
     content?: string | null,
     reason?: string
   ): Promise<number> {
-    const res = await this.post<{ success: boolean; reportId: number }>('/report', undefined, {
+    const res = await this.post<{ success: boolean; reportId: number }>('/api/v1/report', undefined, {
       senderId,
       offenderId,
       content: content ?? null,
@@ -48,7 +48,7 @@ export class ModerationClient extends Client {
 
   /** Notify MS that PE joined a new server so it can log and upsert it. */
   async notifyServerJoined(id: string, name: string, userId: string): Promise<void> {
-    await this.post<{ success: boolean }>('/server', undefined, { id, name, user_id: userId });
+    await this.post<{ success: boolean }>('/api/v1/server', undefined, { id, name, user_id: userId });
   }
 
 }

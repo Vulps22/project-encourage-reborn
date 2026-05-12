@@ -16,40 +16,40 @@ export class DatabaseClient extends Client {
   // ===== USER =====
 
   async getUser(id: string): Promise<User | null> {
-    return this.get<User>(`/user/${id}`);
+    return this.get<User>(`/api/v1/user/${id}`);
   }
 
   async upsertUser(id: string, username: string): Promise<User> {
-    return this.post<User>('/user', undefined, { id, username });
+    return this.post<User>('/api/v1/user', undefined, { id, username });
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<User | null> {
-    return this.patch<User>(`/user/${id}`, undefined, data);
+    return this.patch<User>(`/api/v1/user/${id}`, undefined, data);
   }
 
   async banUser(id: string, banReason: string, banMessageId?: string): Promise<User | null> {
     const body: Record<string, unknown> = { ban_reason: banReason };
     if (banMessageId) body.ban_message_id = banMessageId;
-    return this.patch<User>(`/user/${id}/ban`, undefined, body);
+    return this.patch<User>(`/api/v1/user/${id}/ban`, undefined, body);
   }
 
   async unbanUser(id: string): Promise<User | null> {
-    return this.patch<User>(`/user/${id}/unban`, undefined, {});
+    return this.patch<User>(`/api/v1/user/${id}/unban`, undefined, {});
   }
 
   // ===== INVENTORY =====
 
   async getInventoryItem(userId: string, storableId: string): Promise<InventoryItem | null> {
-    return this.get<InventoryItem>(`/user/${userId}/inventory/${storableId}`);
+    return this.get<InventoryItem>(`/api/v1/user/${userId}/inventory/${storableId}`);
   }
 
   async addInventoryItem(userId: string, storableId: string, amount: number): Promise<InventoryItem> {
-    return this.post<InventoryItem>(`/user/${userId}/inventory/${storableId}`, undefined, { amount });
+    return this.post<InventoryItem>(`/api/v1/user/${userId}/inventory/${storableId}`, undefined, { amount });
   }
 
   async consumeInventoryItem(userId: string, storableId: string, amount: number): Promise<InventoryItem | false> {
     try {
-      return await this.post<InventoryItem>(`/user/${userId}/inventory/${storableId}/consume`, undefined, { amount });
+      return await this.post<InventoryItem>(`/api/v1/user/${userId}/inventory/${storableId}/consume`, undefined, { amount });
     } catch (e) {
       if (e instanceof DSError && e.status === 409) return false;
       throw e;
@@ -59,72 +59,72 @@ export class DatabaseClient extends Client {
   // ===== SERVER =====
 
   async getServer(id: string): Promise<Server | null> {
-    return this.get<Server>(`/server/${id}`);
+    return this.get<Server>(`/api/v1/server/${id}`);
   }
 
   async upsertServer(id: string, name: string | null, userId: string): Promise<Server> {
-    return this.post<Server>('/server', undefined, { id, name, user_id: userId });
+    return this.post<Server>('/api/v1/server', undefined, { id, name, user_id: userId });
   }
 
   async updateServer(id: string, data: Partial<Server>): Promise<Server | null> {
-    return this.patch<Server>(`/server/${id}`, undefined, data);
+    return this.patch<Server>(`/api/v1/server/${id}`, undefined, data);
   }
 
   // ===== QUESTION =====
 
   async getQuestion(id: number): Promise<Question | null> {
-    return this.get<Question>(`/question/${id}`);
+    return this.get<Question>(`/api/v1/question/${id}`);
   }
 
   async searchQuestions(q: string): Promise<Question[]> {
-    return (await this.get<Question[]>('/question/search', undefined, { q })) ?? [];
+    return (await this.get<Question[]>('/api/v1/question/search', undefined, { q })) ?? [];
   }
 
   async getRandomQuestion(type?: QuestionType): Promise<Question | null> {
     const query: Record<string, string> = {};
     if (type) query.type = type;
-    return this.get<Question>('/question/random', undefined, query);
+    return this.get<Question>('/api/v1/question/random', undefined, query);
   }
 
   async createQuestion(type: QuestionType, question: string, userId: string, serverId: string): Promise<Question> {
-    return this.post<Question>('/question', undefined, { type, question, user_id: userId, server_id: serverId });
+    return this.post<Question>('/api/v1/question', undefined, { type, question, user_id: userId, server_id: serverId });
   }
 
   async updateQuestion(id: number, data: Partial<Question>): Promise<Question | null> {
-    return this.patch<Question>(`/question/${id}`, undefined, data);
+    return this.patch<Question>(`/api/v1/question/${id}`, undefined, data);
   }
 
   // ===== CHALLENGE =====
 
   async createChallenge(userId: string, questionId: number, serverId: string, channelId: string | null, username: string, type: QuestionType): Promise<Challenge> {
-    return this.post<Challenge>('/challenge', undefined, { user_id: userId, question_id: questionId, server_id: serverId, channel_id: channelId, username, type });
+    return this.post<Challenge>('/api/v1/challenge', undefined, { user_id: userId, question_id: questionId, server_id: serverId, channel_id: channelId, username, type });
   }
 
   async getChallengeByMessageId(messageId: string): Promise<Challenge | null> {
-    return this.get<Challenge>(`/challenge/message/${messageId}`);
+    return this.get<Challenge>(`/api/v1/challenge/message/${messageId}`);
   }
 
   async setChallengeMessageId(id: number, messageId: string): Promise<void> {
-    await this.patch(`/challenge/${id}/message`, undefined, { message_id: messageId });
+    await this.patch(`/api/v1/challenge/${id}/message`, undefined, { message_id: messageId });
   }
 
   async skipChallenge(id: number): Promise<Challenge | null> {
-    return this.patch<Challenge>(`/challenge/${id}/skip`, undefined, {});
+    return this.patch<Challenge>(`/api/v1/challenge/${id}/skip`, undefined, {});
   }
 
   // ===== VOTE =====
 
   async initVote(challengeId: number): Promise<ChallengeVote> {
-    return this.post<ChallengeVote>(`/vote/${challengeId}`);
+    return this.post<ChallengeVote>(`/api/v1/vote/${challengeId}`);
   }
 
   async getVotes(challengeId: number): Promise<ChallengeVote | null> {
-    return this.get<ChallengeVote>(`/vote/${challengeId}`);
+    return this.get<ChallengeVote>(`/api/v1/vote/${challengeId}`);
   }
 
   async recordVoteDone(challengeId: number, userId: string): Promise<ChallengeVote> {
     try {
-      return await this.post<ChallengeVote>(`/vote/${challengeId}/done`, undefined, { user_id: userId });
+      return await this.post<ChallengeVote>(`/api/v1/vote/${challengeId}/done`, undefined, { user_id: userId });
     } catch (e) {
       if (e instanceof DSError && e.status === 409) throw new Error('ALREADY_VOTED');
       throw e;
@@ -133,7 +133,7 @@ export class DatabaseClient extends Client {
 
   async recordVoteFail(challengeId: number, userId: string): Promise<ChallengeVote> {
     try {
-      return await this.post<ChallengeVote>(`/vote/${challengeId}/fail`, undefined, { user_id: userId });
+      return await this.post<ChallengeVote>(`/api/v1/vote/${challengeId}/fail`, undefined, { user_id: userId });
     } catch (e) {
       if (e instanceof DSError && e.status === 409) throw new Error('ALREADY_VOTED');
       throw e;
@@ -141,28 +141,28 @@ export class DatabaseClient extends Client {
   }
 
   async finalizeVote(challengeId: number, result: 'done' | 'failed' | 'skipped'): Promise<ChallengeVote | null> {
-    return this.patch<ChallengeVote>(`/vote/${challengeId}/finalise`, undefined, { result });
+    return this.patch<ChallengeVote>(`/api/v1/vote/${challengeId}/finalise`, undefined, { result });
   }
 
   // ===== CONFIG =====
 
   async getConfig(): Promise<CoreConfig | null> {
-    return this.get<CoreConfig>('/config');
+    return this.get<CoreConfig>('/api/v1/config');
   }
 
   // ===== STORABLE =====
 
   async getStorable(id: string): Promise<Storable | null> {
-    return this.get<Storable>(`/storable/${id}`);
+    return this.get<Storable>(`/api/v1/storable/${id}`);
   }
 
   async listStorables(): Promise<Storable[]> {
-    return (await this.get<Storable[]>('/storable')) ?? [];
+    return (await this.get<Storable[]>('/api/v1/storable')) ?? [];
   }
 
   // ===== TRACK =====
 
   async trackInteraction(userId: string, serverId: string, serverOwnerId: string): Promise<void> {
-    await this.post('/track', undefined, { user_id: userId, server_id: serverId, server_owner_id: serverOwnerId });
+    await this.post('/api/v1/track', undefined, { user_id: userId, server_id: serverId, server_owner_id: serverOwnerId });
   }
 }
