@@ -3,7 +3,13 @@ import { dsClient } from '../../client';
 import { DMInteractionError } from '../../errors';
 
 jest.mock('../../client', () => ({
-    dsClient: { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() },
+    dsClient: {
+        get: jest.fn(),
+        post: jest.fn(),
+        patch: jest.fn(),
+        delete: jest.fn(),
+        trackInteraction: jest.fn(),
+    },
 }));
 
 const createMockInteraction = (
@@ -38,7 +44,7 @@ describe('UserTrackingService', () => {
                 .rejects
                 .toThrow(DMInteractionError);
 
-            expect(dsClient.post).not.toHaveBeenCalled();
+            expect(dsClient.trackInteraction).not.toHaveBeenCalled();
         });
 
         it('should throw DMInteractionError when guild is null despite guildId existing', async () => {
@@ -48,25 +54,25 @@ describe('UserTrackingService', () => {
                 .rejects
                 .toThrow(DMInteractionError);
 
-            expect(dsClient.post).not.toHaveBeenCalled();
+            expect(dsClient.trackInteraction).not.toHaveBeenCalled();
         });
 
-        it('should post to /track with correct ids', async () => {
+        it('should call trackInteraction with correct ids', async () => {
             const interaction = createMockInteraction('123456789', '987654321', '111222333');
-            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+            (dsClient.trackInteraction as jest.Mock).mockResolvedValue(undefined);
 
             await service.trackInteraction(interaction as any);
 
-            expect(dsClient.post).toHaveBeenCalledWith('/track', undefined, {
-                user_id: '123456789',
-                server_id: '987654321',
-                server_owner_id: '111222333',
-            });
+            expect(dsClient.trackInteraction).toHaveBeenCalledWith(
+                '123456789',
+                '987654321',
+                '111222333',
+            );
         });
 
         it('should throw when DS returns an error', async () => {
             const interaction = createMockInteraction('123456789', '987654321', '111222333');
-            (dsClient.post as jest.Mock).mockRejectedValue(new Error('Service unavailable'));
+            (dsClient.trackInteraction as jest.Mock).mockRejectedValue(new Error('Service unavailable'));
 
             await expect(service.trackInteraction(interaction as any))
                 .rejects
@@ -75,7 +81,7 @@ describe('UserTrackingService', () => {
 
         it('should handle unknown error types gracefully', async () => {
             const interaction = createMockInteraction('123456789', '987654321', '111222333');
-            (dsClient.post as jest.Mock).mockRejectedValue('Unknown error type');
+            (dsClient.trackInteraction as jest.Mock).mockRejectedValue('Unknown error type');
 
             await expect(service.trackInteraction(interaction as any))
                 .rejects
@@ -84,45 +90,45 @@ describe('UserTrackingService', () => {
 
         it('should cache and skip DS calls for the same user-server within 1 hour', async () => {
             const interaction = createMockInteraction('123456789', '987654321', '111222333');
-            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+            (dsClient.trackInteraction as jest.Mock).mockResolvedValue(undefined);
 
             await service.trackInteraction(interaction as any);
             await service.trackInteraction(interaction as any);
             await service.trackInteraction(interaction as any);
 
-            expect(dsClient.post).toHaveBeenCalledTimes(1);
+            expect(dsClient.trackInteraction).toHaveBeenCalledTimes(1);
         });
 
         it('should call DS again after the cache TTL expires', async () => {
             const interaction = createMockInteraction('123456789', '987654321', '111222333');
-            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+            (dsClient.trackInteraction as jest.Mock).mockResolvedValue(undefined);
 
             await service.trackInteraction(interaction as any);
-            expect(dsClient.post).toHaveBeenCalledTimes(1);
+            expect(dsClient.trackInteraction).toHaveBeenCalledTimes(1);
 
             jest.advanceTimersByTime(60 * 60 * 1000 + 1);
 
             await service.trackInteraction(interaction as any);
-            expect(dsClient.post).toHaveBeenCalledTimes(2);
+            expect(dsClient.trackInteraction).toHaveBeenCalledTimes(2);
         });
 
         it('should track different user-server combinations separately', async () => {
             const i1 = createMockInteraction('123456789', '987654321', '111222333');
             const i2 = createMockInteraction('123456789', '111222333', '444555666');
             const i3 = createMockInteraction('999888777', '987654321', '111222333');
-            (dsClient.post as jest.Mock).mockResolvedValue(undefined);
+            (dsClient.trackInteraction as jest.Mock).mockResolvedValue(undefined);
 
             await service.trackInteraction(i1 as any);
-            expect(dsClient.post).toHaveBeenCalledTimes(1);
+            expect(dsClient.trackInteraction).toHaveBeenCalledTimes(1);
 
             await service.trackInteraction(i2 as any);
-            expect(dsClient.post).toHaveBeenCalledTimes(2);
+            expect(dsClient.trackInteraction).toHaveBeenCalledTimes(2);
 
             await service.trackInteraction(i3 as any);
-            expect(dsClient.post).toHaveBeenCalledTimes(3);
+            expect(dsClient.trackInteraction).toHaveBeenCalledTimes(3);
 
             await service.trackInteraction(i1 as any); // cached
-            expect(dsClient.post).toHaveBeenCalledTimes(3);
+            expect(dsClient.trackInteraction).toHaveBeenCalledTimes(3);
         });
     });
 
