@@ -127,11 +127,11 @@ export class UserTrackingService {
       const serverOwner = interaction.guild.ownerId;
 
       // Call DS to track user interaction
-      await dsClient.post('/track', undefined, {
-        user_id: userId,
-        server_id: serverId,
-        server_owner_id: serverOwner,
-      });
+      await dsClient.trackInteraction(
+        userId,
+        serverId,
+        serverOwner,
+      );
 
       // Add to cache
       this.addToCache(userId, serverId);
