@@ -35,6 +35,6 @@ export class ChallengeService {
   }
 
   async skip(challengeId: number): Promise<Challenge> {
-    return dsClient.skipChallenge(challengeId);
+    return (await dsClient.skipChallenge(challengeId))!;
   }
 }

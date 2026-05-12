@@ -29,7 +29,7 @@ export class VotingService {
    */
   async getVoteCount(challengeId: number): Promise<ChallengeVote> {
     try {
-      return await dsClient.getVotes(challengeId);
+      return (await dsClient.getVotes(challengeId))!;
     } catch (error) {
       if (error instanceof DSError && error.status === 404) throw new Error('NO_TRACKING');
       throw error;
@@ -41,6 +41,6 @@ export class VotingService {
    */
   async finalizeChallenge(challengeId: number, result: 'done' | 'failed' | 'skipped'): Promise<ChallengeVote> {
     Logger.debug(`Finalizing challenge ${challengeId} as ${result}`);
-    return await dsClient.finalizeVote(challengeId, result);
+    return (await dsClient.finalizeVote(challengeId, result))!;
   }
 }
