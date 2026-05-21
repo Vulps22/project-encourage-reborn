@@ -45,8 +45,6 @@ const skip: Handler<BotButtonInteraction> = {
             if (question) {
                 await interaction.updateComponentMessage(null, challengeEmbed(question, challenge, updated));
             }
-
-            await interaction.ephemeralFollowUp('⏭️ Challenge skipped. You have ' + (skips.qty) + ' skips remaining.');
         } catch (error) {
             Logger.error(`Skip handler error for message ${messageId}: ${error instanceof Error ? error.message : String(error)}`);
             await interaction.ephemeralFollowUp('❌ Something went wrong. Please try again.');
