@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   workflow_run:
-    workflows: ["Rollout"]
+    workflows: ["Build"]
     types: [completed]
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Deploy
         run: |
-          ssh -i ~/.ssh/id_rsa root@${{ secrets.VPS_HOST }} "
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
             cd ${{ github.event.workflow_run.head_branch == 'staging' && '/opt/discord-bots/project-encourage-reborn' || '/opt/discord-bots/project-encourage' }} &&
             docker compose pull bot &&
             docker compose up -d bot

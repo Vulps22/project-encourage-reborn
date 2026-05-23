@@ -12,7 +12,7 @@ on:
           - production
 
 permissions:
-  contents: write
+  contents: read
   packages: read
 
 jobs:
@@ -37,71 +37,13 @@ jobs:
         with:
           context: .
           push: true
+          build-args: NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}
           tags: vulps23/project-encourage:${{ inputs.environment == 'staging' && 'staging' || 'latest' }}
-
-  rollout:
-    name: Database Migration
-    runs-on: ubuntu-latest
-    needs: build
-    environment: ${{ inputs.environment }}
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.environment == 'staging' && 'staging' || 'main' }}
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Configure npm for private packages
-        run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
-
-      - run: npm ci
-
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Open SSH tunnel to VPS database
-        run: |
-          ssh -i ~/.ssh/id_rsa -fN -L 5432:localhost:5432 root@${{ secrets.VPS_HOST }}
-          sleep 2
-
-      - name: Run database migrations
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-        run: npm run db:rollout
-
-      - name: Close SSH tunnel
-        if: always()
-        run: pkill -f "ssh.*-L 5432:localhost:5432" || true
-
-      - name: Commit applied migration files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add database/migrations/applied/
-          if git diff --staged --quiet; then
-            echo "No migration files moved"
-          else
-            git commit -m "ci: mark applied migrations post-rollout"
-            git push origin ${{ inputs.environment == 'staging' && 'staging' || 'main' }}
-          fi
 
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    needs: rollout
+    needs: build
     environment: ${{ inputs.environment }}
 
     steps:
@@ -114,7 +56,7 @@ jobs:
 
       - name: Deploy
         run: |
-          ssh -i ~/.ssh/id_rsa root@${{ secrets.VPS_HOST }} "
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
             cd ${{ inputs.environment == 'staging' && '/opt/discord-bots/project-encourage-reborn' || '/opt/discord-bots/project-encourage' }} &&
             docker compose pull bot &&
             docker compose up -d bot
