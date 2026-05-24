@@ -1,0 +1,140 @@
+name: Freeze
+
+on:
+  schedule:
+    - cron: '0 20 * * 3' # Every Wednesday at 8pm UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  packages: read
+
+jobs:
+  check:
+    name: Check Freeze Week
+    runs-on: ubuntu-latest
+    if: vars.RELEASES_ENABLED == 'true'
+    outputs:
+      proceed: ${{ steps.week.outputs.proceed }}
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check freeze week
+        id: week
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "proceed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          day=$(date +%-d)
+          if ([ "$day" -ge 1 ] && [ "$day" -le 7 ]) || ([ "$day" -ge 15 ] && [ "$day" -le 21 ]); then
+            echo "proceed=true" >> $GITHUB_OUTPUT
+          else
+            echo "proceed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute version
+        id: version
+        if: steps.week.outputs.proceed == 'true'
+        run: |
+          year=$(date +%Y)
+          month=$(date +%-m)
+          count=$(git tag -l "v${year}.${month}.*" | grep -v '\-H' | wc -l | tr -d ' ')
+          version="v${year}.${month}.$((count + 1))"
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Computed version: $version"
+
+  merge:
+    name: Merge Release-Ready Branches
+    needs: check
+    if: needs.check.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: current-release
+          fetch-depth: 0
+
+      - name: Create freeze branch
+        run: |
+          VERSION="${{ needs.check.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "freeze/${VERSION}"
+
+      - name: Merge release-ready branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          git fetch --all
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          while IFS=$'\t' read -r NUMBER URL; do
+            BRANCH=$(git branch -r | sed 's|.*origin/||' | tr -d ' ' | grep -E "^${NUMBER}-" | head -1)
+
+            if [ -z "$BRANCH" ]; then
+              echo "No branch found for issue #${NUMBER} — skipping"
+              curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+                -H "Content-Type: application/json" \
+                -d "{\"content\": \"${URL} No branch found for issue #${NUMBER} — skipping\"}"
+              continue
+            fi
+
+            AHEAD=$(git log "origin/main".."origin/${BRANCH}" --oneline | wc -l | tr -d ' ')
+            if [ "$AHEAD" -gt 0 ]; then
+              echo "Skipping ${BRANCH} — ${AHEAD} commit(s) ahead of main (not fully merged)"
+              continue
+            fi
+
+            if ! git merge "origin/${BRANCH}" --no-ff -m "Merge branch '${BRANCH}' into freeze/${VERSION}" 2>&1; then
+              git merge --abort 2>/dev/null || true
+              curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+                -H "Content-Type: application/json" \
+                -d "{\"content\": \"${URL} \`${BRANCH}\` Failed to merge in Freeze: merge conflict\"}"
+              continue
+            fi
+
+            gh issue edit "$NUMBER" --remove-label "release-ready" --add-label "in-freeze"
+            echo "Merged ${BRANCH} → freeze/${VERSION}"
+          done < <(gh issue list --label "release-ready" --json number,url --jq '.[] | [(.number | tostring), .url] | @tsv')
+
+          git push origin "freeze/${VERSION}"
+
+  test:
+    name: Test Freeze Branch
+    needs: [check, merge]
+    if: needs.check.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: freeze/${{ needs.check.outputs.version }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Configure npm for private packages
+        run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
+
+      - run: npm ci
+
+      - name: TypeScript compilation check
+        run: npm run build
+
+      - name: Run tests
+        env:
+          NODE_ENV: test
+        run: npm test

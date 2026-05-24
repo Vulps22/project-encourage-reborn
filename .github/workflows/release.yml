@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  schedule:
+    - cron: '0 20 * * 3' # Every Wednesday at 8pm UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: Check Release Week
+    runs-on: ubuntu-latest
+    if: vars.RELEASES_ENABLED == 'true'
+    outputs:
+      proceed: ${{ steps.week.outputs.proceed }}
+      version: ${{ steps.freeze.outputs.version }}
+      ref: ${{ steps.freeze.outputs.ref }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check release week
+        id: week
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "proceed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          day=$(date +%-d)
+          if ([ "$day" -ge 8 ] && [ "$day" -le 14 ]) || ([ "$day" -ge 22 ] && [ "$day" -le 28 ]); then
+            echo "proceed=true" >> $GITHUB_OUTPUT
+          else
+            echo "proceed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Find latest freeze branch
+        id: freeze
+        if: steps.week.outputs.proceed == 'true'
+        run: |
+          git fetch --all
+          freeze_version=$(git branch -r | grep 'origin/freeze/' | sed 's|.*origin/freeze/||' | sort -V | tail -1 | tr -d ' ')
+          if [ -z "$freeze_version" ]; then
+            echo "No freeze branch found" >&2
+            exit 1
+          fi
+          echo "version=$freeze_version" >> $GITHUB_OUTPUT
+          echo "ref=freeze/${freeze_version}" >> $GITHUB_OUTPUT
+          echo "Found freeze branch: freeze/${freeze_version}"
+
+  release:
+    name: Tag and Create GitHub Release
+    needs: check
+    if: needs.check.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.check.outputs.ref }}
+
+      - name: Tag release commit
+        run: |
+          VERSION="${{ needs.check.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ needs.check.outputs.version }}" \
+            --title "Release ${{ needs.check.outputs.version }}" \
+            --generate-notes
