@@ -2,7 +2,7 @@ name: Test Select Menus
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/_handlers/selects/**'
       - 'src/structures/**'

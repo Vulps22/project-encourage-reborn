@@ -2,7 +2,7 @@ name: Test Core
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/bot.ts'
       - 'src/index.ts'

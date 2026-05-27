@@ -2,7 +2,7 @@ name: Test Models
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/models/**'
       - 'package*.json'

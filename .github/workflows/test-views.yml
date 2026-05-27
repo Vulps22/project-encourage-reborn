@@ -2,7 +2,7 @@ name: Test Views
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/views/**'
       - 'package*.json'

@@ -8,7 +8,6 @@ on:
 permissions:
   contents: write
   issues: write
-  packages: read
 
 jobs:
   check:
@@ -109,32 +108,3 @@ jobs:
           done < <(gh issue list --label "release-ready" --json number,url --jq '.[] | [(.number | tostring), .url] | @tsv')
 
           git push origin "freeze/${VERSION}"
-
-  test:
-    name: Test Freeze Branch
-    needs: [check, merge]
-    if: needs.check.outputs.proceed == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: freeze/${{ needs.check.outputs.version }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Configure npm for private packages
-        run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
-
-      - run: npm ci
-
-      - name: TypeScript compilation check
-        run: npm run build
-
-      - name: Run tests
-        env:
-          NODE_ENV: test
-        run: npm test

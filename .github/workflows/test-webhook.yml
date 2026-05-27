@@ -2,7 +2,7 @@ name: Test Webhook
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/routes/api/v1/**'
       - 'package*.json'

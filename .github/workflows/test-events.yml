@@ -2,7 +2,7 @@ name: Test Events
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/events/**'
       - 'src/structures/**'

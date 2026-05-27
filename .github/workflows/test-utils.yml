@@ -2,7 +2,7 @@ name: Test Utils
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/utils/**'
       - 'package*.json'

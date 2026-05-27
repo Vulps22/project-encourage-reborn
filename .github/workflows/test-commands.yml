@@ -2,7 +2,7 @@ name: Test Commands
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'freeze/**']
     paths:
       - 'src/_handlers/commands/**'
       - 'src/structures/**'
