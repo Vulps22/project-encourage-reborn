@@ -59,9 +59,9 @@ export class ServerService {
     await this.updateServerSettings(serverId, { announcement_channel: channelId });
   }
 
-  async markPlaytestNotified(serverId: Snowflake): Promise<void> {
-    Logger.debug(`Marking playtest notice as shown for server ${serverId}`);
-    await this.updateServerSettings(serverId, { playtest_notified: true });
+  async clearPlaytestNotified(serverId: Snowflake): Promise<void> {
+    Logger.debug(`Clearing playtest flag for server ${serverId} after live launch notice`);
+    await this.updateServerSettings(serverId, { playtest_notified: false });
   }
 
   async isServerBanned(serverId: Snowflake): Promise<string | false> {

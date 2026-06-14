@@ -82,12 +82,12 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       return;
     }
 
-    // Send playtest notice on the server's first interaction
+    // Send live launch notice on a beta server's first interaction after go-live
     if (interaction.guildId && interaction.channel) {
       const server = await serverService.getServerSettings(interaction.guildId);
-      if (server && !server.playtest_notified) {
+      if (server && server.playtest_notified) {
         await (interaction.channel as GuildTextBasedChannel).send(playtestNoticeView() as MessageCreateOptions);
-        await serverService.markPlaytestNotified(interaction.guildId);
+        await serverService.clearPlaytestNotified(interaction.guildId);
       }
     }
 
