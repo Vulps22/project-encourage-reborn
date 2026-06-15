@@ -32,7 +32,7 @@ jobs:
             conclusion=$(gh api "repos/$REPO/actions/runs?head_sha=$SHA&per_page=50" \
               --jq "[.workflow_runs[] | select(.name == \"$name\")] | sort_by(.run_number) | last | .conclusion")
 
-            if [ "$conclusion" = '"success"' ]; then
+            if [ "$conclusion" = "success" ]; then
               echo "✓ $name"
             elif [ "$conclusion" = "null" ] || [ -z "$conclusion" ]; then
               echo "⏳ $name still running — skipping this trigger"
