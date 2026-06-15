@@ -1,0 +1,43 @@
+name: Update current-release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Merge freeze into current-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge freeze branch into current-release
+        run: |
+          VERSION="${{ github.ref_name }}"
+          FREEZE_BRANCH="freeze/${VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin
+
+          if ! git ls-remote --exit-code origin "${FREEZE_BRANCH}"; then
+            echo "Freeze branch ${FREEZE_BRANCH} not found — aborting" >&2
+            exit 1
+          fi
+
+          if git ls-remote --exit-code origin current-release; then
+            git checkout -b current-release origin/current-release
+          else
+            git checkout -b current-release origin/"${FREEZE_BRANCH}"
+          fi
+
+          git merge origin/"${FREEZE_BRANCH}" --no-edit
+          git push origin current-release

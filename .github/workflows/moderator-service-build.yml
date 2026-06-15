@@ -36,16 +36,3 @@ jobs:
           tags: |
             vulps23/project-encourage-ms:latest
             vulps23/project-encourage-ms:${{ github.ref_name }}
-
-      - name: Merge main into current-release
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin
-          if git ls-remote --exit-code origin current-release; then
-            git checkout -b current-release origin/current-release
-          else
-            git checkout -b current-release origin/main
-          fi
-          git merge origin/main --no-edit
-          git push origin current-release
