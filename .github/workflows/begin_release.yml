@@ -264,10 +264,3 @@ jobs:
           git tag "$VERSION"
           git push origin "$VERSION"
 
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ needs.determine.outputs.version }}" \
-            --title "Release ${{ needs.determine.outputs.version }}" \
-            --generate-notes
