@@ -1,4 +1,4 @@
-name: Moderator Service — Begin Release
+name: Begin Release
 
 on:
   schedule:
@@ -99,13 +99,16 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "Computed version: $version"
 
-  # ── Tests (all paths) ─────────────────────────────────────────────────────
+  # ── Tests (all three services in parallel) ────────────────────────────────
 
-  test:
-    name: Run Tests
+  test-bs:
+    name: Test — Bot Service
     needs: determine
     if: needs.determine.outputs.should_proceed == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bot-service
 
     steps:
       - uses: actions/checkout@v4
@@ -116,6 +119,93 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: bot-service/package-lock.json
+
+      - name: Configure npm for private packages
+        run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
+
+      - run: npm ci
+
+      - name: TypeScript compilation check
+        run: npm run build
+
+      - name: Run tests
+        env:
+          NODE_ENV: test
+        run: npm test
+
+  test-ds:
+    name: Test — Database Service
+    needs: determine
+    if: needs.determine.outputs.should_proceed == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: database-service
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine.outputs.test_ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: database-service/package-lock.json
+
+      - name: Configure npm for private packages
+        run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
+
+      - run: npm ci
+
+      - name: TypeScript compilation check
+        run: npm run build
+
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_NAME: testdb
+          NODE_ENV: test
+        run: npm test
+
+  test-ms:
+    name: Test — Moderator Service
+    needs: determine
+    if: needs.determine.outputs.should_proceed == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: moderator-service
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine.outputs.test_ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: moderator-service/package-lock.json
 
       - name: Configure npm for private packages
         run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
@@ -134,7 +224,7 @@ jobs:
 
   freeze:
     name: Create Freeze Branch
-    needs: [determine, test]
+    needs: [determine, test-bs, test-ds, test-ms]
     if: needs.determine.outputs.should_proceed == 'true' && needs.determine.outputs.release_type == 'freeze'
     runs-on: ubuntu-latest
 
@@ -156,7 +246,7 @@ jobs:
 
   tag:
     name: Tag and Create GitHub Release
-    needs: [determine, test]
+    needs: [determine, test-bs, test-ds, test-ms]
     if: needs.determine.outputs.should_proceed == 'true' && needs.determine.outputs.release_type != 'freeze'
     runs-on: ubuntu-latest
 
