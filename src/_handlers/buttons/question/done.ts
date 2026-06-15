@@ -51,8 +51,6 @@ const done: Handler<BotButtonInteraction> = {
             if (question) {
                 await interaction.updateComponentMessage(null, challengeEmbed(question, challenge, updated));
             }
-
-            await interaction.ephemeralFollowUp('✅ Voted DONE!');
         } catch (error) {
             console.error('[done] raw error:', error);
             console.error('[done] question:', question ?? 'undefined');

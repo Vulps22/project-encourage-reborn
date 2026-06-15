@@ -81,12 +81,13 @@ describe('skip button handler', () => {
         expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('no skips left'));
     });
 
-    it('should finalize and confirm on happy path', async () => {
+    it('should finalize and update embed on happy path', async () => {
         await skip.execute(mockInteraction);
 
         expect(inventoryService.consume).toHaveBeenCalledWith('user-123', 'skip', 1);
         expect(challengeService.skip).toHaveBeenCalledWith(1);
         expect(votingService.finalizeChallenge).toHaveBeenCalledWith(1, 'skipped');
-        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('skipped'));
+        expect(mockInteraction.updateComponentMessage).toHaveBeenCalled();
+        expect(mockInteraction.ephemeralFollowUp).not.toHaveBeenCalledWith(expect.stringContaining('skipped'));
     });
 });
