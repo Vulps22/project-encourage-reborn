@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: encourage_db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  ds:
+    image: vulps23/project-encourage-ds:playtest
+    container_name: encourage_ds
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  ms:
+    image: vulps23/project-encourage-ms:playtest
+    container_name: encourage_ms
+    env_file:
+      - .env
+    environment:
+      - DISCORD_TOKEN=${MS_DISCORD_TOKEN}
+      - CLIENT_ID=${MS_CLIENT_ID}
+    depends_on:
+      - ds
+    restart: unless-stopped
+
+  pe:
+    image: vulps23/project-encourage:playtest
+    container_name: encourage_pe
+    env_file:
+      - .env
+    environment:
+      - DISCORD_TOKEN=${PE_DISCORD_TOKEN}
+      - CLIENT_ID=${PE_CLIENT_ID}
+    ports:
+      - "3006:3006"
+    depends_on:
+      - ds
+    restart: unless-stopped
+
+volumes:
+  db_data:

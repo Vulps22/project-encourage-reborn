@@ -1,0 +1,65 @@
+name: Rollout
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types: [completed]
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  rollout:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: current-release
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Configure npm for private packages
+        run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
+
+      - run: npm ci
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Open SSH tunnel to VPS database
+        run: |
+          ssh -i ~/.ssh/id_rsa -fN -L ${{ secrets.DB_PORT }}:localhost:${{ secrets.DB_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+          sleep 2
+
+      - name: Run database migrations
+        env:
+          DB_HOST: localhost
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+        run: npm run db:migrate
+
+      - name: Close SSH tunnel
+        if: always()
+        run: pkill -f "ssh.*-L ${{ secrets.DB_PORT }}:localhost:${{ secrets.DB_PORT }}" || true
+
+      - name: Merge current-release into main
+        run: |
+          git fetch origin
+          git checkout -b main origin/main
+          git merge current-release --no-edit
+          git push origin main

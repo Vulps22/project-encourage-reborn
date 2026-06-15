@@ -1,0 +1,22 @@
+import { db } from '../db';
+import { ChallengeService } from './ChallengeService';
+import { ConfigService } from './ConfigService';
+import { InventoryService } from './InventoryService';
+import { QuestionService } from './QuestionService';
+import { ReportService } from './ReportService';
+import { ServerService } from './ServerService';
+import { StorableService } from './StorableService';
+import { TrackService } from './TrackService';
+import { UserService } from './UserService';
+import { VoteService } from './VoteService';
+
+export const challengeService = new ChallengeService(db);
+export const configService = new ConfigService(db);
+export const inventoryService = new InventoryService(db);
+export const questionService = new QuestionService(db);
+export const reportService = new ReportService(db);
+export const serverService = new ServerService(db);
+export const storableService = new StorableService(db);
+export const trackService = new TrackService(db);
+export const userService = new UserService(db);
+export const voteService = new VoteService(db);

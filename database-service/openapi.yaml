@@ -1,0 +1,1326 @@
+openapi: 3.0.3
+info:
+  title: Project Encourage Database Service
+  version: 1.0.0
+  description: REST API for all database operations in the Project Encourage ecosystem
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    Question:
+      type: object
+      properties:
+        id:                { type: integer }
+        type:              { type: string, enum: [truth, dare] }
+        question:          { type: string }
+        user_id:           { type: string }
+        server_id:         { type: string }
+        is_approved:       { type: boolean }
+        approved_by:       { type: string, nullable: true }
+        datetime_approved: { type: string, format: date-time, nullable: true }
+        is_banned:         { type: boolean }
+        ban_reason:        { type: string, nullable: true }
+        banned_by:         { type: string, nullable: true }
+        datetime_banned:   { type: string, format: date-time, nullable: true }
+        is_deleted:        { type: boolean }
+        datetime_deleted:  { type: string, format: date-time, nullable: true }
+        message_id:        { type: string, nullable: true }
+        created:           { type: string, format: date-time }
+
+    Challenge:
+      type: object
+      properties:
+        id:               { type: integer }
+        message_id:       { type: string, nullable: true }
+        user_id:          { type: string }
+        question_id:      { type: integer }
+        server_id:        { type: string }
+        channel_id:       { type: string, nullable: true }
+        username:         { type: string }
+        image_url:        { type: string, nullable: true }
+        skipped:          { type: boolean }
+        type:             { type: string, enum: [truth, dare] }
+        datetime_created: { type: string, format: date-time }
+
+    ChallengeVote:
+      type: object
+      properties:
+        challenge_id:        { type: integer }
+        done_count:          { type: integer }
+        failed_count:        { type: integer }
+        final_result:        { type: string, enum: [done, failed, skipped], nullable: true }
+        finalised_datetime:  { type: string, format: date-time, nullable: true }
+
+    Server:
+      type: object
+      properties:
+        id:                   { type: string }
+        name:                 { type: string, nullable: true }
+        user_id:              { type: string }
+        has_accepted:         { type: boolean }
+        can_create:           { type: boolean }
+        is_banned:            { type: boolean }
+        ban_reason:           { type: string, nullable: true }
+        banned_by:            { type: string, nullable: true }
+        datetime_banned:      { type: string, format: date-time, nullable: true }
+        date_created:         { type: string, format: date-time }
+        date_updated:         { type: string, format: date-time }
+        dare_success_xp:      { type: integer }
+        dare_fail_xp:         { type: integer }
+        truth_success_xp:     { type: integer }
+        truth_fail_xp:        { type: integer }
+        message_xp:           { type: integer }
+        level_up_channel:     { type: string, nullable: true }
+        announcement_channel: { type: string, nullable: true }
+        is_entitled:          { type: boolean }
+        entitlement_end_date: { type: string, format: date-time, nullable: true }
+        message_id:           { type: string, nullable: true }
+        is_deleted:           { type: boolean }
+        datetime_deleted:     { type: string, format: date-time, nullable: true }
+        playtest_notified:    { type: boolean }
+
+    User:
+      type: object
+      properties:
+        id:               { type: string }
+        username:         { type: string, nullable: true }
+        global_level:     { type: integer }
+        global_level_xp:  { type: integer }
+        banned_questions: { type: integer }
+        rules_accepted:   { type: boolean }
+        is_banned:        { type: boolean }
+        ban_reason:       { type: string, nullable: true }
+        vote_count:       { type: integer }
+        ban_message_id:   { type: string, nullable: true }
+        delete_date:      { type: string, format: date-time, nullable: true }
+        created_datetime: { type: string, format: date-time }
+
+    Storable:
+      type: object
+      properties:
+        id:   { type: string }
+        name: { type: string }
+
+    InventoryItem:
+      type: object
+      properties:
+        id:          { type: integer }
+        user_id:     { type: string }
+        storable_id: { type: string }
+        qty:         { type: integer }
+
+    CoreConfig:
+      type: object
+      properties:
+        id:              { type: string, enum: [config] }
+        vote_threshold:  { type: integer }
+        is_locked:       { type: boolean }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+paths:
+  # ─── Storable ────────────────────────────────────────────────────────────────
+
+  /storable:
+    get:
+      summary: List all storables
+      responses:
+        '200':
+          description: All storables
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Storable' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /storable/{id}:
+    get:
+      summary: Get a storable by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The storable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Storable' }
+        '404':
+          description: Storable not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ─── Track ───────────────────────────────────────────────────────────────────
+
+  /track:
+    post:
+      summary: Ensure a user, server, and their relationship exist (upsert all three)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, server_id, server_owner_id]
+              properties:
+                user_id:         { type: string }
+                server_id:       { type: string }
+                server_owner_id: { type: string }
+      responses:
+        '200':
+          description: Tracked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        '400':
+          description: Missing required fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ─── Config ──────────────────────────────────────────────────────────────────
+
+  /config:
+    get:
+      summary: Get the bot configuration
+      responses:
+        '200':
+          description: The config record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CoreConfig' }
+        '404':
+          description: Config not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /config/lockdown:
+    post:
+      summary: Enable or disable maintenance mode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [locked]
+              properties:
+                locked: { type: boolean }
+      responses:
+        '200':
+          description: Updated config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CoreConfig' }
+        '400':
+          description: Missing or invalid field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Config not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ping:
+    get:
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: OK }
+
+  # ─── Question ────────────────────────────────────────────────────────────────
+
+  /question:
+    post:
+      summary: Create a question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, question, user_id, server_id]
+              properties:
+                type:      { type: string, enum: [truth, dare] }
+                question:  { type: string }
+                user_id:   { type: string }
+                server_id: { type: string }
+      responses:
+        '200':
+          description: Question created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Question' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /question/random:
+    get:
+      summary: Get a random approved question
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema: { type: string, enum: [truth, dare] }
+          description: Filter by question type
+      responses:
+        '200':
+          description: A random question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Question' }
+        '404':
+          description: No questions available
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /question/{id}:
+    get:
+      summary: Get a question by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: The question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Question' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Question not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      summary: Update question fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Question' }
+      responses:
+        '200':
+          description: Updated question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Question' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Question not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /question/{id}/approve:
+    patch:
+      summary: Approve a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [moderator_id]
+              properties:
+                moderator_id: { type: string }
+      responses:
+        '200':
+          description: Updated question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Question' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Question not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /question/{id}/ban:
+    patch:
+      summary: Ban a question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [moderator_id, ban_reason]
+              properties:
+                moderator_id: { type: string }
+                ban_reason:   { type: string }
+      responses:
+        '200':
+          description: Updated question
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Question' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Question not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ─── Challenge ───────────────────────────────────────────────────────────────
+
+  /challenge:
+    post:
+      summary: Create a challenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, question_id, server_id, username, type]
+              properties:
+                user_id:     { type: string }
+                question_id: { type: integer }
+                server_id:   { type: string }
+                channel_id:  { type: string, nullable: true }
+                username:    { type: string }
+                type:        { type: string, enum: [truth, dare] }
+
+      responses:
+        '200':
+          description: Challenge created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Challenge' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /challenge/message/{messageId}:
+    get:
+      summary: Get a challenge by Discord message ID
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The challenge
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Challenge' }
+        '404':
+          description: Challenge not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /challenge/{id}:
+    get:
+      summary: Get a challenge by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: The challenge
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Challenge' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Challenge not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /challenge/{id}/message:
+    patch:
+      summary: Set the Discord message ID on a challenge after posting the embed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message_id]
+              properties:
+                message_id: { type: string }
+      responses:
+        '200':
+          description: Message ID set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /challenge/{id}/skip:
+    patch:
+      summary: Mark a challenge as skipped
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated challenge
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Challenge' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Challenge not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ─── Vote ─────────────────────────────────────────────────────────────────────
+
+  /vote/{id}:
+    post:
+      summary: Initialise vote tracking for a challenge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+          description: Challenge ID
+      responses:
+        '200':
+          description: Vote tracking initialised
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChallengeVote' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      summary: Get current vote counts for a challenge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+          description: Challenge ID
+      responses:
+        '200':
+          description: Current vote counts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChallengeVote' }
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Vote tracking not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /vote/{id}/finalise:
+    patch:
+      summary: Finalise a challenge with a result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+          description: Challenge ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result]
+              properties:
+                result: { type: string, enum: [done, failed, skipped] }
+      responses:
+        '200':
+          description: Updated vote record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChallengeVote' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Vote tracking not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /vote/{id}/done:
+    post:
+      summary: Record a done vote — inserts user vote and increments done_count atomically
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+          description: Challenge ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: string }
+      responses:
+        '200':
+          description: Vote recorded, updated counts returned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChallengeVote' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: User has already voted on this challenge
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /vote/{id}/fail:
+    post:
+      summary: Record a fail vote — inserts user vote and increments failed_count atomically
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+          description: Challenge ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: string }
+      responses:
+        '200':
+          description: Vote recorded, updated counts returned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChallengeVote' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: User has already voted on this challenge
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ─── Server ───────────────────────────────────────────────────────────────────
+
+  /server:
+    post:
+      summary: Register or update a server (upsert)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, user_id]
+              properties:
+                id:      { type: string }
+                name:    { type: string, nullable: true }
+                user_id: { type: string }
+      responses:
+        '200':
+          description: Server registered or updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Server' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /server/{id}:
+    get:
+      summary: Get a server by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Server' }
+        '404':
+          description: Server not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      summary: Update server fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Server' }
+      responses:
+        '200':
+          description: Updated server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Server' }
+        '404':
+          description: Server not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      summary: Delete a server
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Server deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        '404':
+          description: Server not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /server/{id}/users:
+    post:
+      summary: Register a user to a server (upsert)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: string }
+      responses:
+        '200':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        '400':
+          description: Missing required field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /server/{id}/users/{userId}:
+    delete:
+      summary: Remove a user from a server
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: User removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        '404':
+          description: User not found in server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /server/{id}/ban:
+    patch:
+      summary: Ban a server
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [moderator_id, ban_reason]
+              properties:
+                moderator_id: { type: string }
+                ban_reason:   { type: string }
+      responses:
+        '200':
+          description: Updated server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Server' }
+        '400':
+          description: Missing or invalid fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Server not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /server/{id}/unban:
+    patch:
+      summary: Unban a server
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Server' }
+        '404':
+          description: Server not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ─── User ─────────────────────────────────────────────────────────────────────
+
+  /user:
+    post:
+      summary: Create or update a user (upsert)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, username]
+              properties:
+                id:       { type: string }
+                username: { type: string }
+      responses:
+        '200':
+          description: User created or updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400':
+          description: Missing required field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /user/{id}:
+    get:
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      summary: Update user fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/User' }
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /user/{id}/ban:
+    patch:
+      summary: Ban a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ban_reason]
+              properties:
+                ban_reason:     { type: string }
+                ban_message_id: { type: string }
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400':
+          description: Missing required field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /user/{id}/inventory/{storableId}:
+    get:
+      summary: Get a user's inventory item for a specific storable
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: storableId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The inventory item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InventoryItem' }
+        '404':
+          description: Inventory item not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      summary: Add quantity to a user's inventory item (upsert-increment)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: storableId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Updated inventory item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InventoryItem' }
+        '400':
+          description: Missing or invalid field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /user/{id}/inventory/{storableId}/consume:
+    post:
+      summary: Consume quantity from a user's inventory item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: storableId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Updated inventory item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InventoryItem' }
+        '400':
+          description: Missing or invalid field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Insufficient quantity
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /user/{id}/unban:
+    patch:
+      summary: Unban a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }

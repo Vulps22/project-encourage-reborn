@@ -1,0 +1,6 @@
+services:
+  app:
+    image: vulps23/project-encourage-ds:latest
+    network_mode: host
+    restart: unless-stopped
+    env_file: .env.production
