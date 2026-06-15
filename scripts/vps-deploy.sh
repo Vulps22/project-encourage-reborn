@@ -12,7 +12,7 @@ set +a
 notify_failure() {
   curl -s -X POST "$DISCORD_ERROR_WEBHOOK_URL" \
     -H "Content-Type: application/json" \
-    -d '{"content": "⚠️ **Deploy failed.** Project Encourage is in an idle state awaiting human correction."}' || true
+    -d '{"content": "⚠️ **Deploy failed.** Shit hit the fan with the most recent release. Project Encourage is in an idle state awaiting human correction."}' || true
 }
 
 trap notify_failure ERR
