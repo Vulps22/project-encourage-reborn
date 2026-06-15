@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "deploy": "node scripts/deploy.js"
+    "deploy": "node scripts/deploy.js",
+    "test": "npm test --prefix bot-service && npm test --prefix database-service && npm test --prefix moderator-service",
+    "build": "npm run build --prefix bot-service && npm run build --prefix database-service && npm run build --prefix moderator-service"
   }
 }
