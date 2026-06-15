@@ -11,7 +11,7 @@ prefix() {
 }
 
 (cd database-service && npm run dev 2>&1 | prefix "database") &
-(cd project-encourage-reborn && npm run dev 2>&1 | prefix "encourage") &
-(cd project-moderator && npm run dev 2>&1 | prefix "moderator") &
+(cd bot-service && npm run dev 2>&1 | prefix "encourage") &
+(cd moderator-service && npm run dev 2>&1 | prefix "moderator") &
 
 wait

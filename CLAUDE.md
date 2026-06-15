@@ -7,15 +7,13 @@ Do not edit, create, or delete files until the user says to go ahead.
 
 ## What This Is
 
-A Discord Truth or Dare bot platform consisting of three services:
+A Discord Truth or Dare bot platform consisting of three services in a single monorepo (`Vulps22/project-encourage-reborn`):
 
 | Service | Directory | Docker Image | Role |
 |---|---|---|---|
-| **BS** — project-encourage-reborn | `project-encourage-reborn/` | `vulps23/project-encourage` | Primary bot (gameplay, XP, user interaction) |
+| **BS** — bot-service | `bot-service/` | `vulps23/project-encourage` | Primary bot (gameplay, XP, user interaction) |
 | **DS** — database-service | `database-service/` | `vulps23/project-encourage-ds` | REST API over PostgreSQL — all DB access goes through here |
-| **MS** — project-moderator | `project-moderator/` | `vulps23/project-encourage-ms` | Standalone moderation bot + Express webhook server |
-
-> **Rename in progress:** PE (project-encourage-reborn) is being renamed to **BS** (bot service) to align with DS and MS naming. Treat PE and BS as interchangeable — the directory and Docker image names have not changed yet.
+| **MS** — moderator-service | `moderator-service/` | `vulps23/project-encourage-ms` | Standalone moderation bot + Express webhook server |
 
 The root `docker-compose.yml` runs only PostgreSQL. Each service has its own `docker-compose.yml` and is deployed independently on the VPS.
 
@@ -140,7 +138,7 @@ docker push vulps23/<image>:v2026.05.1-h<N>
 ### Current build counters (update as builds are done)
 | Service | Last rc | Last h |
 |---|---|---|
-| PE | rc-5 | h5 |
+| BS | rc-5 | h5 |
 | DS | rc-2 | h2 |
 | MS | rc-6 | h6 |
 
@@ -148,24 +146,24 @@ docker push vulps23/<image>:v2026.05.1-h<N>
 
 ## Service Details
 
-### BS / PE — project-encourage-reborn
-- **Entry**: `src/index.ts` — ShardingManager + starts VoteWebhook on `WEBHOOK_PORT`
-- **Config**: `src/config/` — env-switched via `ENVIRONMENT` (`dev`/`stage`/`prod`)
-- **Prod URLs**: `src/config/prod/urls.ts` — DS on `encourage_ds:3000`, MS on `encourage_ms:4001`
+### BS — bot-service
+- **Entry**: `bot-service/src/index.ts` — ShardingManager + starts VoteWebhook on `WEBHOOK_PORT`
+- **Config**: `bot-service/src/config/` — env-switched via `ENVIRONMENT` (`dev`/`stage`/`prod`)
+- **Prod URLs**: `bot-service/src/config/prod/urls.ts` — DS on `encourage_ds:3000`, MS on `encourage_ms:4001`
 - **Interaction pattern**: buttons must call `deferUpdate()` immediately before any async work, then use `ephemeralFollowUp()` (not `ephemeralReply()`) for responses
 - **Components V2**: `challengeEmbed` uses `MessageFlags.IsComponentsV2` — never pass `content` alongside it; use `editReply()` not `update()` (route via `deferUpdate()` first)
 - **Client auth**: `dsClient` sends `DS_TOKEN` as Bearer; `msClient` sends `MS_TOKEN` as Bearer
 
 ### DS — database-service
-- **Entry**: `src/index.ts` — Express REST API on `PORT` (3000)
-- **Auth middleware**: `src/middleware/auth.ts` — validates `PE_API_SECRET`, `MS_API_SECRET`, `POSTMAN_SECRET` (POSTMAN blocked in production)
+- **Entry**: `database-service/src/index.ts` — Express REST API on `PORT` (3000)
+- **Auth middleware**: `database-service/src/middleware/auth.ts` — validates `PE_API_SECRET`, `MS_API_SECRET`, `POSTMAN_SECRET` (POSTMAN blocked in production)
 - **Key gotcha**: `upsert()` uses `DO NOTHING` when all columns are conflict columns (no SET clause needed)
 
-### MS — project-moderator
-- **Entry**: `src/index.ts` — Discord bot + Express API on `MS_PORT` (4001)
+### MS — moderator-service
+- **Entry**: `moderator-service/src/index.ts` — Discord bot + Express API on `MS_PORT` (4001)
 - **Auth**: incoming requests validated against `WEBHOOK_SECRET`
-- **DS client**: `src/bot/services/DatabaseClient.ts` — sends `MS_API_SECRET` as Bearer to DS
-- **Config**: `src/bot/config/prod/Config.ts` — all channel IDs hardcoded (not env-driven)
+- **DS client**: `moderator-service/src/bot/services/DatabaseClient.ts` — sends `MS_API_SECRET` as Bearer to DS
+- **Config**: `moderator-service/src/bot/config/prod/Config.ts` — all channel IDs hardcoded (not env-driven)
 - **Prod channel IDs**: same Discord server as stage (`1079206786021732412`)
 
 ---
