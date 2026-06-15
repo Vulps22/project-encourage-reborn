@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - "Bot Service — Build"
+      - "Database Service — Build"
+      - "Moderator Service — Build"
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Check all three builds succeeded for this SHA
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          REPO="${{ github.repository }}"
+
+          for name in "Bot Service — Build" "Database Service — Build" "Moderator Service — Build"; do
+            conclusion=$(gh api "repos/$REPO/actions/runs?head_sha=$SHA&per_page=50" \
+              --jq "[.workflow_runs[] | select(.name == \"$name\")] | sort_by(.run_number) | last | .conclusion")
+
+            if [ "$conclusion" = '"success"' ]; then
+              echo "✓ $name"
+            elif [ "$conclusion" = "null" ] || [ -z "$conclusion" ]; then
+              echo "⏳ $name still running — skipping this trigger"
+              echo "proceed=false" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "✗ $name: $conclusion"
+              echo "proceed=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          done
+
+          echo "All three builds successful — proceeding with deploy"
+          echo "proceed=true" >> $GITHUB_OUTPUT
+
+      - name: Setup SSH
+        if: steps.check.outputs.proceed == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        if: steps.check.outputs.proceed == 'true'
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+            cd /opt/discord-bots/project-encourage-reborn &&
+            git pull &&
+            bash scripts/vps-deploy.sh
+          "
