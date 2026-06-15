@@ -1,22 +1,22 @@
-name: Lint
+name: Bot Service — Lint
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/**/*.ts'
-      - 'eslint.config.mjs'
-      - '.eslintrc.json'
-      - 'tsconfig.json'
-      - 'package*.json'
+      - 'bot-service/src/**/*.ts'
+      - 'bot-service/eslint.config.mjs'
+      - 'bot-service/.eslintrc.json'
+      - 'bot-service/tsconfig.json'
+      - 'bot-service/package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/**/*.ts'
-      - 'eslint.config.mjs'
-      - '.eslintrc.json'
-      - 'tsconfig.json'
-      - 'package*.json'
+      - 'bot-service/src/**/*.ts'
+      - 'bot-service/eslint.config.mjs'
+      - 'bot-service/.eslintrc.json'
+      - 'bot-service/tsconfig.json'
+      - 'bot-service/package*.json'
   workflow_dispatch:
 
 permissions:

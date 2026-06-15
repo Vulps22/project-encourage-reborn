@@ -1,26 +1,26 @@
-name: Test Core
+name: Bot Service — Test Core
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/bot.ts'
-      - 'src/index.ts'
-      - 'src/types/**'
-      - 'src/interface/**'
-      - 'jest.config.js'
-      - 'tsconfig.json'
-      - 'package*.json'
+      - 'bot-service/src/bot.ts'
+      - 'bot-service/src/index.ts'
+      - 'bot-service/src/types/**'
+      - 'bot-service/src/interface/**'
+      - 'bot-service/jest.config.js'
+      - 'bot-service/tsconfig.json'
+      - 'bot-service/package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/bot.ts'
-      - 'src/index.ts'
-      - 'src/types/**'
-      - 'src/interface/**'
-      - 'jest.config.js'
-      - 'tsconfig.json'
-      - 'package*.json'
+      - 'bot-service/src/bot.ts'
+      - 'bot-service/src/index.ts'
+      - 'bot-service/src/types/**'
+      - 'bot-service/src/interface/**'
+      - 'bot-service/jest.config.js'
+      - 'bot-service/tsconfig.json'
+      - 'bot-service/package*.json'
   workflow_dispatch:
 
 permissions:

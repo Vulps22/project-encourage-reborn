@@ -1,4 +1,4 @@
-name: Begin Release
+name: Bot Service — Begin Release
 
 on:
   schedule:

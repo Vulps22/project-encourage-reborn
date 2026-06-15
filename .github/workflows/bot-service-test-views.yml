@@ -1,16 +1,16 @@
-name: Test Views
+name: Bot Service — Test Views
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/views/**'
-      - 'package*.json'
+      - 'bot-service/src/views/**'
+      - 'bot-service/package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/views/**'
-      - 'package*.json'
+      - 'bot-service/src/views/**'
+      - 'bot-service/package*.json'
   workflow_dispatch:
 
 permissions:

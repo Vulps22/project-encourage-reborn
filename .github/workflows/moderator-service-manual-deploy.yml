@@ -1,4 +1,4 @@
-name: Manual Deploy
+name: Moderator Service — Manual Deploy
 
 on:
   workflow_dispatch:

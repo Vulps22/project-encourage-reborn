@@ -1,16 +1,16 @@
-name: Test Database
+name: Database Service — Test Database
 
 on:
   push:
     branches: [main]
     paths:
-      - 'database/**'
-      - 'package*.json'
+      - 'database-service/database/**'
+      - 'database-service/package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'database/**'
-      - 'package*.json'
+      - 'database-service/database/**'
+      - 'database-service/package*.json'
   workflow_dispatch:
 
 permissions:

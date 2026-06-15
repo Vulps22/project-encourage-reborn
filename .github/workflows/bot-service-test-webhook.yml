@@ -1,16 +1,16 @@
-name: Test Webhook
+name: Bot Service — Test Webhook
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/routes/api/v1/**'
-      - 'package*.json'
+      - 'bot-service/src/routes/api/v1/**'
+      - 'bot-service/package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/routes/api/v1/**'
-      - 'package*.json'
+      - 'bot-service/src/routes/api/v1/**'
+      - 'bot-service/package*.json'
   workflow_dispatch:
 
 permissions:

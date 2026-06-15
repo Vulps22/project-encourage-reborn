@@ -1,4 +1,4 @@
-name: Build
+name: Moderator Service — Build
 
 on:
   push:

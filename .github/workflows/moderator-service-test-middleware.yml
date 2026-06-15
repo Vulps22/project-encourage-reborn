@@ -1,18 +1,18 @@
-name: Test Middleware
+name: Moderator Service — Test Middleware
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/middleware/**'
-      - 'tests/middleware/**'
-      - 'package*.json'
+      - 'moderator-service/src/middleware/**'
+      - 'moderator-service/tests/middleware/**'
+      - 'moderator-service/package*.json'
   pull_request:
     branches: [main]
     paths:
-      - 'src/middleware/**'
-      - 'tests/middleware/**'
-      - 'package*.json'
+      - 'moderator-service/src/middleware/**'
+      - 'moderator-service/tests/middleware/**'
+      - 'moderator-service/package*.json'
   workflow_dispatch:
 
 permissions:

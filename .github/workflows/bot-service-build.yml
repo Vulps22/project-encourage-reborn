@@ -1,4 +1,4 @@
-name: Build
+name: Bot Service — Build
 
 on:
   push:

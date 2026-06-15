@@ -1,8 +1,8 @@
-name: Rollout
+name: Database Service — Rollout
 
 on:
   workflow_run:
-    workflows: ["Build"]
+    workflows: ["Database Service — Build"]
     types: [completed]
 
 permissions:
