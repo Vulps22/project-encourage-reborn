@@ -1,4 +1,4 @@
-/** Component V2 message displayed on a server's first interaction during the playtest */
+/** Component V2 message displayed on a server's first interaction after the beta, announcing the live launch */
 
 import { ContainerBuilder, SeparatorBuilder, TextDisplayBuilder, MessageFlags } from 'discord.js';
 import { Urls } from '../config';
@@ -6,39 +6,24 @@ import { UniversalMessage } from '@vulps22/bot-interactions';
 
 function playtestNoticeView(): UniversalMessage {
     const title = new TextDisplayBuilder()
-        .setContent(`## 🧪 Playtest Notice`);
+        .setContent(`## 🎉 Project Encourage is Now Live!`);
 
     const intro = new TextDisplayBuilder()
         .setContent(
-            `You are using a **playtest version** of the bot. ` +
-            `This playtest runs from <t:1778299200:F> to <t:1780200000:F>.\n\n` +
-            `When the playtest ends, **all data will be wiped** and the live version of the bot will be restored. ` +
-            `You will need to run setup again at that point.`
+            `Thank you to everyone who took part in our beta — your feedback and patience helped shape this release.\n\n` +
+            `**This version of the bot is now officially live.** We won't be returning to the previous version — this is the real deal, and it's here to stay.`
         );
 
-    const moderation = new TextDisplayBuilder()
+    const data = new TextDisplayBuilder()
         .setContent(
-            `**⚠️ Moderation During the Playtest**\n` +
-            `Moderation will be intentionally inconsistent during this period. Questions may be banned for reasons that don't make sense, or for no reason at all, as we test the moderation system. This is expected behaviour.`
-        );
-
-    const participation = new TextDisplayBuilder()
-        .setContent(
-            `**✅ What You Should Do**\n` +
-            `You are actively encouraged to press every button and run every available command. ` +
-            `You will not be penalised for doing so, unless you break Discord's ToS or the law.`
-        );
-
-    const logging = new TextDisplayBuilder()
-        .setContent(
-            `**📋 Logging**\n` +
-            `All interactions with the bot will be logged and reviewed after the playtest. Any errors that arise will also be captured and reviewed.`
+            `**📦 Your Data**\n` +
+            `Beta data has been preserved. There's nothing you need to do — just keep playing.`
         );
 
     const feedback = new TextDisplayBuilder()
         .setContent(
-            `**💬 Feedback**\n` +
-            `Found a bug or have a suggestion? Join our official server and let us know!\n` +
+            `**💬 Stay Connected**\n` +
+            `Spotted a bug or have a suggestion? We'd love to hear from you — join our official server!\n` +
             `${Urls.OFFICIAL_SERVER}`
         );
 
@@ -47,7 +32,7 @@ function playtestNoticeView(): UniversalMessage {
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(intro)
         .addSeparatorComponents(new SeparatorBuilder())
-        .addTextDisplayComponents(moderation, participation, logging)
+        .addTextDisplayComponents(data)
         .addSeparatorComponents(new SeparatorBuilder())
         .addTextDisplayComponents(feedback);
 
