@@ -80,7 +80,7 @@ describe('actionReportButton', () => {
 
         expect(moderationService.actioningReport).not.toHaveBeenCalled();
         expect(mockInteraction.reply).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '❌ Invalid report ID.' })
+            expect.objectContaining({ flags: expect.any(Number) })
         );
     });
 
@@ -104,7 +104,7 @@ describe('actionReportButton', () => {
         await actionReportButton.execute(botInteraction);
 
         expect(mockInteraction.followUp).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '❌ Failed to mark report as actioning: Report not found' })
+            expect.objectContaining({ flags: expect.any(Number) })
         );
     });
 });

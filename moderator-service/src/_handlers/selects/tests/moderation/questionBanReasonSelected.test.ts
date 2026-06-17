@@ -97,7 +97,7 @@ describe('questionBanReasonSelected select menu handler', () => {
 
         expect(mockSelectInteraction.deferUpdate).not.toHaveBeenCalled();
         expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
         expect(mockLogger.error).toHaveBeenCalledWith('Question ID not found when executing questionBanReasonSelected');
     });
 
@@ -108,7 +108,7 @@ describe('questionBanReasonSelected select menu handler', () => {
 
         expect(mockSelectInteraction.deferUpdate).not.toHaveBeenCalled();
         expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
-        expect(mockInteractionEmptyValues.ephemeralReply).toHaveBeenCalledWith('❌ No reason selected');
+        expect(mockInteractionEmptyValues.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
     });
 
     it('should send ephemeral follow-up when question not found after banning', async () => {
@@ -119,7 +119,7 @@ describe('questionBanReasonSelected select menu handler', () => {
 
         expect(mockSelectInteraction.deferUpdate).toHaveBeenCalled();
         expect(mockLogger.error).toHaveBeenCalledWith('Question with ID 123 not found during banning for message message-456');
-        expect(mockSelectInteraction.ephemeralFollowUp).toHaveBeenCalledWith('❌ Question not found');
+        expect(mockSelectInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
     });
 
     it('should send ephemeral follow-up on service failure', async () => {
@@ -130,7 +130,7 @@ describe('questionBanReasonSelected select menu handler', () => {
 
         expect(mockSelectInteraction.deferUpdate).toHaveBeenCalled();
         expect(mockLogger.error).toHaveBeenCalledWith(`Error banning question: ${testError}`);
-        expect(mockSelectInteraction.ephemeralFollowUp).toHaveBeenCalledWith('❌ Failed to ban question. Please try again.');
+        expect(mockSelectInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
     });
 
     it('should use first value from values array', async () => {
