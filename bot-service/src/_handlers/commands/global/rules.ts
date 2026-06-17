@@ -9,7 +9,7 @@ const rules = new Command('rules', 'View the content rules for submitting truths
     .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const message = rulesView(false);
-        await interaction.sendReply(null, message);
+        await interaction.sendReply(message);
     });
 
 export default rules;
