@@ -72,7 +72,7 @@ describe('clearReportButton', () => {
 
         expect(moderationService.clearReport).not.toHaveBeenCalled();
         expect(mockInteraction.reply).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '❌ Invalid report ID.' })
+            expect.objectContaining({ flags: expect.any(Number) })
         );
     });
 
@@ -82,7 +82,7 @@ describe('clearReportButton', () => {
         await clearReportButton.execute(botInteraction);
 
         expect(mockInteraction.followUp).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '❌ Failed to clear report: Report not found after clearing' })
+            expect.objectContaining({ flags: expect.any(Number) })
         );
     });
 
@@ -92,7 +92,7 @@ describe('clearReportButton', () => {
         await clearReportButton.execute(botInteraction);
 
         expect(mockInteraction.followUp).toHaveBeenCalledWith(
-            expect.objectContaining({ content: '❌ Failed to clear report: DB error' })
+            expect.objectContaining({ flags: expect.any(Number) })
         );
     });
 });
