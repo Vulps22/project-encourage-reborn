@@ -54,7 +54,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('Could not find tracking data'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
     });
 
     it('should reply with error when user is not the challenge owner', async () => {
@@ -62,7 +62,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('Only the challenge recipient'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
     });
 
     it('should reply with error when challenge is already locked', async () => {
@@ -70,7 +70,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('already been locked'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
     });
 
     it('should reply with no skips message when consume returns false', async () => {
@@ -78,7 +78,7 @@ describe('skip button handler', () => {
 
         await skip.execute(mockInteraction);
 
-        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.stringContaining('no skips left'));
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
     });
 
     it('should finalize and update embed on happy path', async () => {

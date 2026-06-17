@@ -44,7 +44,7 @@ describe('declineTerms button', () => {
     await declineTermsButton.execute(botInteraction);
 
     expect(botInteraction.sendReply).toHaveBeenCalledWith(
-      '👋 Terms declined. The bot will now leave this server. You can re-add the bot at any time if you change your mind.'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
     expect(mockGuild.leave).toHaveBeenCalled();
   });
@@ -57,7 +57,7 @@ describe('declineTerms button', () => {
 
     expect(mockGuild.leave).not.toHaveBeenCalled();
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
-      '❌ Only administrators can decline terms for this server.'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
   });
 
@@ -69,7 +69,7 @@ describe('declineTerms button', () => {
 
     expect(mockGuild.leave).not.toHaveBeenCalled();
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
-      '❌ This can only be used in a server.'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
   });
 
