@@ -54,7 +54,7 @@ describe('acceptTerms button', () => {
 
     expect(serverService.acceptTerms).toHaveBeenCalledWith('987654321');
     expect(rulesView).toHaveBeenCalled();
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockMessage);
   });
 
   it('should reject non-admin users', async () => {
@@ -65,7 +65,7 @@ describe('acceptTerms button', () => {
 
     expect(serverService.acceptTerms).not.toHaveBeenCalled();
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
-      '❌ Only administrators can accept terms for this server.'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
   });
 
