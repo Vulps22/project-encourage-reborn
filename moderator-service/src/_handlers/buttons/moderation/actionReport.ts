@@ -1,5 +1,5 @@
 import { moderationService } from '../../../services';
-import { BotButtonInteraction } from '@vulps22/bot-interactions';
+import { BotButtonInteraction, errorView } from '@vulps22/bot-interactions';
 import { Handler, ModerationLogger } from '../../../bot/utils';
 
 /**
@@ -15,7 +15,7 @@ const actionReportButton: Handler<BotButtonInteraction> = {
         const reportId = parseInt(interaction.params.get('id') || '0');
         
         if (!reportId || reportId < 1) {
-            await interaction.ephemeralReply('❌ Invalid report ID.');
+            await interaction.ephemeralReply(errorView('Invalid report ID.'));
             return;
         }
 
@@ -35,7 +35,7 @@ const actionReportButton: Handler<BotButtonInteraction> = {
             });
 
         } catch (error) {
-            await interaction.ephemeralFollowUp(`❌ Failed to mark report as actioning: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            await interaction.ephemeralFollowUp(errorView(`Failed to mark report as actioning: ${error instanceof Error ? error.message : 'Unknown error'}`));
         }
     }
 };

@@ -1,6 +1,6 @@
 import { AutocompleteInteraction, MessageFlags } from "discord.js";
 import { dsClient, msClient } from "../../../client";
-import { BotCommandInteraction } from "@vulps22/bot-interactions";
+import { BotCommandInteraction, errorView, successView } from "@vulps22/bot-interactions";
 import { Command } from "../../../utils";
 import { TargetType, Question, Server } from "@vulps22/project-encourage-types";
 
@@ -54,12 +54,12 @@ const report = new Command('report', 'Report Inappropriate Content')
                 content = await getServer(interaction.guildId!);
                 break;
             default:
-                await interaction.ephemeralReply('❌ Invalid report type specified.');
+                await interaction.ephemeralReply(errorView('Invalid report type specified.'));
                 return;
         }
 
         if (!content) {
-            await interaction.ephemeralReply('❌ Content not found. If this is an Error, Please open a ticket on the [Official Server](https://discord.vulps.co.uk).');
+            await interaction.ephemeralReply(errorView('Content not found. If this is an Error, Please open a ticket on the [Official Server](https://discord.vulps.co.uk).'));
             return;
         }
 
@@ -76,7 +76,7 @@ const report = new Command('report', 'Report Inappropriate Content')
             interaction.options.getString('reason') ?? 'No reason provided'
         );
 
-        await interaction.ephemeralReply('✅ Report submitted successfully.');
+        await interaction.ephemeralReply(successView('Report submitted successfully.'));
     });
 
 export default report;

@@ -1,5 +1,5 @@
 import { moderationService, questionService, reportService } from "../../../services";
-import { BotSelectMenuInteraction } from "@vulps22/bot-interactions";
+import { BotSelectMenuInteraction, errorView } from "@vulps22/bot-interactions";
 import { Handler, Logger, ModerationLogger } from "../../../bot/utils";
 import { QuestionType } from "@vulps22/project-encourage-types";
 
@@ -12,11 +12,11 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
         if (!questionId) {
             Logger.error("Question ID not found when executing questionBanReasonSelected");
-            await interaction.ephemeralReply('❌ Invalid question ID');
+            await interaction.ephemeralReply(errorView('Invalid question ID'));
             return;
         }
         if (!selectedReason) {
-            await interaction.ephemeralReply('❌ No reason selected');
+            await interaction.ephemeralReply(errorView('No reason selected'));
             return;
         }
 
@@ -27,7 +27,7 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             const question = await questionService.getQuestionById(Number(questionId));
             if (!question) {
                 Logger.error(`Question with ID ${questionId} not found during banning for message ${interaction.message.id}`);
-                await interaction.ephemeralFollowUp('❌ Question not found');
+                await interaction.ephemeralFollowUp(errorView('Question not found'));
                 return;
             }
 
@@ -47,7 +47,7 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
         } catch (error) {
             Logger.error(`Error banning question: ${JSON.stringify(error)}`);
-            await interaction.ephemeralFollowUp('❌ Failed to ban question. Please try again.');
+            await interaction.ephemeralFollowUp(errorView('Failed to ban question. Please try again.'));
         }
     }
 };
