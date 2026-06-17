@@ -1,4 +1,5 @@
-import { BotButtonInteraction } from '@vulps22/bot-interactions';
+import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { BotButtonInteraction, errorView } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { reportConfirmationView } from '../../../views';
 
@@ -8,7 +9,7 @@ const reportButton: Handler<BotButtonInteraction> = {
     async execute(interaction: BotButtonInteraction): Promise<void> {
         const questionId = interaction.params.get(reportButton.params!.id);
         if (!questionId) {
-            await interaction.ephemeralReply('❌ Invalid question ID');
+            await interaction.ephemeralReply(errorView('Invalid question ID'));
             throw new Error('Invalid question ID when using Button: question_report');
         }
 
