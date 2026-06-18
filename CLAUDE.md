@@ -204,14 +204,6 @@ npm run db:rollback                                   # revert a migration
 
 ---
 
-## Open GitHub Issues
-
-| # | Repo | Summary |
-|---|---|---|
-| [#105](https://github.com/Vulps22/project-encourage-reborn/issues/105) | PE | `fetch failed` error gives no context (URL, service, reason) |
-| [#106](https://github.com/Vulps22/project-encourage-reborn/issues/106) | PE | GitHub Actions test workflows need `NODE_AUTH_TOKEN` for private packages |
-
----
 
 ## Git Conventions
 
