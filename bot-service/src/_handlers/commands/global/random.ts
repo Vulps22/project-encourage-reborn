@@ -1,5 +1,5 @@
 import { challengeService, questionService, votingService } from '../../../services';
-import { BotCommandInteraction, errorView } from '@vulps22/bot-interactions';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { QuestionType } from '@vulps22/project-encourage-types';
 import { Command } from '../../../utils';
 import { challengeEmbed } from '../../../views';
@@ -14,7 +14,9 @@ const random = new Command('random', 'Get a random truth or dare question')
     const question = await questionService.getRandomQuestion(selectedType);
 
     if (!question) {
-      await interaction.sendReply(errorView(`No approved ${selectedType} questions available. Try again later!`));
+      await interaction.editReply({
+        content: `❌ No approved ${selectedType} questions available. Try again later!`,
+      });
       return;
     }
 
@@ -29,7 +31,7 @@ const random = new Command('random', 'Get a random truth or dare question')
 
     const votes = await votingService.addChallenge(challenge.id);
     const message = challengeEmbed(question, challenge, votes);
-    await interaction.sendReply(message);
+    await interaction.sendReply(null, message);
 
     const sentMessage = await interaction.fetchReply();
     await challengeService.setMessageId(challenge.id, sentMessage.id);

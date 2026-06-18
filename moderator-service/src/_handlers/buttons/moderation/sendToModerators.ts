@@ -1,6 +1,6 @@
 import { MessageCreateOptions, TextChannel } from "discord.js";
 import { Config } from "../../../bot/config";
-import { BotButtonInteraction, errorView, successView } from "@vulps22/bot-interactions";
+import { BotButtonInteraction } from "@vulps22/bot-interactions";
 import { Handler } from "../../../bot/utils";
 import { userProfileView } from "../../../views";
 import { UserProfileBuilder } from "../../../bot/builders/UserProfileBuilder";
@@ -11,19 +11,19 @@ const sendToModeratorsButton: Handler<BotButtonInteraction> = {
     async execute(interaction) {
         const userId = interaction.params.get(sendToModeratorsButton.params!.ID);
         if(!userId) {
-            await interaction.ephemeralReply(errorView('Invalid user ID'));
+            await interaction.ephemeralReply('❌ Invalid user ID');
             throw new Error('Invalid user ID when using Button: moderation_sendToModerators');
         }
         const profile = await new UserProfileBuilder().getUserProfile(userId);
         if(!profile) {
-            await interaction.ephemeralReply(errorView('User not found'));
+            await interaction.ephemeralReply('❌ User not found');
             return;
         }
 
         const view = await userProfileView(profile);
         const channel = await interaction.client.channels.fetch(Config.MOD_CHAT_CHANNEL_ID);
         if(!channel || !channel.isTextBased()) {
-            await interaction.ephemeralReply(errorView('Mod chat channel not found'));
+            await interaction.ephemeralReply('❌ Mod chat channel not found');
             throw new Error('Mod chat channel not found when using Button: moderation_sendToModerators');
         }
         const message = await (channel as TextChannel).send(view as MessageCreateOptions);
@@ -32,7 +32,7 @@ const sendToModeratorsButton: Handler<BotButtonInteraction> = {
         const guildId = (channel as TextChannel).guildId || '@me';
         const messageLink = `https://discord.com/channels/${guildId}/${channel.id}/${message.id}`;
 
-        await interaction.ephemeralReply(successView(`User profile sent to mod chat — [Go To Message](${messageLink})`));
+        await interaction.ephemeralReply(`✅ User profile sent to mod chat — [Go To Message](${messageLink})`);
     }
 };
 

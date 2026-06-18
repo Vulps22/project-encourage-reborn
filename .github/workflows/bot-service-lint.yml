@@ -26,9 +26,6 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: bot-service
 
     steps:
       - name: Checkout code
@@ -39,7 +36,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: 'bot-service/package-lock.json'
 
       - name: Configure npm for private packages
         run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}

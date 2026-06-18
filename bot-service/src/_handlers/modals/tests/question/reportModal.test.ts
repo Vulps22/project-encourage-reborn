@@ -57,7 +57,7 @@ describe('reportModal', () => {
             'This is an inappropriate question.'
         );
         expect(mockInteraction.reply).toHaveBeenCalledWith(
-            expect.objectContaining({ flags: expect.any(Number) })
+            expect.objectContaining({ content: '✅ Report submitted successfully.' })
         );
     });
 
@@ -78,7 +78,7 @@ describe('reportModal', () => {
 
         expect(msClient.submitReport).not.toHaveBeenCalled();
         expect(mockInteraction.reply).toHaveBeenCalledWith(
-            expect.objectContaining({ flags: expect.any(Number) })
+            expect.objectContaining({ content: '❌ Question not found.' })
         );
     });
 });

@@ -7,7 +7,7 @@ const help = new Command('help', 'Display all available commands and features')
   .setAdministrator(false)
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
     const message = helpView();
-    await interaction.sendReply(message);
+    await interaction.sendReply(null, message);
   });
 
 export default help;

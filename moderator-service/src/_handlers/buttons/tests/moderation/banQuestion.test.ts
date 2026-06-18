@@ -49,7 +49,6 @@ describe('banQuestion button handler', () => {
             action: 'banQuestion',
             params: new Map([['id', '123']]),
             ephemeralReply: jest.fn().mockResolvedValue(undefined),
-            deferUpdate: jest.fn().mockResolvedValue(undefined),
             message: {
                 awaitMessageComponent: jest.fn().mockResolvedValue({}),
             }
@@ -67,7 +66,7 @@ describe('banQuestion button handler', () => {
 
         await banQuestionButton.execute(mockButtonInteraction);
 
-        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
         expect(mockModerationService.getBanReasons).not.toHaveBeenCalled();
         expect(mockQuestionService.getQuestionById).not.toHaveBeenCalled();
     });

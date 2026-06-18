@@ -37,7 +37,7 @@
     "node": ">=20.6.0"
   },
   "dependencies": {
-    "@vulps22/bot-interactions": "^1.1.0",
+    "@vulps22/bot-interactions": "^1.0.4",
     "@vulps22/dynamic-endpoint-router": "^1.0.1",
     "@vulps22/logger": "^1.0.0",
     "@vulps22/project-encourage-types": "^1.0.0",

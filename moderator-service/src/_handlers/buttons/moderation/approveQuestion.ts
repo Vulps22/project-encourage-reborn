@@ -2,7 +2,7 @@ import { Handler, Logger } from "../../../bot/utils";
 import { moderationService } from "../../../services";
 import { MetaQuestionBuilder } from "../../../bot/builders/MetaQuestionBuilder";
 import { LoggerService } from "../../../services/LoggerService";
-import { BotButtonInteraction, errorView, successView } from "@vulps22/bot-interactions";
+import { BotButtonInteraction } from "@vulps22/bot-interactions";
 import { QuestionType } from "@vulps22/project-encourage-types";
 import { newQuestionView } from "../../../views/moderation/newQuestionView";
 
@@ -12,7 +12,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
         const questionId = interaction.params.get("id");
 
         if (!questionId) {
-            await interaction.ephemeralReply(errorView('Invalid question ID'));
+            await interaction.ephemeralReply('❌ Invalid question ID');
             return;
         }
 
@@ -21,7 +21,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
 
             const meta = await new MetaQuestionBuilder().getMetaQuestion(Number(questionId));
             if (!meta) {
-                await interaction.ephemeralReply(errorView('Question not found'));
+                await interaction.ephemeralReply('❌ Question not found');
                 Logger.error(`Question with ID ${questionId} not found during approval for message ${interaction.message.id}`);
                 return;
             }
@@ -29,7 +29,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
             const { question, user, server } = meta;
 
             if (!question.message_id) {
-                await interaction.ephemeralReply(errorView('Question has no associated log message'));
+                await interaction.ephemeralReply('❌ Question has no associated log message');
                 return;
             }
 
@@ -39,11 +39,11 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
 
             const updatedView = await newQuestionView(question, undefined, user, server);
             await LoggerService.update(logChannelId, question.message_id, updatedView);
-            await interaction.sendReply(successView('Question approved successfully!'));
+            await interaction.sendReply('✅ Question approved successfully!');
 
         } catch (error) {
             console.error('Error approving question:', error);
-            await interaction.ephemeralReply(errorView('Failed to approve question. Please try again.'));
+            await interaction.ephemeralReply('❌ Failed to approve question. Please try again.');
         }
     }
 };

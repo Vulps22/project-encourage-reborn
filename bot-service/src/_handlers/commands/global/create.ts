@@ -1,7 +1,7 @@
 import { MessageFlags } from 'discord.js';
 import { questionService, serverService } from '../../../services';
 import { msClient } from '../../../client';
-import { BotCommandInteraction, errorView } from '@vulps22/bot-interactions';
+import { BotCommandInteraction } from '@vulps22/bot-interactions';
 import { QuestionType } from '@vulps22/project-encourage-types';
 import { Command } from '../../../utils';
 import { Logger } from '@vulps22/logger';
@@ -23,7 +23,9 @@ const create = new Command('create', 'Submit a custom truth or dare question')
 
     if (!interaction.guildId) {
       console.log(`[DEBUG /create] Rejected: no guildId`);
-      await interaction.sendReply(errorView('This command can only be used in a server.'));
+      await interaction.editReply({
+        content: '❌ This command can only be used in a server.',
+      });
       return;
     }
 
@@ -31,7 +33,9 @@ const create = new Command('create', 'Submit a custom truth or dare question')
     const canCreate = await serverService.canCreate(interaction.guildId);
     console.log(`[DEBUG /create] canCreate=${canCreate}`);
     if (!canCreate) {
-      await interaction.sendReply(errorView('This server is not allowed to create questions. It has either been blocked or has not accepted the rules yet.'));
+      await interaction.editReply({
+        content: '❌ This server is not allowed to create questions. It has either been blocked or has not accepted the rules yet.',
+      });
       return;
     }
 
@@ -44,7 +48,9 @@ const create = new Command('create', 'Submit a custom truth or dare question')
     console.log(`[DEBUG /create] questionService.createQuestion returned: ${typeof savedQuestion === 'string' ? `error="${savedQuestion}"` : `id=${savedQuestion.id}`}`);
 
     if (typeof savedQuestion === 'string') {
-      await interaction.sendReply(errorView(savedQuestion));
+      await interaction.editReply({
+        content: `❌ ${savedQuestion}`,
+      });
       return;
     }
 
@@ -56,7 +62,7 @@ const create = new Command('create', 'Submit a custom truth or dare question')
     const response = confirmNewQuestionEmbed(savedQuestion);
 
     // For now, just acknowledge
-    await interaction.sendReply(response);
+    await interaction.sendReply(null, response);
     console.log(`[DEBUG /create] Ephemeral confirmation sent to user ${interaction.user.id}`);
   });
 

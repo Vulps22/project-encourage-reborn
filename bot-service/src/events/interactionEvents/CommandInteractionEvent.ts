@@ -1,5 +1,5 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
-import { BotCommandInteraction, errorView } from "@vulps22/bot-interactions";
+import { BotCommandInteraction } from "@vulps22/bot-interactions";
 import { Logger } from "@vulps22/logger";
 import { InteractionEvent } from "./InteractionEvent";
 
@@ -16,7 +16,7 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
         const botInteraction = new BotCommandInteraction(interaction, executionId);
 
         if (command.isAdministrator && !botInteraction.isAdministrator()) {
-            await botInteraction.sendReply(errorView('You do not have permission to use this command.'));
+            await botInteraction.sendReply('❌ You do not have permission to use this command.');
             await Logger.updateExecution(executionId, 'Failed: Permission denied');
             return;
         }
@@ -31,7 +31,7 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
             await Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
 
             if (!interaction.replied && !interaction.deferred) {
-                await botInteraction.sendReply(errorView('An error occurred while processing your command.')).catch(() => null);
+                await botInteraction.sendReply('❌ An error occurred while processing your command.').catch(() => null);
             }
         }
     }

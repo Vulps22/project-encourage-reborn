@@ -76,7 +76,7 @@ describe('setup command', () => {
       '111222333'
     );
     expect(termsView).toHaveBeenCalled();
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockTermsMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockTermsMessage);
   });
 
   it('should reject non-admin users', async () => {

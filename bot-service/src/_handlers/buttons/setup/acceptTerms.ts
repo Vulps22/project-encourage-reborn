@@ -1,6 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { serverService } from '../../../services';
-import { BotButtonInteraction, errorView } from '@vulps22/bot-interactions';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { rulesView } from '../../../views';
 
@@ -11,20 +11,20 @@ const acceptTermsButton: Handler<BotButtonInteraction> = {
         // Verify user is admin
         const member = interaction.member;
         if (!member || !('permissions' in member)) {
-            await interaction.ephemeralReply(errorView('Only administrators can accept terms for this server.'));
+            await interaction.ephemeralReply('❌ Only administrators can accept terms for this server.');
             return;
         }
 
         const permissions = member.permissions as import('discord.js').PermissionsBitField;
         if (!permissions.has(PermissionFlagsBits.Administrator) &&
             !permissions.has(PermissionFlagsBits.ManageGuild)) {
-            await interaction.ephemeralReply(errorView('Only administrators can accept terms for this server.'));
+            await interaction.ephemeralReply('❌ Only administrators can accept terms for this server.');
             return;
         }
 
         const guildId = interaction.guildId;
         if (!guildId) {
-            await interaction.ephemeralReply(errorView('This can only be used in a server.'));
+            await interaction.ephemeralReply('❌ This can only be used in a server.');
             return;
         }
 
@@ -33,7 +33,7 @@ const acceptTermsButton: Handler<BotButtonInteraction> = {
 
         // Proceed to rules step
         const message = rulesView();
-        await interaction.sendReply(message);
+        await interaction.sendReply(null, message);
     }
 };
 

@@ -82,7 +82,7 @@ describe('approveQuestion button handler', () => {
         expect(mockModerationService.approveQuestion).toHaveBeenCalledWith('123', '123456789012345678');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
         expect(mockLoggerService.update).toHaveBeenCalledWith('truths-channel-id', 'msg-789', expect.anything());
-        expect(mockButtonInteraction.sendReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockButtonInteraction.sendReply).toHaveBeenCalledWith('✅ Question approved successfully!');
         expect(mockButtonInteraction.ephemeralReply).not.toHaveBeenCalled();
     });
 
@@ -92,7 +92,7 @@ describe('approveQuestion button handler', () => {
         await approveQuestionButton.execute(mockButtonInteraction);
 
         expect(mockModerationService.approveQuestion).not.toHaveBeenCalled();
-        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
         expect(mockButtonInteraction.sendReply).not.toHaveBeenCalled();
     });
 
@@ -104,7 +104,7 @@ describe('approveQuestion button handler', () => {
 
         expect(mockModerationService.approveQuestion).toHaveBeenCalledWith('123', '123456789012345678');
         expect(console.error).toHaveBeenCalledWith('Error approving question:', testError);
-        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Failed to approve question. Please try again.');
         expect(mockButtonInteraction.sendReply).not.toHaveBeenCalled();
     });
 
@@ -116,7 +116,7 @@ describe('approveQuestion button handler', () => {
 
         expect(mockModerationService.approveQuestion).toHaveBeenCalledWith('123', '123456789012345678');
         expect(console.error).toHaveBeenCalledWith('Error approving question:', testError);
-        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Failed to approve question. Please try again.');
     });
 
     it('should use correct moderator ID from interaction', async () => {
@@ -150,7 +150,7 @@ describe('approveQuestion button handler', () => {
         expect(mockModerationService.approveQuestion).toHaveBeenCalledWith('123', '123456789012345678');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
         expect(mockLogger.error).toHaveBeenCalledWith('Question with ID 123 not found during approval for message message-456');
-        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Question not found');
         expect(mockButtonInteraction.sendReply).not.toHaveBeenCalled();
     });
 

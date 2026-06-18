@@ -1,5 +1,5 @@
 
-import { BotButtonInteraction, errorView } from "@vulps22/bot-interactions";
+import { BotButtonInteraction } from "@vulps22/bot-interactions";
 import { Handler } from "../../../bot/utils";
 import { moderationService } from "../../../services";
 import { userProfileView } from "../../../views";
@@ -13,21 +13,21 @@ const banUserButton: Handler<BotButtonInteraction> = {
     async execute(interaction) {
         const userId = interaction.params.get(banUserButton.params!.ID);
         if (!userId) {
-            await interaction.ephemeralReply(errorView('Invalid user ID'));
+            await interaction.ephemeralReply('❌ Invalid user ID');
             throw new Error('Invalid user ID when using Button: moderation_banUser');
         }
 
         // Get user profile
         const profile = await new UserProfileBuilder().getUserProfile(userId);
         if (!profile) {
-            await interaction.ephemeralReply(errorView('User not found'));
+            await interaction.ephemeralReply('❌ User not found');
             return;
         }
 
         // Get ban reasons and update message with dropdown
         const reasons = moderationService.getBanReasons(TargetType.User);
         const view = await userProfileView(profile, reasons);
-        await interaction.updateComponentMessage(view);
+        await interaction.updateComponentMessage(null, view);
 
         interaction.message.awaitMessageComponent({
             filter: i => i.customId.startsWith(`moderation_userBanReasonSelected`),

@@ -87,7 +87,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         expect(mockModerationService.banServer).toHaveBeenCalledWith('987654321098765432', '123456789012345678', 'Hate Speech');
         expect(mockGetServerProfile).toHaveBeenCalledWith('987654321098765432');
         expect(mockModerationLogger.updateServerLog).toHaveBeenCalledWith(mockProfile);
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('✅ Server banned successfully!');
         expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
     });
 
@@ -97,7 +97,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         await serverBanReasonSelected.execute(mockSelectInteraction);
 
         expect(mockModerationService.banServer).not.toHaveBeenCalled();
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid server ID');
         expect(mockLogger.error).toHaveBeenCalledWith('Server ID not found when executing serverBanReasonSelected');
     });
 
@@ -107,7 +107,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         await serverBanReasonSelected.execute(mockInteractionEmptyValues as any);
 
         expect(mockModerationService.banServer).not.toHaveBeenCalled();
-        expect(mockInteractionEmptyValues.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockInteractionEmptyValues.ephemeralReply).toHaveBeenCalledWith('❌ No reason selected');
     });
 
     it('should reply ephemerally with error when server profile not found after banning', async () => {
@@ -117,7 +117,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         await serverBanReasonSelected.execute(mockSelectInteraction);
 
         expect(mockLogger.error).toHaveBeenCalledWith('Server with ID 987654321098765432 not found during banning for message message-456');
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Server not found');
         expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
     });
 
@@ -128,7 +128,7 @@ describe('serverBanReasonSelected select menu handler', () => {
         await serverBanReasonSelected.execute(mockSelectInteraction);
 
         expect(console.error).toHaveBeenCalledWith('Error banning server:', testError);
-        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockSelectInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Failed to ban server. Please try again.');
         expect(mockSelectInteraction.sendReply).not.toHaveBeenCalled();
     });
 

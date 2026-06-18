@@ -101,7 +101,7 @@ describe('random command', () => {
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
     expect(challengeEmbed).toHaveBeenCalled();
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockEmbedMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockEmbedMessage);
   });
 
   it('should send a random dare question when Math.random >= 0.5', async () => {
@@ -143,37 +143,37 @@ describe('random command', () => {
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Dare);
     expect(challengeEmbed).toHaveBeenCalled();
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockEmbedMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockEmbedMessage);
   });
 
   it('should handle no approved truth questions available', async () => {
     // Mock Math.random to select Truth
     mathRandomSpy.mockReturnValue(0.3);
+
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(null);
-    botInteraction.sendReply = jest.fn().mockResolvedValue(undefined);
 
     await random.execute(botInteraction);
 
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(
-      expect.objectContaining({ flags: expect.any(Number) })
-    );
+    expect(mockInteraction.editReply).toHaveBeenCalledWith({
+      content: '❌ No approved truth questions available. Try again later!',
+    });
   });
 
   it('should handle no approved dare questions available', async () => {
     // Mock Math.random to select Dare
     mathRandomSpy.mockReturnValue(0.7);
+
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(null);
-    botInteraction.sendReply = jest.fn().mockResolvedValue(undefined);
 
     await random.execute(botInteraction);
 
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Dare);
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(
-      expect.objectContaining({ flags: expect.any(Number) })
-    );
+    expect(mockInteraction.editReply).toHaveBeenCalledWith({
+      content: '❌ No approved dare questions available. Try again later!',
+    });
   });
 
   it('should have correct command properties', () => {

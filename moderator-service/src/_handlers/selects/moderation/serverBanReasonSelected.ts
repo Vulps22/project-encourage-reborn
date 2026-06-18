@@ -1,5 +1,5 @@
 import { moderationService, reportService } from "../../../services";
-import { BotSelectMenuInteraction, errorView, successView } from "@vulps22/bot-interactions";
+import { BotSelectMenuInteraction } from "@vulps22/bot-interactions";
 import { Handler, Logger, ModerationLogger } from "../../../bot/utils";
 import { ServerProfileBuilder } from "../../../bot/builders/ServerProfileBuilder";
 
@@ -12,11 +12,11 @@ const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
         if (!serverId) {
             Logger.error("Server ID not found when executing serverBanReasonSelected");
-            await interaction.ephemeralReply(errorView('Invalid server ID'));
+            await interaction.ephemeralReply('❌ Invalid server ID');
             return;
         }
         if (!selectedReason) {
-            await interaction.ephemeralReply(errorView('No reason selected'));
+            await interaction.ephemeralReply('❌ No reason selected');
             return;
         }
 
@@ -25,7 +25,7 @@ const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
             const profile = await new ServerProfileBuilder().getServerProfile(serverId);
             if (!profile) {
-                await interaction.ephemeralReply(errorView('Server not found'));
+                await interaction.ephemeralReply('❌ Server not found');
                 Logger.error(`Server with ID ${serverId} not found during banning for message ${interaction.message.id}`);
                 return;
             }
@@ -41,11 +41,11 @@ const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
                 );
             }
 
-            await interaction.ephemeralReply(successView('Server banned successfully!'));
+            await interaction.ephemeralReply('✅ Server banned successfully!');
 
         } catch (error) {
             console.error('Error banning server:', error);
-            await interaction.ephemeralReply(errorView('Failed to ban server. Please try again.'));
+            await interaction.ephemeralReply('❌ Failed to ban server. Please try again.');
         }
     }
 };

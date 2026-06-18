@@ -1,5 +1,5 @@
 import { UserProfileBuilder } from "../../../bot/builders/UserProfileBuilder";
-import { BotButtonInteraction, errorView } from "@vulps22/bot-interactions";
+import { BotButtonInteraction } from "@vulps22/bot-interactions";
 import { Handler, Logger } from "../../../bot/utils";
 import { questionService, serverService, userService } from "../../../services";
 import { userProfileView } from "../../../views";
@@ -10,7 +10,7 @@ const unbanUserButton: Handler<BotButtonInteraction> = {
     async execute(interaction) {
         const userId = interaction.params.get(unbanUserButton.params!.ID);
         if (!userId) {
-            await interaction.ephemeralReply(errorView('Invalid user ID'));
+            await interaction.ephemeralReply('❌ Invalid user ID');
             throw new Error('Invalid user ID when using Button: moderation_unbanUser');
         }
 
@@ -28,12 +28,12 @@ const unbanUserButton: Handler<BotButtonInteraction> = {
         // Refresh the profile view
         const profile = await new UserProfileBuilder().getUserProfile(userId);
         if (!profile) {
-            await interaction.ephemeralReply(errorView('User not found'));
+            await interaction.ephemeralReply('❌ User not found');
             return;
         }
 
         const view = await userProfileView(profile);
-        await interaction.sendReply(view);
+        await interaction.sendReply(null, view);
     }
 };
 

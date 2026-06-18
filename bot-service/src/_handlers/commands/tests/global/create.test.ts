@@ -119,9 +119,9 @@ describe('create command', () => {
       await create.execute(mockInteraction as BotCommandInteraction);
 
       expect(questionService.createQuestion).not.toHaveBeenCalled();
-      expect(mockSendReply).toHaveBeenCalledWith(
-        expect.objectContaining({ flags: expect.any(Number) })
-      );
+      expect(mockEditReply).toHaveBeenCalledWith({
+        content: '❌ This server is not allowed to create questions. It has either been blocked or has not accepted the rules yet.',
+      });
     });
 
     it('should fail if not in a guild', async () => {
@@ -132,9 +132,9 @@ describe('create command', () => {
 
       await create.execute(noGuildInteraction as BotCommandInteraction);
 
-      expect(mockSendReply).toHaveBeenCalledWith(
-        expect.objectContaining({ flags: expect.any(Number) })
-      );
+      expect(mockEditReply).toHaveBeenCalledWith({
+        content: '❌ This command can only be used in a server.',
+      });
     });
 
     it('should get type and question from options', async () => {
@@ -179,9 +179,10 @@ describe('create command', () => {
 
       await create.execute(mockInteraction as BotCommandInteraction);
 
-      expect(mockSendReply).toHaveBeenCalledWith(
-        expect.objectContaining({ flags: expect.any(Number) })
-      );
+      expect(mockEditReply).toHaveBeenCalledWith({
+        content: '❌ Question must be between 5 and 500 characters long.',
+      });
+      expect(mockSendReply).not.toHaveBeenCalled();
     });
 
     it('should send success message on valid question', async () => {
@@ -212,7 +213,7 @@ describe('create command', () => {
       await create.execute(mockInteraction as BotCommandInteraction);
 
       expect(confirmNewQuestionEmbed).toHaveBeenCalledWith(savedQuestion);
-      expect(mockSendReply).toHaveBeenCalledWith(embedResponse);
+      expect(mockSendReply).toHaveBeenCalledWith(null, embedResponse);
     });
 
     it('should handle truth type', async () => {
@@ -275,9 +276,9 @@ describe('create command', () => {
       await create.execute(noGuildInteraction);
 
       expect(questionService.createQuestion).not.toHaveBeenCalled();
-      expect(mockSendReply).toHaveBeenCalledWith(
-        expect.objectContaining({ flags: expect.any(Number) })
-      );
+      expect(mockEditReply).toHaveBeenCalledWith({
+        content: '❌ This command can only be used in a server.',
+      });
     });
   });
 });

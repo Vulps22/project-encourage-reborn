@@ -90,20 +90,19 @@ describe('truth command', () => {
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
     expect(challengeEmbed).toHaveBeenCalled();
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockEmbedMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockEmbedMessage);
   });
 
   it('should handle no approved questions available', async () => {
     (questionService.getRandomQuestion as jest.Mock).mockResolvedValue(null);
-    botInteraction.sendReply = jest.fn().mockResolvedValue(undefined);
 
     await truth.execute(botInteraction);
 
     expect(mockInteraction.deferReply).toHaveBeenCalled();
     expect(questionService.getRandomQuestion).toHaveBeenCalledWith(QuestionType.Truth);
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(
-      expect.objectContaining({ flags: expect.any(Number) })
-    );
+    expect(mockInteraction.editReply).toHaveBeenCalledWith({
+      content: '❌ No approved truth questions available. Try again later!',
+    });
   });
 
   it('should have correct command properties', () => {
