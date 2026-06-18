@@ -1,5 +1,5 @@
 import { UserProfileBuilder } from "../../../bot/builders/UserProfileBuilder";
-import { BotSelectMenuInteraction } from "@vulps22/bot-interactions";
+import { BotSelectMenuInteraction, errorView } from "@vulps22/bot-interactions";
 import { Handler, Logger } from "../../../bot/utils";
 import { moderationService, questionService, reportService, serverService, userService } from "../../../services";
 import { userProfileView } from "../../../views";
@@ -13,12 +13,12 @@ const userBanReasonSelected: Handler<BotSelectMenuInteraction> = {
 
         if (!userId) {
             Logger.error("User ID not found when executing userBanReasonSelected");
-            await interaction.ephemeralReply('❌ Invalid user ID');
+            await interaction.ephemeralReply(errorView('Invalid user ID'));
             return;
         }
 
         if (!selectedReason) {
-            await interaction.ephemeralReply('❌ No reason selected');
+            await interaction.ephemeralReply(errorView('No reason selected'));
             return;
         }
 
@@ -43,13 +43,13 @@ async function banUser(userId: string, reason: string, interaction: BotSelectMen
         // Refresh the profile view
         const profile = await new UserProfileBuilder().getUserProfile(userId);
         if (!profile) {
-            await interaction.ephemeralReply('❌ User not found after banning');
+            await interaction.ephemeralReply(errorView('User not found after banning'));
             Logger.error(`User ${userId} not found after banning`);
             return;
         }
 
         const view = await userProfileView(profile);
-        await interaction.updateComponentMessage(null, view);
+        await interaction.updateComponentMessage(view);
 
         const reports = await moderationService.findActioningReports(userId);
         for (const report of reports) {
@@ -62,7 +62,7 @@ async function banUser(userId: string, reason: string, interaction: BotSelectMen
 
     } catch (error) {
         Logger.error(`Error banning user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        await interaction.ephemeralReply('❌ Failed to ban user. Please try again.');
+        await interaction.ephemeralReply(errorView('Failed to ban user. Please try again.'));
     }
 }
 
