@@ -223,6 +223,8 @@ Example: `105 - improve-fetch-failed-error-messages`
 
 Unless explicitly instructed otherwise, every working branch must relate to a specific GitHub issue.
 
+**ALWAYS branch off `current-release` — NEVER off `main`.** PRs merge into `main`. `current-release` is the production branch; branching off it means every branch starts from a known-good production state. Fixes merged into `current-release` can then flow into any in-flight branch independently, without waiting for unrelated work on `main` to land first.
+
 ### Commit message format
 ```
 #<issue_number> - <message up to 50 characters>
@@ -233,6 +235,17 @@ Example: `#105 - wrap fetch errors with url and reason`
 - Commits must be **single responsibility** — one logical change per commit
 - If a single file contains changes belonging to two different concerns, **cherry-pick the relevant hunks** using `git add -p` rather than committing the file wholesale
 - Never commit incomplete or work-in-progress code that belongs to a different concern — keep each commit self-contained and coherent
+
+### PR title format
+```
+#<issue_number> - Add|Remove|Update|Revert|Refactor <short summary>
+```
+Examples:
+- `#126 - Update all string based messages to new Components V2 views`
+- `#112 - Add vote skip command for inventory`
+- `#99 - Remove deprecated string overload from sendReply`
+
+The changelog script (issue #125) strips the `#<issue> - ` prefix and uses the leading verb for Discord symbol mapping (`Add`/`Update`/`Refactor` → `+`, `Remove`/`Revert` → `-`). A `validate-pr-title.yml` workflow enforces the format — PRs that don't match are blocked. No colon after the verb.
 
 ---
 
