@@ -21,6 +21,9 @@ jobs:
   fresh-install:
     name: Fresh Install Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: database-service
 
     services:
       postgres:
@@ -46,6 +49,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: 'database-service/package-lock.json'
 
       - name: Configure npm for private packages
         run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
@@ -68,6 +72,9 @@ jobs:
   migration-test:
     name: Migration Rollout/Rollback Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: database-service
 
     services:
       postgres:
@@ -95,6 +102,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: 'database-service/package-lock.json'
 
       - name: Configure npm for private packages
         run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
@@ -170,6 +178,9 @@ jobs:
   schema-sync:
     name: Schema Sync Validation
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: database-service
 
     services:
       postgres-migrated:
@@ -211,6 +222,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: 'database-service/package-lock.json'
 
       - name: Configure npm for private packages
         run: npm config set //npm.pkg.github.com/:_authToken ${{ secrets.GITHUB_TOKEN }}
