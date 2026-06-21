@@ -6,7 +6,8 @@ on:
     branches: [main]
 
 permissions:
-  pull-requests: read
+  pull-requests: write
+  issues: read
 
 jobs:
   validate-title:
@@ -26,4 +27,42 @@ jobs:
             echo "Verbs:    Add, Remove, Update, Revert, Refactor  (no colon, no ALLCAPS)"
             echo "Got: $PR_TITLE"
             exit 1
+          fi
+
+      - name: Check issue exists and is open
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          issue_num=$(echo "$PR_TITLE" | grep -oE '^#[0-9]+' | tr -d '#')
+          state=$(gh issue view "$issue_num" --repo "${{ github.repository }}" --json state -q '.state')
+          if [ "$state" != "OPEN" ]; then
+            echo "ERROR: Issue #${issue_num} is not open (state: ${state})"
+            echo "PRs must reference an open issue."
+            exit 1
+          fi
+          echo "Issue #${issue_num} is open ✓"
+
+      - name: Link PR to issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          issue_num=$(echo "$PR_TITLE" | grep -oE '^#[0-9]+' | tr -d '#')
+          pr_number="${{ github.event.pull_request.number }}"
+          repo="${{ github.repository }}"
+
+          # Add a cross-reference to the PR body so the issue timeline shows the connection.
+          # We avoid "Closes"/"Fixes" keywords to prevent auto-close on merge to main.
+          current_body=$(gh pr view "$pr_number" --repo "$repo" --json body -q '.body // ""')
+          ref="Tracks #${issue_num}"
+          if ! echo "$current_body" | grep -qF "$ref"; then
+            new_body="${current_body}
+
+<!-- auto-linked -->
+${ref}"
+            gh pr edit "$pr_number" --repo "$repo" --body "$new_body"
+            echo "Linked PR #${pr_number} to issue #${issue_num} ✓"
+          else
+            echo "PR already references issue #${issue_num} ✓"
           fi
