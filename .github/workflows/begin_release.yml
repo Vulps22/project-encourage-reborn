@@ -264,3 +264,54 @@ jobs:
           git tag "$VERSION"
           git push origin "$VERSION"
 
+  # ── Discord notifications ──────────────────────────────────────────────────
+
+  notify-freeze:
+    name: Notify Discord — Freeze Preview
+    needs: [determine, freeze]
+    if: needs.determine.outputs.should_proceed == 'true' && needs.determine.outputs.release_type == 'freeze'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Post freeze preview to Discord
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_CHANGELOG_WEBHOOK_URL: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK_URL }}
+        run: |
+          chmod +x .github/scripts/post-changelog.sh
+          .github/scripts/post-changelog.sh \
+            freeze \
+            "${{ needs.determine.outputs.version }}" \
+            "$DISCORD_CHANGELOG_WEBHOOK_URL" \
+            "${{ github.repository }}"
+
+  notify-release:
+    name: Notify Discord — Release / Hotfix
+    needs: [determine, tag]
+    if: needs.determine.outputs.should_proceed == 'true' && needs.determine.outputs.release_type != 'freeze'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.determine.outputs.test_ref }}
+
+      - name: Post release changelog to Discord
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_CHANGELOG_WEBHOOK_URL: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK_URL }}
+        run: |
+          chmod +x .github/scripts/post-changelog.sh
+          .github/scripts/post-changelog.sh \
+            "${{ needs.determine.outputs.release_type }}" \
+            "${{ needs.determine.outputs.version }}" \
+            "$DISCORD_CHANGELOG_WEBHOOK_URL" \
+            "${{ github.repository }}"
+

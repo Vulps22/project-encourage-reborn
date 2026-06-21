@@ -1,0 +1,43 @@
+name: Project — Move to Frozen
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ['freeze/**']
+
+permissions:
+  contents: read
+
+jobs:
+  move:
+    name: Move issue to Frozen
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse issue number from PR title
+        id: parse
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          issue_num=$(echo "$PR_TITLE" | grep -oE '^#[0-9]+' | tr -d '#')
+          if [ -z "$issue_num" ]; then
+            echo "Could not parse issue number from PR title — skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "issue_number=$issue_num" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Move to Frozen
+        if: steps.parse.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x .github/scripts/update-project-status.sh
+          .github/scripts/update-project-status.sh \
+            "${{ steps.parse.outputs.issue_number }}" \
+            "250a1c85"

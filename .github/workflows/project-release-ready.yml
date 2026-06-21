@@ -1,0 +1,27 @@
+name: Project — Move to Release Ready
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  move:
+    name: Move issue to Release Ready
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'release-ready'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Move to Release Ready
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x .github/scripts/update-project-status.sh
+          .github/scripts/update-project-status.sh \
+            "${{ github.event.issue.number }}" \
+            "df73e18b"
