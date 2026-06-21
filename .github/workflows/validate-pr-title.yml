@@ -1,0 +1,29 @@
+name: Validate PR Title
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches: [main]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate-title:
+    name: Validate PR title format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title matches convention
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^#[0-9]+ - (Add|Remove|Update|Revert|Refactor) .+'
+          if echo "$PR_TITLE" | grep -qE "$pattern"; then
+            echo "PR title is valid: $PR_TITLE"
+          else
+            echo "ERROR: PR title does not match required format."
+            echo "Required: #<issue> - <Verb> <summary>"
+            echo "Verbs:    Add, Remove, Update, Revert, Refactor  (no colon, no ALLCAPS)"
+            echo "Got: $PR_TITLE"
+            exit 1
+          fi
