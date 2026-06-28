@@ -12,7 +12,7 @@ function challengeEmbed(question: Question, challenge: Challenge, vote: Challeng
 
     const reportAccessoryButton = new ButtonBuilder()
         .setCustomId(`question_report_id:${question.id}`)
-        .setLabel('⚠️')
+        .setLabel('⚠️ Report Abuse')
         .setStyle(ButtonStyle.Secondary);
 
     const titleSection = new SectionBuilder()

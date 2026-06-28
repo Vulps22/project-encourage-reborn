@@ -1,5 +1,5 @@
 import { PermissionFlagsBits } from 'discord.js';
-import { BotButtonInteraction } from '@vulps22/bot-interactions';
+import { BotButtonInteraction, errorView, noticeView } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 
 const declineTermsButton: Handler<BotButtonInteraction> = {
@@ -9,26 +9,26 @@ const declineTermsButton: Handler<BotButtonInteraction> = {
         // Verify user is admin
         const member = interaction.member;
         if (!member || !('permissions' in member)) {
-            await interaction.ephemeralReply('❌ Only administrators can decline terms for this server.');
+            await interaction.ephemeralReply(errorView('Only administrators can decline terms for this server.'));
             return;
         }
 
         const permissions = member.permissions as import('discord.js').PermissionsBitField;
         if (!permissions.has(PermissionFlagsBits.Administrator) &&
             !permissions.has(PermissionFlagsBits.ManageGuild)) {
-            await interaction.ephemeralReply('❌ Only administrators can decline terms for this server.');
+            await interaction.ephemeralReply(errorView('Only administrators can decline terms for this server.'));
             return;
         }
 
         const guild = interaction.guild;
         if (!guild) {
-            await interaction.ephemeralReply('❌ This can only be used in a server.');
+            await interaction.ephemeralReply(errorView('This can only be used in a server.'));
             return;
         }
 
         // Send farewell message
         await interaction.sendReply(
-            '👋 Terms declined. The bot will now leave this server. You can re-add the bot at any time if you change your mind.'
+            noticeView('Terms declined. The bot will now leave this server. You can re-add the bot at any time if you change your mind.')
         );
 
         // Leave the server

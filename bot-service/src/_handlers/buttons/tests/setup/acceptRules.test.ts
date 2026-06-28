@@ -55,7 +55,7 @@ describe('acceptRules button', () => {
 
     expect(serverService.acceptRules).toHaveBeenCalledWith('987654321');
     expect(channelSelectView).toHaveBeenCalled();
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockMessage);
   });
 
   it('should reject non-admin users', async () => {
@@ -66,7 +66,7 @@ describe('acceptRules button', () => {
 
     expect(serverService.acceptRules).not.toHaveBeenCalled();
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
-      '❌ Only administrators can accept rules for this server.'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
   });
 
@@ -78,7 +78,7 @@ describe('acceptRules button', () => {
 
     expect(serverService.acceptRules).not.toHaveBeenCalled();
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
-      '❌ This can only be used in a server.'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
   });
 
@@ -90,7 +90,7 @@ describe('acceptRules button', () => {
 
     expect(serverService.acceptRules).not.toHaveBeenCalled();
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
-      '❌ This server is banned from using the bot. Reason: Hate Speech'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
   });
 
