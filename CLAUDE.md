@@ -204,24 +204,22 @@ npm run db:rollback                                   # revert a migration
 
 ---
 
-## Open GitHub Issues
-
-| # | Repo | Summary |
-|---|---|---|
-| [#105](https://github.com/Vulps22/project-encourage-reborn/issues/105) | PE | `fetch failed` error gives no context (URL, service, reason) |
-| [#106](https://github.com/Vulps22/project-encourage-reborn/issues/106) | PE | GitHub Actions test workflows need `NODE_AUTH_TOKEN` for private packages |
-
----
 
 ## Git Conventions
 
 ### Branch naming
 ```
-<issue_number> - <issue title>
+<issue_number>-<issue-title-slugified>
 ```
-Example: `105 - improve-fetch-failed-error-messages`
+Example: `105-improve-fetch-failed-error-messages`
 
 Unless explicitly instructed otherwise, every working branch must relate to a specific GitHub issue.
+
+**ALWAYS use `gh issue develop` to create branches** — this links the branch to the issue and makes it appear under the "Development" section of the issue page:
+```bash
+gh issue develop <issue_number> --repo Vulps22/project-encourage-reborn --checkout --base current-release
+```
+
 
 **ALWAYS branch off `current-release` — NEVER off `main`.** PRs merge into `main`. `current-release` is the production branch; branching off it means every branch starts from a known-good production state. Fixes merged into `current-release` can then flow into any in-flight branch independently, without waiting for unrelated work on `main` to land first.
 

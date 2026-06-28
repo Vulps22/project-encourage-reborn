@@ -1,0 +1,27 @@
+name: Project — Move to Up Next
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  move:
+    name: Move issue to Up Next
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'refined'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Move to Up Next
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x .github/scripts/update-project-status.sh
+          .github/scripts/update-project-status.sh \
+            "${{ github.event.issue.number }}" \
+            "61e4505c"
