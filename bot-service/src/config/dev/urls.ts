@@ -5,5 +5,5 @@ export const Urls = {
     WIKI: 'http://github.com/Vulps22/truth-or-dare-discord-bot/wiki/',
     ADD_BOT: 'https://discord.com/oauth2/authorize?client_id=1079207025315164331',
     DS_URL: 'http://localhost:3000',
-    MS_URL: 'http://localhost:3001',
+    MS_URL: 'http://localhost:4001',
 } as const;

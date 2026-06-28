@@ -1,6 +1,6 @@
-import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
+import { reportConfirmationView } from '../../../views';
 
 const reportButton: Handler<BotButtonInteraction> = {
     name: 'report',
@@ -12,22 +12,7 @@ const reportButton: Handler<BotButtonInteraction> = {
             throw new Error('Invalid question ID when using Button: question_report');
         }
 
-        const modal = new ModalBuilder()
-            .setCustomId(`question_reportModal_id:${questionId}`)
-            .setTitle('Report Question')
-            .addComponents(
-                new ActionRowBuilder<TextInputBuilder>().addComponents(
-                    new TextInputBuilder()
-                        .setCustomId('reason')
-                        .setLabel('Why are you reporting this?')
-                        .setStyle(TextInputStyle.Paragraph)
-                        .setMinLength(10)
-                        .setMaxLength(500)
-                        .setRequired(true)
-                )
-            );
-
-        await interaction.showModal(modal);
+        await interaction.ephemeralReply(reportConfirmationView(questionId));
     }
 };
 
