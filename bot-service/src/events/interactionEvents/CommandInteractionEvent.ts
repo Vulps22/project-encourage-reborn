@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, GuildNSFWLevel, TextChannel } from "discord.js";
 import { BotCommandInteraction } from "@vulps22/bot-interactions";
 import { Logger } from "@vulps22/logger";
 import { InteractionEvent } from "./InteractionEvent";
@@ -10,6 +10,16 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
         const command = global.commands.get(interaction.commandName);
         if (!command) {
             Logger.error(`No command found for name: ${interaction.commandName}`);
+            return;
+        }
+
+        const channel = interaction.channel as TextChannel;
+
+        const guildIsNSFW = interaction.guild?.nsfwLevel !== GuildNSFWLevel.Safe
+                 && interaction.guild?.nsfwLevel !== GuildNSFWLevel.Default;
+
+        if (command.isNSFW && !channel.nsfw && !guildIsNSFW) {
+            await interaction.reply('❌ This command can only be used in NSFW channels or servers.');
             return;
         }
 
