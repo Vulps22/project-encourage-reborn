@@ -1,30 +1,17 @@
-import { ButtonInteraction } from 'discord.js';
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
+import { MessageFlags } from 'discord.js';
 import reportButton from '../../question/report';
 
 describe('reportButton', () => {
-    let mockInteraction: any;
-    let botInteraction: BotButtonInteraction;
+    let mockInteraction: jest.Mocked<BotButtonInteraction>;
 
     beforeEach(() => {
         jest.clearAllMocks();
 
         mockInteraction = {
-            customId: 'question_report_id:42',
-            deferred: false,
-            replied: false,
-            guildId: '987654321',
-            user: { id: '111222333' },
-            reply: jest.fn().mockResolvedValue(undefined),
-            editReply: jest.fn().mockResolvedValue(undefined),
-            showModal: jest.fn().mockResolvedValue(undefined),
-            message: { id: 'msg123' },
-        };
-
-        botInteraction = new BotButtonInteraction(
-            mockInteraction as ButtonInteraction,
-            'exec-123'
-        );
+            params: new Map([['id', '42']]),
+            ephemeralReply: jest.fn().mockResolvedValue(undefined),
+        } as unknown as jest.Mocked<BotButtonInteraction>;
     });
 
     it('should have correct name and params', () => {
@@ -32,22 +19,35 @@ describe('reportButton', () => {
         expect(reportButton.params).toEqual({ id: 'id' });
     });
 
-    it('should show the report reason modal', async () => {
-        await reportButton.execute(botInteraction);
+    it('should show the report confirmation view', async () => {
+        await reportButton.execute(mockInteraction);
 
-        expect(mockInteraction.showModal).toHaveBeenCalledTimes(1);
-        const modal = mockInteraction.showModal.mock.calls[0][0];
-        expect(modal.data.custom_id).toBe('question_reportModal_id:42');
-        expect(modal.data.title).toBe('Report Question');
+        expect(mockInteraction.ephemeralReply).toHaveBeenCalledTimes(1);
+        const message = (mockInteraction.ephemeralReply as jest.Mock).mock.calls[0][0];
+        expect(message.flags).toBe(MessageFlags.IsComponentsV2);
+        expect(message.components).toBeDefined();
+        expect(message.components.length).toBeGreaterThan(0);
     });
 
-    it('should handle missing question ID', async () => {
-        mockInteraction.customId = 'question_report';
-        botInteraction = new BotButtonInteraction(mockInteraction as ButtonInteraction, 'exec-123');
+    it('should include a confirm button targeting the correct question ID', async () => {
+        await reportButton.execute(mockInteraction);
 
-        await expect(reportButton.execute(botInteraction)).rejects.toThrow(
+        const message = (mockInteraction.ephemeralReply as jest.Mock).mock.calls[0][0];
+        const allComponents = message.components.flatMap((c: any) =>
+            c.components ?? [c]
+        );
+        const confirmButton = allComponents.find((c: any) =>
+            c.data?.custom_id === 'question_reportConfirmed_id:42'
+        );
+        expect(confirmButton).toBeDefined();
+    });
+
+    it('should throw and call ephemeralReply when question ID is missing', async () => {
+        (mockInteraction.params as Map<string, string>).clear();
+
+        await expect(reportButton.execute(mockInteraction)).rejects.toThrow(
             'Invalid question ID when using Button: question_report'
         );
-        expect(mockInteraction.showModal).not.toHaveBeenCalled();
+        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
     });
 });
