@@ -197,6 +197,8 @@ async function registerGlobalCommands(rest: REST, commands: Command[]): Promise<
         return;
     }
 
+    commands.forEach(cmd => cmd.setNSFW(false)); // Ensure global commands are not NSFW for registration only
+
     try {
         await rest.put(
             Routes.applicationCommands(process.env.PE_CLIENT_ID!),
