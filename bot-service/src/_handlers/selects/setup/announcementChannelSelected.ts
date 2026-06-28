@@ -1,7 +1,7 @@
 import { NewsChannel, PermissionFlagsBits } from 'discord.js';
 import { Config } from '../../../config';
 import { serverService } from '../../../services';
-import { BotSelectMenuInteraction } from '@vulps22/bot-interactions';
+import { BotSelectMenuInteraction, errorView } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { Logger } from '@vulps22/logger';
 import { setupCompleteView, setupFailedView } from '../../../views';
@@ -14,32 +14,32 @@ const announcementChannelSelected: Handler<BotSelectMenuInteraction> = {
         // Verify user is admin
         const member = interaction.member;
         if (!member || !('permissions' in member)) {
-            await interaction.ephemeralFollowUp('❌ Only administrators can configure announcement channels.');
+            await interaction.ephemeralFollowUp(errorView('Only administrators can configure announcement channels.'));
             return;
         }
         
         const permissions = member.permissions;
         if (typeof permissions === 'string') {
-            await interaction.ephemeralFollowUp('❌ Only administrators can configure announcement channels.');
+            await interaction.ephemeralFollowUp(errorView('Only administrators can configure announcement channels.'));
             return;
         }
         
         if (!permissions.has(PermissionFlagsBits.Administrator) &&
             !permissions.has(PermissionFlagsBits.ManageGuild)) {
-            await interaction.ephemeralFollowUp('❌ Only administrators can configure announcement channels.');
+            await interaction.ephemeralFollowUp(errorView('Only administrators can configure announcement channels.'));
             return;
         }
 
         const guildId = interaction.guildId;
         if (!guildId) {
-            await interaction.ephemeralFollowUp('❌ This can only be used in a server.');
+            await interaction.ephemeralFollowUp(errorView('This can only be used in a server.'));
             return;
         }
 
         // Get selected channel ID from the channel select menu
         const selectedChannelId = interaction.values[0];
         if (!selectedChannelId) {
-            await interaction.ephemeralFollowUp('❌ No channel was selected.');
+            await interaction.ephemeralFollowUp(errorView('No channel was selected.'));
             return;
         }
 

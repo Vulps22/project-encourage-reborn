@@ -2,7 +2,7 @@ import { Handler, ModerationLogger } from "../../../bot/utils";
 import { moderationService, questionService } from "../../../services";
 import { QuestionNotFoundError } from "../../../bot/errors/QuestionNotFoundError";
 import { QuestionType, TargetType } from "@vulps22/project-encourage-types";
-import { BotButtonInteraction } from "@vulps22/bot-interactions";
+import { BotButtonInteraction, errorView } from "@vulps22/bot-interactions";
 
 const approveQuestionButton: Handler<BotButtonInteraction> = {
     name: "banQuestion",
@@ -11,7 +11,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
         const reason = interaction.params.get("reason") || null;
 
         if (!questionId) {
-            await interaction.ephemeralReply('❌ Invalid question ID');
+            await interaction.ephemeralReply(errorView('Invalid question ID'));
             return;
         }
 

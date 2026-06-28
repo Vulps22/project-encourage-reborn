@@ -1,4 +1,4 @@
-import { BotButtonInteraction } from '@vulps22/bot-interactions';
+import { BotButtonInteraction, errorView } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { Logger } from '@vulps22/logger';
 import { DSError } from '../../../client';
@@ -20,7 +20,7 @@ const done: Handler<BotButtonInteraction> = {
 
             challenge = await challengeService.getChallengeByMessageId(messageId);
             if (!challenge) {
-                await interaction.ephemeralFollowUp('❌ Could not find tracking data for this challenge.');
+                await interaction.ephemeralFollowUp(errorView('Could not find tracking data for this challenge.'));
                 return;
             }
 
@@ -28,7 +28,7 @@ const done: Handler<BotButtonInteraction> = {
 
             const challengeVote = await votingService.getVoteCount(challengeId);
             if (challengeVote.final_result !== null) {
-                await interaction.ephemeralFollowUp('❌ This challenge has already been locked.');
+                await interaction.ephemeralFollowUp(errorView('This challenge has already been locked.'));
                 return;
             }
 
@@ -36,7 +36,7 @@ const done: Handler<BotButtonInteraction> = {
                 updated = await votingService.vote(challengeId, userId, 'done');
             } catch (error) {
                 if (error instanceof DSError && error.status === 409) {
-                    await interaction.ephemeralFollowUp('❌ You have already voted on this question.');
+                    await interaction.ephemeralFollowUp(errorView('You have already voted on this question.'));
                     return;
                 }
                 throw error;
@@ -49,7 +49,7 @@ const done: Handler<BotButtonInteraction> = {
 
             question = await questionService.getQuestionById(challenge.question_id);
             if (question) {
-                await interaction.updateComponentMessage(null, challengeEmbed(question, challenge, updated));
+                await interaction.updateComponentMessage(challengeEmbed(question, challenge, updated));
             }
         } catch (error) {
             console.error('[done] raw error:', error);
@@ -57,7 +57,7 @@ const done: Handler<BotButtonInteraction> = {
             console.error('[done] challenge:', challenge ?? 'undefined');
             console.error('[done] updated:', updated ?? 'undefined');
             Logger.error(`Done handler error for message ${messageId}: ${error instanceof Error ? error.message : String(error)}`);
-            await interaction.ephemeralFollowUp('❌ Something went wrong. Please try again.');
+            await interaction.ephemeralFollowUp(errorView('Something went wrong. Please try again.'));
         }
     }
 };

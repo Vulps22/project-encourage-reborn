@@ -46,7 +46,7 @@ describe('declineRules button', () => {
     await declineRulesButton.execute(botInteraction);
 
     expect(channelSelectView).toHaveBeenCalled();
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockMessage);
   });
 
   it('should reject non-admin users', async () => {
@@ -56,7 +56,7 @@ describe('declineRules button', () => {
     await declineRulesButton.execute(botInteraction);
 
     expect(botInteraction.ephemeralReply).toHaveBeenCalledWith(
-      '❌ Only administrators can decline rules for this server.'
+      expect.objectContaining({ flags: expect.any(Number) })
     );
   });
 

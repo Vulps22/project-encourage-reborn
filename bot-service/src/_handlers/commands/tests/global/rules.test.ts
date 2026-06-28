@@ -68,6 +68,6 @@ describe('rules command', () => {
 
     await rules.execute(botInteraction);
 
-    expect(botInteraction.sendReply).toHaveBeenCalledWith(null, mockMessage);
+    expect(botInteraction.sendReply).toHaveBeenCalledWith(mockMessage);
   });
 });

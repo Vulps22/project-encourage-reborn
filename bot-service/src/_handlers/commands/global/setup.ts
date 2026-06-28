@@ -1,6 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { serverService } from '../../../services';
-import { BotCommandInteraction } from '@vulps22/bot-interactions';
+import { BotCommandInteraction, errorView } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import { termsView } from '../../../views';
 
@@ -11,14 +11,14 @@ const setup = new Command('setup', 'Configure server settings (Admin only)')
     // Check if user has admin permissions
     const member = interaction.member;
     if (!member || !('permissions' in member)) {
-      await interaction.ephemeralReply('❌ You need Administrator or Manage Server permissions to run this command.');
+      await interaction.ephemeralReply(errorView('You need Administrator or Manage Server permissions to run this command.'));
       return;
     }
 
     const permissions = member.permissions as import('discord.js').PermissionsBitField;
     if (!permissions.has(PermissionFlagsBits.Administrator) &&
         !permissions.has(PermissionFlagsBits.ManageGuild)) {
-      await interaction.ephemeralReply('❌ You need Administrator or Manage Server permissions to run this command.');
+      await interaction.ephemeralReply(errorView('You need Administrator or Manage Server permissions to run this command.'));
       return;
     }
 
@@ -29,7 +29,7 @@ const setup = new Command('setup', 'Configure server settings (Admin only)')
     const guild = interaction.guild;
 
     if (!guildId || !guild) {
-      await interaction.editReply({ content: '❌ This command can only be used in a server.' });
+      await interaction.sendReply(errorView('This command can only be used in a server.'));
       return;
     }
 
@@ -42,7 +42,7 @@ const setup = new Command('setup', 'Configure server settings (Admin only)')
 
     // Show terms view to start the setup wizard
     const message = termsView();
-    await interaction.sendReply(null, message);
+    await interaction.sendReply(message);
   });
 
 export default setup;
