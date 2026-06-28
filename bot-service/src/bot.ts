@@ -176,12 +176,14 @@ async function registerGlobalCommands(rest: REST, commands: Command[]): Promise<
         return;
     }
 
+    const commandsForRegistration = commands.map(cmd => ({ ...cmd.toJSON(), nsfw: false }));
+
     try {
         await rest.put(
             Routes.applicationCommands(process.env.PE_CLIENT_ID!),
-            { body: commands.map(cmd => cmd.toJSON()) }
+            { body: commandsForRegistration }
         );
-        Logger.debug(`Registered ${commands.length} global commands`);
+        Logger.debug(`Registered ${commandsForRegistration.length} global commands`);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         Logger.error(`Failed to register global commands: ${errorMessage}`);
