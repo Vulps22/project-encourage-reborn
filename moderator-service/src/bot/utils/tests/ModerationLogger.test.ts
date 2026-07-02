@@ -1,5 +1,8 @@
 import { ModerationLogger } from '../ModerationLogger';
 import { Logger } from '../Logger';
+import { newQuestionView } from '../../../views/moderation/newQuestionView';
+import { serverView } from '../../../views/moderation/serverView';
+import { ReportView } from '../../../views/moderation/reportView';
 import { Question, Report, ReportStatus, QuestionType, TargetType } from '@vulps22/project-encourage-types';
 
 jest.mock('../Logger', () => ({
@@ -14,6 +17,18 @@ jest.mock('../../config', () => ({
         REPORT_CHANNEL_ID: 'report-channel-id',
         SERVER_LOG_CHANNEL_ID: 'server-log-channel-id',
     },
+}));
+
+jest.mock('../../../views/moderation/newQuestionView', () => ({
+    newQuestionView: jest.fn().mockResolvedValue({ components: [] }),
+}));
+
+jest.mock('../../../views/moderation/serverView', () => ({
+    serverView: jest.fn().mockResolvedValue({ components: [] }),
+}));
+
+jest.mock('../../../views/moderation/reportView', () => ({
+    ReportView: jest.fn().mockReturnValue({ components: [] }),
 }));
 
 const mockQuestion: Question = {
@@ -62,11 +77,18 @@ const mockServer = {
     datetime_banned: null,
 };
 
-function mockBroadcastEval(returnValues: any[]) {
+function createMockChannel(overrides: Record<string, any> = {}) {
+    return {
+        isTextBased: jest.fn().mockReturnValue(true),
+        send: jest.fn().mockResolvedValue({ id: 'sent-msg-id' }),
+        messages: { fetch: jest.fn() },
+        ...overrides,
+    };
+}
+
+function setClientChannel(channel: any) {
     (global as any).client = {
-        shard: {
-            broadcastEval: jest.fn().mockResolvedValue(returnValues),
-        },
+        channels: { cache: { get: jest.fn().mockReturnValue(channel) } },
     };
 }
 
@@ -77,17 +99,26 @@ describe('ModerationLogger', () => {
 
     describe('logQuestion', () => {
         it('should broadcast to the correct channel and return the sent message', async () => {
-            const mockMessage = { id: 'sent-msg-id' };
-            mockBroadcastEval([null, mockMessage]);
+            const channel = createMockChannel();
+            setClientChannel(channel);
 
             const result = await ModerationLogger.logQuestion(mockQuestion, 'channel-123');
 
-            expect((global as any).client.shard.broadcastEval).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockMessage);
+            expect((global as any).client.channels.cache.get).toHaveBeenCalledWith('channel-123');
+            expect(channel.send).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ id: 'sent-msg-id' });
         });
 
-        it('should return null when no shard finds the channel', async () => {
-            mockBroadcastEval([null, null]);
+        it('should return null when no channel is found', async () => {
+            setClientChannel(undefined);
+
+            const result = await ModerationLogger.logQuestion(mockQuestion, 'channel-123');
+
+            expect(result).toBeNull();
+        });
+
+        it('should return null when the channel is not text-based', async () => {
+            setClientChannel(createMockChannel({ isTextBased: jest.fn().mockReturnValue(false) }));
 
             const result = await ModerationLogger.logQuestion(mockQuestion, 'channel-123');
 
@@ -97,48 +128,55 @@ describe('ModerationLogger', () => {
 
     describe('updateQuestionLog', () => {
         it('should return null early when question has no message_id', async () => {
-            mockBroadcastEval([]);
+            const channel = createMockChannel();
+            setClientChannel(channel);
             const questionWithoutMessage = { ...mockQuestion, message_id: null };
 
             const result = await ModerationLogger.updateQuestionLog(questionWithoutMessage, 'channel-123');
 
             expect(result).toBeNull();
-            expect((global as any).client.shard.broadcastEval).not.toHaveBeenCalled();
+            expect(channel.messages.fetch).not.toHaveBeenCalled();
         });
 
-        it('should broadcast and return the updated message on success', async () => {
-            const mockMessage = { id: 'updated-msg-id' };
-            mockBroadcastEval([{ success: true, error: null, message: mockMessage }]);
+        it('should fetch and return the updated message on success', async () => {
+            const mockMessage = { id: 'updated-msg-id', edit: jest.fn().mockResolvedValue({ id: 'updated-msg-id' }) };
+            const channel = createMockChannel();
+            channel.messages.fetch.mockResolvedValue(mockMessage);
+            setClientChannel(channel);
 
             const result = await ModerationLogger.updateQuestionLog(mockQuestion, 'channel-123');
 
-            expect((global as any).client.shard.broadcastEval).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockMessage);
+            expect(channel.messages.fetch).toHaveBeenCalledWith('msg-123');
+            expect(mockMessage.edit).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ id: 'updated-msg-id' });
         });
 
         it('should log an error and return null when update fails', async () => {
-            mockBroadcastEval([{ success: false, error: 'Message not found', message: null }]);
+            const channel = createMockChannel();
+            channel.messages.fetch.mockRejectedValue(new Error('Message not found'));
+            setClientChannel(channel);
 
             const result = await ModerationLogger.updateQuestionLog(mockQuestion, 'channel-123');
 
-            expect(Logger.error).toHaveBeenCalledWith('Failed to update question log: Message not found');
+            expect(Logger.error).toHaveBeenCalledWith('Failed to update question log: Error: Message not found');
             expect(result).toBeNull();
         });
     });
 
     describe('logReport', () => {
-        it('should broadcast and return the sent message', async () => {
-            const mockMessage = { id: 'report-msg-id' };
-            mockBroadcastEval([mockMessage]);
+        it('should send and return the sent message', async () => {
+            const channel = createMockChannel();
+            setClientChannel(channel);
 
             const result = await ModerationLogger.logReport(mockReport);
 
-            expect((global as any).client.shard.broadcastEval).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockMessage);
+            expect((global as any).client.channels.cache.get).toHaveBeenCalledWith('report-channel-id');
+            expect(channel.send).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ id: 'sent-msg-id' });
         });
 
-        it('should return null when no shard finds the channel', async () => {
-            mockBroadcastEval([null, null]);
+        it('should return null when no channel is found', async () => {
+            setClientChannel(undefined);
 
             const result = await ModerationLogger.logReport(mockReport);
 
@@ -148,48 +186,55 @@ describe('ModerationLogger', () => {
 
     describe('updateReportLog', () => {
         it('should return null early when report has no message_id', async () => {
-            mockBroadcastEval([]);
+            const channel = createMockChannel();
+            setClientChannel(channel);
             const reportWithoutMessage = { ...mockReport, message_id: null };
 
             const result = await ModerationLogger.updateReportLog(reportWithoutMessage as Report);
 
             expect(result).toBeNull();
-            expect((global as any).client.shard.broadcastEval).not.toHaveBeenCalled();
+            expect(channel.messages.fetch).not.toHaveBeenCalled();
         });
 
-        it('should broadcast and return the updated message on success', async () => {
-            const mockMessage = { id: 'updated-report-msg-id' };
-            mockBroadcastEval([{ success: true, error: null, message: mockMessage }]);
+        it('should fetch and return the updated message on success', async () => {
+            const mockMessage = { id: 'updated-report-msg-id', edit: jest.fn().mockResolvedValue({ id: 'updated-report-msg-id' }) };
+            const channel = createMockChannel();
+            channel.messages.fetch.mockResolvedValue(mockMessage);
+            setClientChannel(channel);
 
             const result = await ModerationLogger.updateReportLog(mockReport);
 
-            expect((global as any).client.shard.broadcastEval).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockMessage);
+            expect(channel.messages.fetch).toHaveBeenCalledWith('msg-456');
+            expect(mockMessage.edit).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ id: 'updated-report-msg-id' });
         });
 
         it('should log an error and return null when update fails', async () => {
-            mockBroadcastEval([{ success: false, error: 'Channel not found', message: null }]);
+            const channel = createMockChannel();
+            channel.messages.fetch.mockRejectedValue(new Error('Channel not found'));
+            setClientChannel(channel);
 
             const result = await ModerationLogger.updateReportLog(mockReport);
 
-            expect(Logger.error).toHaveBeenCalledWith('Failed to update report log: Channel not found');
+            expect(Logger.error).toHaveBeenCalledWith('Failed to update report log: Error: Channel not found');
             expect(result).toBeNull();
         });
     });
 
     describe('logServer', () => {
-        it('should broadcast and return the sent message', async () => {
-            const mockMessage = { id: 'server-msg-id' };
-            mockBroadcastEval([mockMessage]);
+        it('should send and return the sent message', async () => {
+            const channel = createMockChannel();
+            setClientChannel(channel);
 
             const result = await ModerationLogger.logServer(mockServer as any);
 
-            expect((global as any).client.shard.broadcastEval).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockMessage);
+            expect((global as any).client.channels.cache.get).toHaveBeenCalledWith('server-log-channel-id');
+            expect(channel.send).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ id: 'sent-msg-id' });
         });
 
-        it('should return null when no shard finds the channel', async () => {
-            mockBroadcastEval([null, null]);
+        it('should return null when no channel is found', async () => {
+            setClientChannel(undefined);
 
             const result = await ModerationLogger.logServer(mockServer as any);
 
@@ -199,31 +244,37 @@ describe('ModerationLogger', () => {
 
     describe('updateServerLog', () => {
         it('should return null early when server has no message_id', async () => {
-            mockBroadcastEval([]);
+            const channel = createMockChannel();
+            setClientChannel(channel);
             const serverWithoutMessage = { ...mockServer, message_id: null };
 
             const result = await ModerationLogger.updateServerLog(serverWithoutMessage as any);
 
             expect(result).toBeNull();
-            expect((global as any).client.shard.broadcastEval).not.toHaveBeenCalled();
+            expect(channel.messages.fetch).not.toHaveBeenCalled();
         });
 
-        it('should broadcast and return the updated message on success', async () => {
-            const mockMessage = { id: 'updated-server-msg-id' };
-            mockBroadcastEval([{ success: true, error: null, message: mockMessage }]);
+        it('should fetch and return the updated message on success', async () => {
+            const mockMessage = { id: 'updated-server-msg-id', edit: jest.fn().mockResolvedValue({ id: 'updated-server-msg-id' }) };
+            const channel = createMockChannel();
+            channel.messages.fetch.mockResolvedValue(mockMessage);
+            setClientChannel(channel);
 
             const result = await ModerationLogger.updateServerLog(mockServer as any);
 
-            expect((global as any).client.shard.broadcastEval).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockMessage);
+            expect(channel.messages.fetch).toHaveBeenCalledWith('msg-789');
+            expect(mockMessage.edit).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ id: 'updated-server-msg-id' });
         });
 
         it('should log an error and return null when update fails', async () => {
-            mockBroadcastEval([{ success: false, error: 'Message not found', message: null }]);
+            const channel = createMockChannel();
+            channel.messages.fetch.mockRejectedValue(new Error('Message not found'));
+            setClientChannel(channel);
 
             const result = await ModerationLogger.updateServerLog(mockServer as any);
 
-            expect(Logger.error).toHaveBeenCalledWith('Failed to update server log: Message not found');
+            expect(Logger.error).toHaveBeenCalledWith('Failed to update server log: Error: Message not found');
             expect(result).toBeNull();
         });
     });

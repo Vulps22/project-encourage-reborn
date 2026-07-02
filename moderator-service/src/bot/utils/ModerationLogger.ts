@@ -3,7 +3,6 @@ import { Question, Report, ServerProfile } from '@vulps22/project-encourage-type
 import { Config } from '../config';
 import { Logger } from './Logger';
 import { newQuestionView } from '../../views/moderation/newQuestionView';
-import { userService, serverService } from '../../services';
 import { serverView } from '../../views/moderation/serverView';
 import { ReportView } from '../../views/moderation/reportView';
 import { BanReason } from '../../services/ModerationService';
@@ -11,6 +10,10 @@ import { BanReason } from '../../services/ModerationService';
 export class ModerationLogger {
 
   static async logQuestion(question: Question, channelId: Snowflake): Promise<Message | null> {
+    // Lazily required to avoid a circular dependency: services/index.ts constructs
+    // VotingService, which imports bot/utils (this file), which would otherwise
+    // import services/index.ts back at module-load time.
+    const { userService, serverService } = require('../../services');
     const [userResult, serverResult] = await Promise.allSettled([
       userService.getUser(question.user_id),
       serverService.getServerSettings(question.server_id),
@@ -31,6 +34,7 @@ export class ModerationLogger {
     const ch = global.client.channels.cache.get(channelId) as TextChannel | undefined;
     if (!ch?.isTextBased()) return null;
     try {
+      const { userService, serverService } = require('../../services');
       const [userResult, serverResult] = await Promise.allSettled([
         userService.getUser(question.user_id),
         serverService.getServerSettings(question.server_id),
@@ -41,7 +45,7 @@ export class ModerationLogger {
       const view = await newQuestionView(question, reasons as [] | null, user, server);
       return existing.edit(view as unknown as MessageEditOptions);
     } catch (err) {
-      Logger.error(`Failed to update question log: ${JSON.stringify(err)}`);
+      Logger.error(`Failed to update question log: ${err}`);
       return null;
     }
   }
@@ -64,7 +68,7 @@ export class ModerationLogger {
       const view = await serverView(server, reasons as [] | null);
       return existing.edit(view as unknown as MessageEditOptions);
     } catch (err) {
-      Logger.error(`Failed to update server log: ${JSON.stringify(err)}`);
+      Logger.error(`Failed to update server log: ${err}`);
       return null;
     }
   }
@@ -87,7 +91,7 @@ export class ModerationLogger {
       const view = ReportView(report, reasons as [] | null);
       return existing.edit(view as unknown as MessageEditOptions);
     } catch (err) {
-      Logger.error(`Failed to update report log: ${JSON.stringify(err)}`);
+      Logger.error(`Failed to update report log: ${err}`);
       return null;
     }
   }

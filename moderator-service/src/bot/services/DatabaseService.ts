@@ -358,7 +358,7 @@ export class DatabaseService {
         rows: result.rows,
       };
     } catch (error) {
-      throw new Error(`Failed to update records in ${schema}.${table}: ${this.getErrorMessage(error)}`);
+      throw new Error(`Failed to update records in ${schema}.${table}: ${this.getErrorMessage(error)}\nQuery: ${query}\nValues: ${JSON.stringify(values)}`);
     }
   }
 
