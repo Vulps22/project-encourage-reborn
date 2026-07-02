@@ -10,11 +10,18 @@ jest.mock('../../../../services', () => ({
     },
     questionService: {
         getQuestionById: jest.fn()
+    },
+    userService: {
+        getUser: jest.fn()
+    },
+    serverService: {
+        getServerSettings: jest.fn()
     }
 }));
 
 jest.mock('../../../../bot/utils', () => ({
     Logger: {
+        debug: jest.fn(),
         error: jest.fn()
     },
 }));

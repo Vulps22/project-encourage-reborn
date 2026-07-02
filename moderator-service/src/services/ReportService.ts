@@ -43,14 +43,12 @@ export class ReportService {
   }
 
   async notifyReporter(report: Report, message: string): Promise<void> {
-    Logger.log("BYpassing Notification fror playtest");
-    return;
     try {
       const user = await global.client.users.fetch(report.sender_id);
       await user.send(message);
       Logger.debug(`Notified reporter ${report.sender_id} for report ${report.id}`);
     } catch (error) {
-      Logger.debug(`Could not notify reporter ${report.sender_id} for report ${report.id}: ${JSON.stringify(error)}`);
+      Logger.debug(`Could not notify reporter ${report.sender_id} for report ${report.id}: ${error}`);
     }
   }
 }

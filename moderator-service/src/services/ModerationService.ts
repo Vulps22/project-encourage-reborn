@@ -31,7 +31,7 @@ export class ModerationService {
       Logger.debug(`Question ${question.id} would be sent to approval queue in channel ${channelId}`);
       return message.id;
     } catch (error) {
-      Logger.debug(`Failed to send question ${question.id} to approval queue: ${JSON.stringify(error)}`);
+      Logger.debug(`Failed to send question ${question.id} to approval queue: ${error}`);
       throw error;
     }
   }
@@ -43,7 +43,7 @@ export class ModerationService {
       if (!result) throw new Error(`Question with ID ${questionId} not found`);
       Logger.debug(`Question ${questionId} approved successfully`);
     } catch (error) {
-      Logger.debug(`Failed to approve question ${questionId}: ${JSON.stringify(error)}`);
+      Logger.debug(`Failed to approve question ${questionId}: ${error}`);
       throw error;
     }
   }
@@ -55,7 +55,7 @@ export class ModerationService {
       if (!result) throw new Error(`Question with ID ${questionId} not found`);
       Logger.debug(`Question ${questionId} banned successfully`);
     } catch (error) {
-      Logger.debug(`Failed to ban question ${questionId}: ${JSON.stringify(error)}`);
+      Logger.debug(`Failed to ban question ${questionId}: ${error}`);
       throw error;
     }
   }
@@ -67,7 +67,7 @@ export class ModerationService {
       if (!result) throw new Error(`Server with ID ${serverId} not found`);
       Logger.debug(`Server ${serverId} banned successfully`);
     } catch (error) {
-      Logger.debug(`Failed to ban server ${serverId}: ${JSON.stringify(error)}`);
+      Logger.debug(`Failed to ban server ${serverId}: ${error}`);
       throw error;
     }
   }
@@ -104,7 +104,7 @@ export class ModerationService {
 
       Logger.debug(`Report ${reportId} cleared successfully`);
     } catch (error) {
-      Logger.error(`Failed to clear report ${reportId}: ${JSON.stringify(error)}`);
+      Logger.error(`Failed to clear report ${reportId}: ${error}`);
       throw error;
     }
   }
@@ -120,7 +120,7 @@ export class ModerationService {
       Logger.debug(`Report ${reportId} marked as actioning successfully`);
       return updated;
     } catch (error) {
-      Logger.error(`Failed to mark report ${reportId} as actioning: ${JSON.stringify(error)}`);
+      Logger.error(`Failed to mark report ${reportId} as actioning: ${error}`);
       throw error;
     }
   }
@@ -155,7 +155,7 @@ export class ModerationService {
 
       Logger.debug(`Report ${reportId} marked as actioned successfully`);
     } catch (error) {
-      Logger.error(`Failed to mark report ${reportId} as actioned: ${JSON.stringify(error)}`);
+      Logger.error(`Failed to mark report ${reportId} as actioned: ${error}`);
       throw error;
     }
   }

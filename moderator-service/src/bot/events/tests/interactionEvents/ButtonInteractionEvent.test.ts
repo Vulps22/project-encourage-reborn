@@ -1,176 +1,176 @@
-// import { ButtonInteraction } from 'discord.js';
+import { ButtonInteraction } from 'discord.js';
+import { BotButtonInteraction } from '@vulps22/bot-interactions';
 
-// // Mock the Logger before importing ButtonInteractionEvent
-// jest.mock('../../../utils/Logger', () => ({
-//     Logger: {
-//         debug: jest.fn(),
-//         error: jest.fn(),
-//         updateExecution: jest.fn()
-//     }
-// }));
+// Mock the Logger before importing ButtonInteractionEvent
+jest.mock('../../../utils', () => ({
+    Logger: {
+        debug: jest.fn(),
+        error: jest.fn(),
+        updateExecution: jest.fn()
+    }
+}));
 
-// const { ButtonInteractionEvent } = require('../../interactionEvents/ButtonInteractionEvent')
-// const { BotButtonInteraction } = require('../../../structures');
-// const { Logger } = require('../../../utils');
+const { ButtonInteractionEvent } = require('../../interactionEvents/ButtonInteractionEvent')
+const { Logger } = require('../../../utils');
 
-// describe('ButtonInteractionEvent', () => {
-//     let buttonInteractionEvent: InstanceType<typeof ButtonInteractionEvent>;
-//     let mockButtonInteraction: jest.Mocked<ButtonInteraction>;
-//     let mockHandler: any;
-//     let originalGlobal: any;
-//     let originalConsoleLog: any;
+describe('ButtonInteractionEvent', () => {
+    let buttonInteractionEvent: InstanceType<typeof ButtonInteractionEvent>;
+    let mockButtonInteraction: jest.Mocked<ButtonInteraction>;
+    let mockHandler: any;
+    let originalGlobal: any;
+    let originalConsoleLog: any;
 
-//     beforeAll(() => {
-//         // Save original global state
-//         originalGlobal = {
-//             buttons: (global as any).buttons
-//         };
-//         // Mock console.log to avoid test output pollution
-//         originalConsoleLog = console.log;
-//         console.log = jest.fn();
-//     });
+    beforeAll(() => {
+        // Save original global state
+        originalGlobal = {
+            buttons: (global as any).buttons
+        };
+        // Mock console.log to avoid test output pollution
+        originalConsoleLog = console.log;
+        console.log = jest.fn();
+    });
 
-//     afterAll(() => {
-//         // Restore original global state
-//         (global as any).buttons = originalGlobal.buttons;
-//         console.log = originalConsoleLog;
-//     });
+    afterAll(() => {
+        // Restore original global state
+        (global as any).buttons = originalGlobal.buttons;
+        console.log = originalConsoleLog;
+    });
 
-//     beforeEach(() => {
-//         // Reset all mocks
-//         jest.clearAllMocks();
+    beforeEach(() => {
+        // Reset all mocks
+        jest.clearAllMocks();
 
-//         // Create instance
-//         buttonInteractionEvent = new ButtonInteractionEvent();
+        // Create instance
+        buttonInteractionEvent = new ButtonInteractionEvent();
 
-//         // Create mock button interaction
-//         mockButtonInteraction = {
-//             customId: 'moderation_approveQuestion_id:123',
-//             user: {
-//                 id: '987654321',
-//                 username: 'testuser'
-//             },
-//             guild: {
-//                 id: '111111111',
-//                 name: 'Test Guild'
-//             },
-//             replied: false,
-//             deferred: false,
-//             reply: jest.fn().mockResolvedValue(undefined),
-//             deferReply: jest.fn().mockResolvedValue(undefined),
-//             followUp: jest.fn().mockResolvedValue(undefined)
-//         } as any;
+        // Create mock button interaction
+        mockButtonInteraction = {
+            customId: 'moderation_approveQuestion_id:123',
+            user: {
+                id: '987654321',
+                username: 'testuser'
+            },
+            guild: {
+                id: '111111111',
+                name: 'Test Guild'
+            },
+            replied: false,
+            deferred: false,
+            reply: jest.fn().mockResolvedValue(undefined),
+            deferReply: jest.fn().mockResolvedValue(undefined),
+            followUp: jest.fn().mockResolvedValue(undefined)
+        } as any;
 
-//         // Create mock handler
-//         mockHandler = {
-//             name: 'approveQuestion',
-//             execute: jest.fn().mockResolvedValue(undefined)
-//         };
+        // Create mock handler
+        mockHandler = {
+            name: 'approveQuestion',
+            execute: jest.fn().mockResolvedValue(undefined)
+        };
 
-//         // Set up global buttons collection
-//         (global as any).buttons = new Map();
-//         (global as any).buttons.set('moderation_approveQuestion', mockHandler);
-//     });
+        // Set up global buttons collection
+        (global as any).buttons = new Map();
+        (global as any).buttons.set('moderation_approveQuestion', mockHandler);
+    });
 
-//     describe('execute', () => {
-//         it('should execute handler for valid button interaction', async () => {
-//             const executionId = 'test-execution-id';
+    describe('execute', () => {
+        it('should execute handler for valid button interaction', async () => {
+            const executionId = 'test-execution-id';
 
-//             await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
+            await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
 
-//             expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
-            
-//             // Verify the BotButtonInteraction was created correctly
-//             const botInteractionArg = mockHandler.execute.mock.calls[0][0];
-//             expect(botInteractionArg.baseId).toBe('moderation_approveQuestion');
-//             expect(botInteractionArg.action).toBe('approveQuestion');
-//             expect(botInteractionArg.params.get('id')).toBe('123');
-//         });
+            expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
 
-//         it('should handle missing handler gracefully', async () => {
-//             mockButtonInteraction.customId = 'unknown_handler_id:123';
-//             const executionId = 'test-execution-id';
+            // Verify the BotButtonInteraction was created correctly
+            const botInteractionArg = mockHandler.execute.mock.calls[0][0];
+            expect(botInteractionArg.baseId).toBe('moderation_approveQuestion');
+            expect(botInteractionArg.action).toBe('approveQuestion');
+            expect(botInteractionArg.params.get('id')).toBe('123');
+        });
 
-//             await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
+        it('should handle missing handler gracefully', async () => {
+            mockButtonInteraction.customId = 'unknown_handler_id:123';
+            const executionId = 'test-execution-id';
 
-//             expect(Logger.error).toHaveBeenCalledWith('Button not found for Custom ID: unknown_handler');
-//             expect(mockHandler.execute).not.toHaveBeenCalled();
-//             expect(console.log).not.toHaveBeenCalled();
-//         });
+            await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
 
-//         it('should handle handler execution errors gracefully', async () => {
-//             const testError = new Error('Handler execution failed');
-//             mockHandler.execute.mockRejectedValue(testError);
-//             const executionId = 'test-execution-id';
+            expect(Logger.error).toHaveBeenCalledWith('Button not found for Custom ID: unknown_handler');
+            expect(mockHandler.execute).not.toHaveBeenCalled();
+            expect(console.log).not.toHaveBeenCalled();
+        });
 
-//             await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
-//                 .resolves.not.toThrow();
+        it('should handle handler execution errors gracefully', async () => {
+            const testError = new Error('Handler execution failed');
+            mockHandler.execute.mockRejectedValue(testError);
+            const executionId = 'test-execution-id';
 
-//             expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
-//             expect(mockButtonInteraction.reply).toHaveBeenCalledWith({
-//                 content: '❌ An error occurred while processing this action.',
-//                 flags: 64
-//             });
-//         });
+            await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
+                .resolves.not.toThrow();
 
-//         it('should not reply on error if interaction already replied', async () => {
-//             mockButtonInteraction.replied = true;
-//             const testError = new Error('Handler execution failed');
-//             mockHandler.execute.mockRejectedValue(testError);
-//             const executionId = 'test-execution-id';
+            expect(mockHandler.execute).toHaveBeenCalledWith(expect.any(BotButtonInteraction));
+            expect(mockButtonInteraction.reply).toHaveBeenCalledWith({
+                content: '❌ An error occurred while processing this action.',
+                flags: 64
+            });
+        });
 
-//             await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
-//                 .resolves.not.toThrow();
+        it('should not reply on error if interaction already replied', async () => {
+            mockButtonInteraction.replied = true;
+            const testError = new Error('Handler execution failed');
+            mockHandler.execute.mockRejectedValue(testError);
+            const executionId = 'test-execution-id';
 
-//             expect(mockButtonInteraction.reply).not.toHaveBeenCalled();
-//         });
+            await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
+                .resolves.not.toThrow();
 
-//         it('should not reply on error if interaction already deferred', async () => {
-//             mockButtonInteraction.deferred = true;
-//             const testError = new Error('Handler execution failed');
-//             mockHandler.execute.mockRejectedValue(testError);
-//             const executionId = 'test-execution-id';
+            expect(mockButtonInteraction.reply).not.toHaveBeenCalled();
+        });
 
-//             await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
-//                 .resolves.not.toThrow();
+        it('should not reply on error if interaction already deferred', async () => {
+            mockButtonInteraction.deferred = true;
+            const testError = new Error('Handler execution failed');
+            mockHandler.execute.mockRejectedValue(testError);
+            const executionId = 'test-execution-id';
 
-//             expect(mockButtonInteraction.reply).not.toHaveBeenCalled();
-//         });
+            await expect(buttonInteractionEvent.execute(mockButtonInteraction, executionId))
+                .resolves.not.toThrow();
 
-//         it('should parse complex custom IDs correctly', async () => {
-//             mockButtonInteraction.customId = 'moderation_banQuestion_id:456_reason:spam_modId:789';
-//             const banHandler = {
-//                 name: 'banQuestion',
-//                 execute: jest.fn().mockResolvedValue(undefined)
-//             };
-//             (global as any).buttons.set('moderation_banQuestion', banHandler);
-//             const executionId = 'test-execution-id';
+            expect(mockButtonInteraction.reply).not.toHaveBeenCalled();
+        });
 
-//             await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
+        it('should parse complex custom IDs correctly', async () => {
+            mockButtonInteraction.customId = 'moderation_banQuestion_id:456_reason:spam_modId:789';
+            const banHandler = {
+                name: 'banQuestion',
+                execute: jest.fn().mockResolvedValue(undefined)
+            };
+            (global as any).buttons.set('moderation_banQuestion', banHandler);
+            const executionId = 'test-execution-id';
 
-//             const botInteractionArg = banHandler.execute.mock.calls[0][0];
-//             expect(botInteractionArg.baseId).toBe('moderation_banQuestion');
-//             expect(botInteractionArg.action).toBe('banQuestion');
-//             expect(botInteractionArg.params.get('id')).toBe('456');
-//             expect(botInteractionArg.params.get('reason')).toBe('spam');
-//             expect(botInteractionArg.params.get('modId')).toBe('789');
-//         });
+            await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
 
-//         it('should handle simple custom IDs without parameters', async () => {
-//             mockButtonInteraction.customId = 'simple_action';
-//             const simpleHandler = {
-//                 name: 'simple',
-//                 execute: jest.fn().mockResolvedValue(undefined)
-//             };
-//             (global as any).buttons.set('simple_action', simpleHandler);
-//             const executionId = 'test-execution-id';
+            const botInteractionArg = banHandler.execute.mock.calls[0][0];
+            expect(botInteractionArg.baseId).toBe('moderation_banQuestion');
+            expect(botInteractionArg.action).toBe('banQuestion');
+            expect(botInteractionArg.params.get('id')).toBe('456');
+            expect(botInteractionArg.params.get('reason')).toBe('spam');
+            expect(botInteractionArg.params.get('modId')).toBe('789');
+        });
 
-//             await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
+        it('should handle simple custom IDs without parameters', async () => {
+            mockButtonInteraction.customId = 'simple_action';
+            const simpleHandler = {
+                name: 'simple',
+                execute: jest.fn().mockResolvedValue(undefined)
+            };
+            (global as any).buttons.set('simple_action', simpleHandler);
+            const executionId = 'test-execution-id';
 
-//             const botInteractionArg = simpleHandler.execute.mock.calls[0][0];
-//             expect(botInteractionArg.baseId).toBe('simple_action');
-//             expect(botInteractionArg.action).toBe('action');
-//             expect(botInteractionArg.params.size).toBe(0);
-//         });
-//     });
-// });
+            await buttonInteractionEvent.execute(mockButtonInteraction, executionId);
+
+            const botInteractionArg = simpleHandler.execute.mock.calls[0][0];
+            expect(botInteractionArg.baseId).toBe('simple_action');
+            expect(botInteractionArg.action).toBe('action');
+            expect(botInteractionArg.params.size).toBe(0);
+        });
+    });
+});
