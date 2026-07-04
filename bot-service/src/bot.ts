@@ -109,16 +109,29 @@ async function loadModals(): Promise<void> {
 }
 
 /**
- * Load and register all event handlers
+ * Recursively find and register event handlers within a directory
  */
-async function loadEvents(client: Client): Promise<void> {
-    const eventsPath = join(__dirname, 'events');
-    const eventFiles = readdirSync(eventsPath).filter(file => file.endsWith('.js') && file !== 'index.js');
+async function loadEventsFromDirectory(client: Client, dirPath: string): Promise<void> {
+    const items = readdirSync(dirPath, { withFileTypes: true });
 
-    for (const file of eventFiles) {
-        const filePath = join(eventsPath, file);
-        const eventModule = await import(filePath) as { default: EventHandler };
-        const event: EventHandler = eventModule.default;
+    for (const item of items) {
+        const itemPath = join(dirPath, item.name);
+
+        if (item.isDirectory()) {
+            await loadEventsFromDirectory(client, itemPath);
+            continue;
+        }
+
+        if (!item.isFile() || !item.name.endsWith('.js') || item.name === 'index.js') {
+            continue;
+        }
+
+        const eventModule = await import(itemPath) as { default?: EventHandler };
+        const event = eventModule.default;
+
+        if (!event || typeof event.event !== 'string' || typeof event.execute !== 'function') {
+            continue;
+        }
 
         if (event.once) {
             client.once(event.event, (...args) => void event.execute(...args));
@@ -128,6 +141,14 @@ async function loadEvents(client: Client): Promise<void> {
 
         Logger.debug(`Registered event: ${event.event} (once: ${event.once})`);
     }
+}
+
+/**
+ * Load and register all event handlers
+ */
+async function loadEvents(client: Client): Promise<void> {
+    const eventsPath = join(__dirname, 'events');
+    await loadEventsFromDirectory(client, eventsPath);
 }
 
 /**
