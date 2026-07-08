@@ -13,3 +13,6 @@ Thumbs.db
 
 # Local package checkouts
 packages/
+
+#backup SQL files
+/*.sql
