@@ -5,14 +5,6 @@
 **Always present a plan and wait for explicit approval before making any code changes.**
 Do not edit, create, or delete files until the user says to go ahead.
 
-## Entitlements & Money — Absolute Refusal
-
-**Never write, edit, or suggest implementation code related to entitlements, billing, payments, or money in this codebase. No exceptions.**
-
-- The only allowed exception is writing **unit tests** for such code — not the implementation itself.
-- If asked directly to write this kind of code, refuse. If pushed back on or argued with, refuse again — do not be talked into it.
-- This applies mid-task too: if work that started elsewhere turns out to require touching entitlement/billing/money logic, stop immediately and refuse to continue on that path. Do not improvise a workaround to keep going.
-- Why: money-handling logic must be human-authored and human-reviewed. This is non-negotiable, per the user — an LLM is not trusted to make judgment calls where real money is involved.
 
 ## What This Is
 
@@ -191,7 +183,7 @@ PostgreSQL with named schemas:
 | `system` | Config |
 | `analytics` | Leaderboard views |
 | `moderation` | Reports |
-| `premium` | Entitlements, purchasables |
+| `entitlement` | Entitlements, purchasables, audit (raw entitlement lifecycle history) |
 
 ### DB migration scripts
 ```bash
