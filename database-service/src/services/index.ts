@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { ChallengeService } from './ChallengeService';
 import { ConfigService } from './ConfigService';
+import { EntitlementService } from './EntitlementService';
 import { InventoryService } from './InventoryService';
 import { QuestionService } from './QuestionService';
 import { ReportService } from './ReportService';
@@ -12,6 +13,7 @@ import { VoteService } from './VoteService';
 
 export const challengeService = new ChallengeService(db);
 export const configService = new ConfigService(db);
+export const entitlementService = new EntitlementService(db);
 export const inventoryService = new InventoryService(db);
 export const questionService = new QuestionService(db);
 export const reportService = new ReportService(db);
