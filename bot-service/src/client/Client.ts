@@ -67,7 +67,7 @@ export abstract class Client {
     return this.request<T>('PATCH', path, params, body);
   }
 
-  async delete<T>(path: string, params?: PathParams): Promise<T> {
-    return this.request<T>('DELETE', path, params);
+  async delete<T>(path: string, params?: PathParams, body?: unknown): Promise<T> {
+    return this.request<T>('DELETE', path, params, body);
   }
 }

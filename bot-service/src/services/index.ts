@@ -1,6 +1,7 @@
 // Barrel file for services
 import { ChallengeService } from './ChallengeService';
 import { ConfigurationService } from './ConfigurationService';
+import { EntitlementService } from './EntitlementService';
 import { QuestionService } from './QuestionService';
 import { ServerService } from './ServerService';
 import { UserService } from './UserService';
@@ -11,6 +12,7 @@ import { InventoryService } from './InventoryService';
 
 export { ChallengeService } from './ChallengeService';
 export { ConfigurationService } from './ConfigurationService';
+export { EntitlementService } from './EntitlementService';
 export { QuestionService } from './QuestionService';
 export { ServerService } from './ServerService';
 export { UserService } from './UserService';
@@ -21,6 +23,7 @@ export { InventoryService } from './InventoryService';
 
 export const challengeService = new ChallengeService();
 export const configurationService = new ConfigurationService();
+export const entitlementService = new EntitlementService();
 export const questionService = new QuestionService();
 export const serverService = new ServerService();
 export const userService = new UserService();

@@ -2,6 +2,7 @@ import { ShardingManager } from 'discord.js';
 import path from 'path';
 import { createServer } from '@vulps22/dynamic-endpoint-router';
 import { Logger } from '@vulps22/logger';
+import { entitlementService } from './services';
 
 // Initialize Logger with sensitive values from .env
 Logger.initialize();
@@ -39,6 +40,15 @@ createServer({
     port: webhookPort,
     routesPath: path.join(__dirname, 'routes'),
 }).catch(console.error);
+
+// Reconcile entitlements on startup, then on an interval, as a backstop for any
+// gateway entitlement events missed while the bot was offline. Runs once in the
+// ShardingManager process (not per-shard) since it only needs the bot token.
+entitlementService.reconcile().catch(console.error);
+const entitlementReconcileInterval = setInterval(() => {
+    entitlementService.reconcile().catch(console.error);
+}, 60 * 60 * 1000);
+entitlementReconcileInterval.unref();
 
 // Start the bot
 startBot().catch((error: Error) => {
