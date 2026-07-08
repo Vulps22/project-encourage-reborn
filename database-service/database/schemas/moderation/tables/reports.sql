@@ -1,0 +1,60 @@
+
+DO $$ BEGIN
+    CREATE TYPE report_status AS ENUM ('pending', 'actioning', 'actioned', 'cleared');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS "reports" (
+  "id" SERIAL,
+  "type" TEXT NOT NULL,
+  "reason" TEXT NOT NULL,
+  "content" TEXT NOT NULL,
+  "status" report_status NOT NULL DEFAULT 'pending',
+  "moderator_id" BIGINT DEFAULT NULL,
+  "ban_reason" TEXT,
+  "sender_id" BIGINT NOT NULL,
+  "offender_id" BIGINT NOT NULL,
+  "server_id" BIGINT NOT NULL,
+  "message_id" BIGINT DEFAULT NULL,
+  "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("id")
+);
+
+-- Trigger to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_reports_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_reports_updated_at ON "reports";
+CREATE TRIGGER trg_reports_updated_at
+BEFORE UPDATE ON "reports"
+FOR EACH ROW
+EXECUTE FUNCTION update_reports_updated_at();
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS "idx_status" ON "reports"("status");
+CREATE INDEX IF NOT EXISTS "idx_offender" ON "reports"("offender_id");
+CREATE INDEX IF NOT EXISTS "idx_server" ON "reports"("server_id");
+CREATE INDEX IF NOT EXISTS "idx_created" ON "reports"("created_at");
+CREATE INDEX IF NOT EXISTS "idx_message_id" ON "reports"("message_id");
+ 
+COMMENT ON TABLE "reports" IS 'Stores user reports for inappropriate questions or behavior';
+COMMENT ON COLUMN "reports"."id" IS 'Unique identifier for the report';
+COMMENT ON COLUMN "reports"."type" IS 'Type of content being reported';
+COMMENT ON COLUMN "reports"."reason" IS 'User-provided reason for the report';
+COMMENT ON COLUMN "reports"."content" IS 'Content of the report';
+COMMENT ON COLUMN "reports"."status" IS 'Current status of the report';
+COMMENT ON COLUMN "reports"."moderator_id" IS 'Discord user ID of the moderator who actioned the report';
+COMMENT ON COLUMN "reports"."sender_id" IS 'Discord user ID of the user who submitted the report';
+COMMENT ON COLUMN "reports"."offender_id" IS 'ID of the reported entity (question ID, server ID, or user ID depending on type)';
+COMMENT ON COLUMN "reports"."server_id" IS 'Discord server ID where the report was made';
+COMMENT ON COLUMN "reports"."message_id" IS 'Discord message ID of the moderation log post';
+COMMENT ON COLUMN "reports"."created_at" IS 'When the report was submitted';
+COMMENT ON COLUMN "reports"."updated_at" IS 'When the report was last updated (auto-maintained by trigger)';
+COMMENT ON COLUMN "reports"."ban_reason" IS 'Moderator-provided reason if content was banned';
