@@ -7,7 +7,7 @@ const vote = new Command('vote', 'Check your skips and vote for the bot on Top.g
     .setAdministrator(false)
     .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {
         const topggUrl = process.env.TOPGG_URL;
-        const inventory = await inventoryService.get(interaction.user.id, 'Skip');
+        const inventory = await inventoryService.get(interaction.user.id, 'skip');
         const skips = inventory?.qty ?? 0;
 
         await interaction.ephemeralReply(
