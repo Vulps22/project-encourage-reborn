@@ -1,6 +1,11 @@
-import { BotButtonInteraction } from '@vulps22/bot-interactions';
+import { BotButtonInteraction, errorView } from '@vulps22/bot-interactions';
 import { MessageFlags } from 'discord.js';
 import reportButton from '../../question/report';
+
+jest.mock('@vulps22/bot-interactions', () => ({
+    ...jest.requireActual('@vulps22/bot-interactions'),
+    errorView: jest.fn().mockReturnValue({ flags: 64, components: [] }),
+}));
 
 describe('reportButton', () => {
     let mockInteraction: jest.Mocked<BotButtonInteraction>;
@@ -42,12 +47,13 @@ describe('reportButton', () => {
         expect(confirmButton).toBeDefined();
     });
 
-    it('should throw and call ephemeralReply when question ID is missing', async () => {
+    it('should throw and call ephemeralReply with errorView when question ID is missing', async () => {
         (mockInteraction.params as Map<string, string>).clear();
 
         await expect(reportButton.execute(mockInteraction)).rejects.toThrow(
             'Invalid question ID when using Button: question_report'
         );
-        expect(mockInteraction.ephemeralReply).toHaveBeenCalledWith('❌ Invalid question ID');
+        expect(errorView).toHaveBeenCalledWith('Invalid question ID');
+        expect(mockInteraction.ephemeralReply).toHaveBeenCalledTimes(1);
     });
 });

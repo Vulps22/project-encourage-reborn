@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, GuildNSFWLevel, TextChannel } from "discord.js";
 import { BotCommandInteraction, errorView } from "@vulps22/bot-interactions";
 import { Logger } from "@vulps22/logger";
 import { InteractionEvent } from "./InteractionEvent";
@@ -14,16 +14,15 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
         }
 
         const channel = interaction.channel as TextChannel;
+        const botInteraction = new BotCommandInteraction(interaction, executionId);
 
         const guildIsNSFW = interaction.guild?.nsfwLevel !== GuildNSFWLevel.Safe
                  && interaction.guild?.nsfwLevel !== GuildNSFWLevel.Default;
 
         if (command.isNSFW && !channel.nsfw && !guildIsNSFW) {
-            await interaction.reply('❌ This command can only be used in NSFW channels or servers.');
+            await botInteraction.sendReply(errorView('This command can only be used in NSFW channels or servers.'));
             return;
         }
-
-        const botInteraction = new BotCommandInteraction(interaction, executionId);
 
         if (command.isAdministrator && !botInteraction.isAdministrator()) {
             await botInteraction.sendReply(errorView('You do not have permission to use this command.'));

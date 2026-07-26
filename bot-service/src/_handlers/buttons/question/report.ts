@@ -1,4 +1,3 @@
-import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { BotButtonInteraction, errorView } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { reportConfirmationView } from '../../../views';

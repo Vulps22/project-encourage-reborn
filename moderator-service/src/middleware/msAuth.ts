@@ -1,4 +1,4 @@
-import { auth, jsonBody, Middleware } from '@vulps22/dynamic-endpoint-router';
+import { auth, jsonBody, Middleware } from '@vulps22/pathfinder';
 
 export const msMiddleware: Middleware[] = [
   jsonBody(),

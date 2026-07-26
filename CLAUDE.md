@@ -221,6 +221,7 @@ Unless explicitly instructed otherwise, every working branch must relate to a sp
 gh issue develop <issue_number> --repo Vulps22/project-encourage-reborn --checkout --base current-release
 ```
 
+
 **ALWAYS branch off `current-release` — NEVER off `main`.** PRs merge into `main`. `current-release` is the production branch; branching off it means every branch starts from a known-good production state. Fixes merged into `current-release` can then flow into any in-flight branch independently, without waiting for unrelated work on `main` to land first.
 
 ### Commit message format
