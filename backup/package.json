@@ -1,0 +1,29 @@
+{
+  "name": "backup-bot",
+  "version": "1.0.0",
+  "description": "Standalone failover bot — replies with a maintenance message on any interaction while the primary bot is offline",
+  "main": "dist/index.js",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
+    "start": "node --env-file=../.env.production dist/index.js",
+    "dev": "npm run build && node --env-file=../.env.development --watch dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.13.14",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.48.0"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3"
+  }
+}

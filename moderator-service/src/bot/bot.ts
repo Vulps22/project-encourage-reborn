@@ -5,7 +5,7 @@ import { Handler, Command, Logger } from './utils';
 import { EventHandler } from './types';
 import { Config } from './config';
 import { BotButtonInteraction, BotModalInteraction, BotSelectMenuInteraction } from '@vulps22/bot-interactions';
-import { createServer } from '@vulps22/dynamic-endpoint-router';
+import { createServer } from '@vulps22/pathfinder';
 
 /**
  * Initialize global objects

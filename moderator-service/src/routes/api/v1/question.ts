@@ -1,4 +1,4 @@
-import { ApiRoute } from '@vulps22/dynamic-endpoint-router';
+import { ApiRoute } from '@vulps22/pathfinder';
 import { Request, Response } from 'express';
 import { QuestionType } from '@vulps22/project-encourage-types';
 import { MetaQuestionBuilder } from '../../../bot/builders/MetaQuestionBuilder';
