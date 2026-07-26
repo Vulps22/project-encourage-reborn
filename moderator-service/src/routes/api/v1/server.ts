@@ -1,4 +1,4 @@
-import { ApiRoute } from '@vulps22/dynamic-endpoint-router';
+import { ApiRoute } from '@vulps22/pathfinder';
 import { Request, Response } from 'express';
 import { ServerProfileBuilder } from '../../../bot/builders/ServerProfileBuilder';
 import { ModerationLogger } from '../../../bot/utils/ModerationLogger';

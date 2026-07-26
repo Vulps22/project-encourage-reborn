@@ -18,6 +18,7 @@ const mockVote     = { challenge_id: 1, done_count: 0, failed_count: 0 };
 const mockReport   = { id: 1, status: 'PENDING' };
 const mockConfig   = { id: 'config', lockdown: false };
 const mockStorable = { id: 1, name: 'item' };
+const mockAuditRow = { id: 1, entitlement_id: 'ent-1', type: 'create', source: 'gateway', data: {}, created_at: '2026-01-01' };
 
 jest.mock('../../src/services', () => ({
   questionService: {
@@ -92,6 +93,13 @@ jest.mock('../../src/services', () => ({
     get:     jest.fn().mockResolvedValue({ qty: 5 }),
     add:     jest.fn().mockResolvedValue({ qty: 6 }),
     consume: jest.fn().mockResolvedValue({ qty: 4 }),
+  },
+  entitlementService: {
+    record: jest.fn().mockResolvedValue(mockAuditRow),
+    latestByEntitlementId: jest.fn().mockResolvedValue(null),
+    distinctOpenEntitlementIds: jest.fn().mockResolvedValue([]),
+    findPurchasableBySkuId: jest.fn().mockResolvedValue({ sku_id: 'sku-1' }),
+    hasDrifted: jest.fn().mockReturnValue(false),
   },
 }));
 
@@ -229,5 +237,105 @@ describe('POST /api/v1/track', () => {
       .set('Authorization', PE)
       .send({});
     expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/v1/entitlement/audit', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/audit');
+  const app = buildRouteApp(route, '/api/v1/entitlement/audit');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).post('/api/v1/entitlement/audit')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing fields', async () => {
+    const res = await request(app)
+      .post('/api/v1/entitlement/audit')
+      .set('Authorization', PE)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 201 with auth and a valid body', async () => {
+    const res = await request(app)
+      .post('/api/v1/entitlement/audit')
+      .set('Authorization', PE)
+      .send({ id: 'ent-1', data: { foo: 'bar' } });
+    expect(res.status).toBe(201);
+  });
+});
+
+describe('PATCH /api/v1/entitlement/audit', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/audit');
+  const app = buildRouteApp(route, '/api/v1/entitlement/audit');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).patch('/api/v1/entitlement/audit')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing fields', async () => {
+    const res = await request(app)
+      .patch('/api/v1/entitlement/audit')
+      .set('Authorization', PE)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 200 with auth and a valid body', async () => {
+    const res = await request(app)
+      .patch('/api/v1/entitlement/audit')
+      .set('Authorization', PE)
+      .send({ id: 'ent-1', data: { foo: 'bar' } });
+    expect(res.status).toBe(200);
+  });
+});
+
+describe('DELETE /api/v1/entitlement/audit', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/audit');
+  const app = buildRouteApp(route, '/api/v1/entitlement/audit');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).delete('/api/v1/entitlement/audit')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing fields', async () => {
+    const res = await request(app)
+      .delete('/api/v1/entitlement/audit')
+      .set('Authorization', PE)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 200 with auth and a valid body', async () => {
+    const res = await request(app)
+      .delete('/api/v1/entitlement/audit')
+      .set('Authorization', PE)
+      .send({ id: 'ent-1', data: { foo: 'bar' } });
+    expect(res.status).toBe(200);
+  });
+});
+
+describe('POST /api/v1/entitlement/reconcile', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/reconcile');
+  const app = buildRouteApp(route, '/api/v1/entitlement/reconcile');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).post('/api/v1/entitlement/reconcile')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing entitlements array', async () => {
+    const res = await request(app)
+      .post('/api/v1/entitlement/reconcile')
+      .set('Authorization', PE)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 200 with auth and a valid body', async () => {
+    const res = await request(app)
+      .post('/api/v1/entitlement/reconcile')
+      .set('Authorization', PE)
+      .send({ entitlements: [{ id: 'ent-1', sku_id: 'sku-1' }] });
+    expect(res.status).toBe(200);
   });
 });

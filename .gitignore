@@ -3,9 +3,6 @@
 .env.*
 !.env.example
 
-# SQL backups
-*.sql
-
 # OS
 .DS_Store
 Thumbs.db
@@ -16,3 +13,6 @@ Thumbs.db
 
 # Local package checkouts
 packages/
+
+#backup SQL files
+/*.sql

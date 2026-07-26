@@ -155,4 +155,24 @@ export class DatabaseClient extends Client {
   async trackInteraction(userId: string, serverId: string, serverOwnerId: string): Promise<void> {
     await this.post('/api/v1/track', undefined, { user_id: userId, server_id: serverId, server_owner_id: serverOwnerId });
   }
+
+  // ===== ENTITLEMENT =====
+
+  async recordEntitlementEvent(type: 'create' | 'update' | 'delete', id: string, data: unknown): Promise<void> {
+    switch (type) {
+      case 'create':
+        await this.post('/api/v1/entitlement/audit', undefined, { id, data });
+        break;
+      case 'update':
+        await this.patch('/api/v1/entitlement/audit', undefined, { id, data });
+        break;
+      case 'delete':
+        await this.delete('/api/v1/entitlement/audit', undefined, { id, data });
+        break;
+    }
+  }
+
+  async reconcileEntitlements(entitlements: unknown[]): Promise<void> {
+    await this.post('/api/v1/entitlement/reconcile', undefined, { entitlements });
+  }
 }

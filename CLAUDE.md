@@ -5,6 +5,7 @@
 **Always present a plan and wait for explicit approval before making any code changes.**
 Do not edit, create, or delete files until the user says to go ahead.
 
+
 ## What This Is
 
 A Discord Truth or Dare bot platform consisting of three services in a single monorepo (`Vulps22/project-encourage-reborn`):
@@ -182,7 +183,7 @@ PostgreSQL with named schemas:
 | `system` | Config |
 | `analytics` | Leaderboard views |
 | `moderation` | Reports |
-| `premium` | Entitlements, purchasables |
+| `entitlement` | Entitlements, purchasables, audit (raw entitlement lifecycle history) |
 
 ### DB migration scripts
 ```bash
