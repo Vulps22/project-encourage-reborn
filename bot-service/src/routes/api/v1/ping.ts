@@ -1,4 +1,4 @@
-import { ApiRoute } from '@vulps22/dynamic-endpoint-router';
+import { ApiRoute } from '@vulps22/pathfinder';
 
 export const route: ApiRoute = {
     async get(_req, res): Promise<void> {

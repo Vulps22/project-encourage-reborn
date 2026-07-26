@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
-import { ApiRoute, rawBody } from '@vulps22/dynamic-endpoint-router';
+import { ApiRoute, rawBody } from '@vulps22/pathfinder';
 import { Logger } from '@vulps22/logger';
 import { inventoryService, userService } from '../../../services';
 

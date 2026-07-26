@@ -1,4 +1,4 @@
-import { ApiRoute } from '@vulps22/dynamic-endpoint-router';
+import { ApiRoute } from '@vulps22/pathfinder';
 import { questionService } from '../../../../services';
 import { Question } from '@vulps22/project-encourage-types';
 import { dsMiddleware } from '../../../../middleware/dsAuth';
