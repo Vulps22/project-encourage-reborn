@@ -1,6 +1,6 @@
 import { ShardingManager } from 'discord.js';
 import path from 'path';
-import { createServer } from '@vulps22/dynamic-endpoint-router';
+import { createServer } from '@vulps22/pathfinder';
 import { Logger } from '@vulps22/logger';
 
 // Initialize Logger with sensitive values from .env

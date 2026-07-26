@@ -1,4 +1,4 @@
-import { ApiRoute } from '@vulps22/dynamic-endpoint-router';
+import { ApiRoute } from '@vulps22/pathfinder';
 
 const route: ApiRoute = {
   middleware: [],
