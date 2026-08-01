@@ -16,3 +16,8 @@ Thumbs.db
 
 # Local package checkouts
 packages/
+
+# Root has no real dependencies of its own (just delegates to each
+# service's npm install) — `npm install` still writes a trivial lockfile
+# here that carries no real lock data. Per-service lockfiles stay tracked.
+/package-lock.json
