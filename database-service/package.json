@@ -22,7 +22,7 @@
     "node": ">=20.6.0"
   },
   "dependencies": {
-    "@vulps22/dynamic-endpoint-router": "^1.0.1",
+    "@vulps22/pathfinder": "^1.0.1",
     "@vulps22/project-encourage-types": "^1.0.0",
     "dotenv": "^17.4.2",
     "mysql2": "^3.22.3",

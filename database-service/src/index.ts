@@ -1,4 +1,4 @@
-import { createServer } from '@vulps22/dynamic-endpoint-router';
+import { createServer } from '@vulps22/pathfinder';
 import { join } from 'path';
 import { initialiseSecrets } from './config/secrets';
 
