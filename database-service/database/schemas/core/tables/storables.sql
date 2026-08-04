@@ -10,3 +10,6 @@ COMMENT ON COLUMN "core"."storables"."name" IS 'Human-readable display name';
 
 INSERT INTO "core"."storables" ("id", "name") VALUES ('skip', 'Skip')
 ON CONFLICT ("id") DO NOTHING;
+
+-- bot_user privileges
+GRANT SELECT ON "core"."storables" TO bot_user;

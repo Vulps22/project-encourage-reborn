@@ -32,3 +32,8 @@ COMMENT ON COLUMN "challenge"."challenges"."channel_id" IS 'Discord channel ID w
 COMMENT ON COLUMN "challenge"."challenges"."type" IS 'Question type: truth or dare';
 COMMENT ON COLUMN "challenge"."challenges"."datetime_created" IS 'When the challenge was created';
 COMMENT ON COLUMN "challenge"."challenges"."skipped" IS 'Whether the user skipped this challenge';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "challenge" TO bot_user;
+GRANT SELECT, INSERT, UPDATE ON "challenge"."challenges" TO bot_user;
+GRANT USAGE, SELECT ON SEQUENCE "challenge"."challenges_id_seq" TO bot_user;

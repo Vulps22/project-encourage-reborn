@@ -37,3 +37,8 @@ COMMENT ON COLUMN "question"."given_questions"."type" IS 'Question type: truth o
 COMMENT ON COLUMN "question"."given_questions"."xp_type" IS 'XP scope: global or server';
 COMMENT ON COLUMN "question"."given_questions"."created" IS 'When the question was given';
 COMMENT ON COLUMN "question"."given_questions"."skipped" IS 'Whether the question was skipped';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "question" TO bot_user;
+GRANT SELECT, INSERT, UPDATE ON "question"."given_questions" TO bot_user;
+GRANT USAGE, SELECT ON SEQUENCE "question"."given_questions_id_seq" TO bot_user;

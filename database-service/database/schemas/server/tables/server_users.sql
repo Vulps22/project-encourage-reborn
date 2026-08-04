@@ -15,3 +15,6 @@ COMMENT ON COLUMN "server"."server_users"."user_id" IS 'Discord user ID';
 COMMENT ON COLUMN "server"."server_users"."server_id" IS 'Discord server ID';
 COMMENT ON COLUMN "server"."server_users"."server_level" IS 'User level within this specific server';
 COMMENT ON COLUMN "server"."server_users"."server_level_xp" IS 'Current XP progress toward next server level';
+
+-- bot_user privileges
+GRANT SELECT, INSERT, UPDATE, DELETE ON "server"."server_users" TO bot_user;

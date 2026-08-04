@@ -34,3 +34,7 @@ CREATE TABLE IF NOT EXISTS "system"."config" ("id" SERIAL,
 CREATE UNIQUE INDEX IF NOT EXISTS "id_UNIQUE" ON "system"."config"("id");
 
 COMMENT ON TABLE "system"."config" IS 'DEPRECATED: Used for database-based config in production. Moving to .env in rewrite.';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "system" TO bot_user;
+GRANT SELECT ON "system"."config" TO bot_user;

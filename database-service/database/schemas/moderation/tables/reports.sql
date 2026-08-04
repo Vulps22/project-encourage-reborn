@@ -58,3 +58,8 @@ COMMENT ON COLUMN "reports"."message_id" IS 'Discord message ID of the moderatio
 COMMENT ON COLUMN "reports"."created_at" IS 'When the report was submitted';
 COMMENT ON COLUMN "reports"."updated_at" IS 'When the report was last updated (auto-maintained by trigger)';
 COMMENT ON COLUMN "reports"."ban_reason" IS 'Moderator-provided reason if content was banned';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "moderation" TO bot_user;
+GRANT SELECT, INSERT, UPDATE ON "moderation"."reports" TO bot_user;
+GRANT USAGE, SELECT ON SEQUENCE "moderation"."reports_id_seq" TO bot_user;

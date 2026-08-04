@@ -21,3 +21,4 @@ packages/
 
 # Root level backup files should never touch the repo
 /*.sql
+database-service/database/scripts/bootstrap-native-db.sql
