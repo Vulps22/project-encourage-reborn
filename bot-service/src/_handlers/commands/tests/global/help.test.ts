@@ -44,6 +44,7 @@ describe('help command', () => {
 
   it('should not require administrator', () => {
     expect(help.isAdministrator).toBe(false);
+    expect(help.interactionInitiator).toBe(true);
   });
 
   it('should call helpView to build the message', async () => {

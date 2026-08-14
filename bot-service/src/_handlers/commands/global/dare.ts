@@ -4,7 +4,7 @@ import { QuestionType } from '@vulps22/project-encourage-types';
 import { Command } from '../../../utils';
 import { challengeEmbed } from '../../../views';
 
-const dare = new Command('dare', 'Get a random dare question')
+const dare = new Command('dare', 'Get a random dare question', true)
   .setNSFW(true)
   .setAdministrator(false)
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {

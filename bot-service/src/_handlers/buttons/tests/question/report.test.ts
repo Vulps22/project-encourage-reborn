@@ -21,6 +21,7 @@ describe('reportButton', () => {
 
     it('should have correct name and params', () => {
         expect(reportButton.name).toBe('report');
+        expect(reportButton.interactionInitiator).toBe(true);
         expect(reportButton.params).toEqual({ id: 'id' });
     });
 

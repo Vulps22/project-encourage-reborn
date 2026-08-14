@@ -47,6 +47,7 @@ describe('skip button handler', () => {
 
     it('should have correct name', () => {
         expect(skip.name).toBe('skip');
+        expect(skip.interactionInitiator).toBe(true);
     });
 
     it('should reply with error when challenge not found', async () => {

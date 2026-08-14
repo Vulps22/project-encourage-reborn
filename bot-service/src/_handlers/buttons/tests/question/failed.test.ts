@@ -25,6 +25,7 @@ describe.skip('failed button handler', () => {
   describe('handler properties', () => {
     it('should have correct name', () => {
       expect(failed.name).toBe('failed');
+      expect(failed.interactionInitiator).toBe(true);
     });
 
     it('should have execute function', () => {
