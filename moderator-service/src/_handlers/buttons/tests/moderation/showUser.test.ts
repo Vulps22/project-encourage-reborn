@@ -34,6 +34,7 @@ describe('showUser button handler', () => {
 
     it('should have correct handler properties', () => {
         expect(showUserButton.name).toBe('showUser');
+        expect(showUserButton.interactionInitiator).toBe(true);
         expect(showUserButton.params).toEqual({ ID: 'id' });
     });
 

@@ -6,6 +6,7 @@ import { QuestionType } from "@vulps22/project-encourage-types";
 const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "questionBanReasonSelected",
     params: { id: 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const questionId = interaction.params.get(questionBanReasonSelected.params!.id);
         const selectedReason = interaction.values[0];

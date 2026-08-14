@@ -8,6 +8,7 @@ import { newQuestionView } from "../../../views/moderation/newQuestionView";
 
 const approveQuestionButton: Handler<BotButtonInteraction> = {
     name: "approveQuestion",
+    interactionInitiator: true,
     async execute(interaction) {
         const questionId = interaction.params.get("id");
 

@@ -6,6 +6,7 @@ import { ServerProfileBuilder } from "../../../bot/builders/ServerProfileBuilder
 const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "serverBanReasonSelected",
     params: { id: 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const serverId = interaction.params.get(serverBanReasonSelected.params!.id);
         const selectedReason = interaction.values[0];

@@ -163,6 +163,7 @@ describe('approveQuestion button handler', () => {
 
     it('should have correct button handler structure', () => {
         expect(approveQuestionButton.name).toBe('approveQuestion');
+        expect(approveQuestionButton.interactionInitiator).toBe(true);
         expect(typeof approveQuestionButton.execute).toBe('function');
     });
 });

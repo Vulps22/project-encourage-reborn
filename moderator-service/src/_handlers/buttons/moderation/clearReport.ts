@@ -8,6 +8,7 @@ import { Handler } from '../../../bot/utils';
 const clearReportButton: Handler<BotButtonInteraction> = {
     name: 'clearReport',
     params: { id: 'string' },
+    interactionInitiator: true,
     async execute(interaction) {
         await interaction.deferUpdate();
 

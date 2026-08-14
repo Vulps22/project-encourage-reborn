@@ -7,6 +7,7 @@ import { userProfileView } from "../../../views";
 const userBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "userBanReasonSelected",
     params: { 'ID': 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const userId = interaction.params.get(userBanReasonSelected.params!.ID);
         const selectedReason = interaction.values[0];

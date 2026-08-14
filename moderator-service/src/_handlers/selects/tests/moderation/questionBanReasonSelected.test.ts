@@ -71,6 +71,7 @@ describe('questionBanReasonSelected select menu handler', () => {
 
     it('should have correct handler structure', () => {
         expect(questionBanReasonSelected.name).toBe('questionBanReasonSelected');
+        expect(questionBanReasonSelected.interactionInitiator).toBe(false);
         expect(typeof questionBanReasonSelected.execute).toBe('function');
     });
 
