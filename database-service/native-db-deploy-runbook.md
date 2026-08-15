@@ -2,7 +2,8 @@
 
 Full procedure for switching prod from the Dockerized `encourage_db` container
 to the native PostgreSQL instance: freeze writes, take a live dump, load it
-onto the native instance, fix ownership/grants, repoint prod, unfreeze.
+onto the native instance, fix ownership/grants, open network access, repoint
+prod, apply outstanding migrations, unfreeze.
 
 ## Prerequisites
 
@@ -29,7 +30,9 @@ node scripts/maintenance-bot.js
   bot-service fetches `core.config` but never actually reads `is_locked`
   anywhere, so flipping it has no effect. The maintenance-bot swap above is
   the only mechanism that actually stops traffic.
-- all services should be disabled during this window to prevent any data loss caused by changes after the dump and to allow `DS` to accept the new environment variables
+- Stop `bs`, `ms`, and `ds` (`docker compose stop bs ms ds` per service, or
+  equivalent) — this prevents writes during the dump and frees `ds` up to be
+  restarted later against the new database.
 
 ## 2. Dump the live prod database
 
@@ -80,10 +83,13 @@ sudo cat /opt/backups/project-encourage/cutover_<timestamp>.dump | \
 - Socket + `sudo -u postgres` (peer auth) rather than password auth over TCP,
   since `awesome_vd_user`/`bot_user` are deliberately too restricted to run
   ownership-bearing operations like this anyway.
-- **Known gap, not a bug**: the dump's `premium` schema doesn't exist in the
-  repo's current schema files — it's been renamed to `entitlement` there but
-  not yet migrated on real prod. Restore proceeds fine; `premium` just isn't
-  reconciled with the new name yet (see Open Items).
+- **Known gap, deliberately deferred, not a blocker**: the dump's `premium`
+  schema doesn't exist in the repo's current schema files — it's been renamed
+  to `entitlement` there but never migrated on real prod. Restore proceeds
+  fine; `premium` just isn't reconciled with the new name yet. This cutover
+  is a pure host migration (same schema in, same schema out) — the rename is
+  an unrelated, orthogonal piece of work and should land as its own ordinary
+  migration *after* cutover, not be bundled into it. See Open Items.
 
 ## 5. Reassign ownership from postgres to awesome_vd_user
 
@@ -131,63 +137,182 @@ END $$;
   cascades ownership to any sequences it owns automatically.
 - This is a one-time console step, **not a tracked migration** — ownership
   doesn't affect `bot_user`'s ability to read/write data at all (that's
-  governed entirely by grants, applied separately in step 6).
+  governed entirely by grants, applied separately in step 7).
 
-## 6. Apply any outstanding migrations
+## 6. Open network access from the app containers to Postgres
+
+**This is the step that was previously blocked/undecided — now resolved.**
+
+Confirmed directly against the VPS: Postgres's `listen_addresses` is
+currently `localhost` — it refuses connections from anywhere but loopback,
+full stop, regardless of firewall or `pg_hba.conf` rules. `bs`/`ds`/`ms` run
+on their own Docker bridge network (`project-encourage-reborn_default`,
+confirmed gateway `172.22.0.1`, subnet `172.22.0.0/16`) — a different network
+namespace from the host's loopback, so containers cannot reach
+`127.0.0.1:49154` today no matter what `DB_HOST` is set to.
+
+Three-tier access model — only one of these three actually needs to change:
+
+- `postgres` (superuser) — local socket only, peer auth (`sudo -u postgres psql`,
+  no network involved at all). **Unchanged.**
+- `awesome_vd_user` (schema owner, runs migrations) — always connects from
+  the VPS's own localhost: the repo is cloned onto the VPS and
+  `npm run db:migrate` is run directly there, never remotely. Already works
+  today against `listen_addresses = 'localhost'`. **Unchanged.**
+- `bot_user` (app runtime credential) — this is the one that's actually
+  reached from inside a Docker container (`ds`), on the bridge network. This
+  is the only role that needs the new access below.
+
+Fix (as `postgres` superuser, requires a Postgres restart):
+
+1. In `postgresql.conf`, change:
+   ```
+   listen_addresses = 'localhost'
+   ```
+   to:
+   ```
+   listen_addresses = 'localhost,172.22.0.1'
+   ```
+   Scoped to exactly what's needed — loopback (unchanged, for `postgres`/
+   `awesome_vd_user`) plus the specific Docker bridge gateway address `ds`
+   reaches Postgres through. Not a wildcard `*` — no reason to bind
+   interfaces nothing needs.
+
+2. In `pg_hba.conf`, add a rule allowing `bot_user` specifically, from the
+   Docker bridge subnet, with password auth:
+   ```
+   host    project-encourage    bot_user    172.22.0.0/16    scram-sha-256
+   ```
+   Not `awesome_vd_user` — it never connects from that network, so it has no
+   reason to be reachable from it. `scram-sha-256` rather than `md5`: every
+   password connection used while working on this (including the ones used
+   to confirm this network issue in the first place) has succeeded with a
+   plain password, and this is Postgres 18, where `scram-sha-256` has been
+   the default for years — `md5` would only be in play if someone
+   deliberately configured it otherwise.
+
+3. Restart Postgres to apply `listen_addresses` (`pg_hba.conf` alone would
+   only need a reload, but the `listen_addresses` change needs a full
+   restart): `sudo systemctl restart postgresql@18-main` (confirm exact
+   service name with `systemctl list-units | grep postgresql` first).
+
+4. Verify from inside a container on that network, e.g.
+   `docker exec encourage_ds sh -c "nc -zv 172.22.0.1 49154"` (or install a
+   throwaway psql check) before proceeding — confirm reachability before
+   trusting it in step 8.
+
+**Resolved: `DB_HOST` for prod's `.env` is `172.22.0.1`** (this network's
+Docker bridge gateway — reaches the host from any container on
+`project-encourage-reborn_default`). Note this is specific to this compose
+network; if it's ever recreated, re-check the gateway IP hasn't changed
+(`docker network inspect project-encourage-reborn_default`).
+
+## 7. Update `.env.production` and apply outstanding migrations
+
+Update root `.env.production`: `DB_HOST=172.22.0.1`, `DB_PORT=49154`. Do this
+now, before migrating — the migration script reads this file, and the old
+`DB_HOST=encourage_db` is unresolvable outside the now-defunct Docker network
+`ds` used to share with `encourage_db`.
 
 ```bash
 cd database-service && npm run db:migrate -- --prod
 ```
 
-- This should include 2 migrations, one to grant bot_user the permissions it needs. Another to apply the new timescaleDB extension and hypertable
-- Grants are defined per-table at the bottom of each
-  `database/schemas/**/*.sql` file (source of truth for `db:install` fresh
-  builds) and mirrored into a tracked migration
-  (`database/migrations/20260807_162_grant_bot_user_permissions.js`) so the
-  same grants can also apply to a database that already has data, not just a
-  from-scratch install.
-- That migration currently **excludes `entitlement`** — it doesn't exist yet
-  on a real prod-sourced database, and a single failing `GRANT` would roll
-  back the whole migration (it runs inside one transaction). Add
-  `entitlement`'s grants alongside whatever migration eventually performs the
-  `premium` → `entitlement` rename.
+This will report the TimescaleDB-dependent migrations as **skipped**, not
+applied — `analytics.events`'s hypertable, weekly aggregate, and monthly
+aggregate migrations are all gated behind `requiresSuperUser` (see
+`database/migrations/README.md`). Before re-running:
 
-## 7. Verify
+```sql
+-- as postgres superuser, via socket
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+CREATE EXTENSION IF NOT EXISTS timescaledb_toolkit;
+```
+
+Then re-run with the flag that applies superuser-gated migrations:
 
 ```bash
-PGPASSWORD='<bot_user password>' psql -h <host> -p <port> -U bot_user -d project-encourage \
+npm run db:migrate -- --prod --force-skipped
+```
+
+Expect **4** migrations to apply here, not 2:
+- `20260807_162_grant_bot_user_permissions.js` — mirrors the per-table
+  grants from `database/schemas/**/*.sql` onto a database that already has
+  data. **Excludes `entitlement`** — it doesn't exist yet on a real
+  prod-sourced database (see step 4's note and Open Items); a single failing
+  `GRANT` would roll back the whole migration. Add `entitlement`'s grants
+  alongside whatever migration eventually performs the rename.
+- `20260811_162_create_analytics_events_hypertable.js` — creates
+  `analytics.events`, converts it to a hypertable, 6-month retention policy.
+- `20260811_162_create_analytics_events_weekly_aggregate.js` and
+  `..._monthly_aggregate.js` — continuous aggregates with hyperloglog
+  distinct-user/guild counts. Both run with `skipTransaction: true` (see
+  `database/migrations/README.md`) — TimescaleDB refuses to create a
+  continuous aggregate's refresh policy inside an explicit transaction, so
+  these auto-commit statement-by-statement instead of atomically. If one
+  fails partway, there's no automatic rollback: check what landed
+  (`\d analytics` / `SELECT * FROM timescaledb_information.continuous_aggregates;`)
+  and use `node database/scripts/revert.js <name> --prod` to clean up before
+  retrying — `revert.js` can only target migrations already recorded in
+  `system.migrations`, so a partially-applied, never-recorded migration
+  needs the orphaned objects dropped by hand first (same recovery pattern
+  used when this was worked out against staging).
+
+## 8. Verify
+
+```bash
+PGPASSWORD='<bot_user password>' psql -h 172.22.0.1 -p 49154 -U bot_user -d project-encourage \
   -c 'SELECT id, type, question FROM "question"."questions" ORDER BY random() LIMIT 3;'
 ```
 
-## 8. Point prod at the new database
+## 9. Start `ds` against the new database
 
-Update the root `.env.production` `DB_HOST` (and `DB_PORT` if different) to
-the native instance's address, then start `ds` only (`docker compose up
--d ds` from the repo root) so it picks up the new value — `ms`/`bs` stay down
-until the smoke test in step 9 passes.
+```bash
+docker compose up -d ds   # from the repo root
+```
 
-- **Still open**: exactly what address `DB_HOST` should be — see Open Items,
-  the container-to-host networking question was deliberately deferred and
-  needs resolving before this step is real. `encourage_db` (the current
-  Docker-internal hostname) won't resolve once Postgres isn't a container on
-  the same compose network.
-- Once this is confirmed working, the `db` service in the root
-  `docker-compose.yml` is no longer used and can be removed.
+`bs`/`ms` stay down until the smoke test below passes. Once this is
+confirmed working, the `db` service in the root `docker-compose.yml` is no
+longer used and can be removed.
 
-## 9. Verify with smoke test
+## 10. Smoke test
 
-Ask Claude Code to execute a few Curl requests to DS to fetch data from at least 3 tables to verify the change has worked
+Curl DS directly to confirm at least 3 tables read correctly through the new
+connection, then specifically exercise the reason for this whole migration —
+confirm a real interaction lands in the interaction event log:
 
-## 10. Disable maintenance mode
+```bash
+# after starting bs (still with ms down), run a real command in Discord,
+# then check the row landed:
+PGPASSWORD='<bot_user password>' psql -h 172.22.0.1 -p 49154 -U bot_user -d project-encourage \
+  -c "SELECT created_at, service, interaction_type, interaction_name FROM analytics.events ORDER BY created_at DESC LIMIT 5;"
+```
+
+## 11. Disable maintenance mode
+
 Start `ms` and `bs`.
 Stop `maintenance-bot.js`.
 
 ## Open items (not yet resolved)
 
-- `premium` → `entitlement` schema rename not yet migrated on real prod.
-- Network restriction (`pg_hba.conf` / `listen_addresses`) is still an open
-  design question — currently reached via SSH tunnel plus a firewalled
-  non-default port, not a finished "localhost-only" setup.
-- What `DB_HOST` in prod's `.env` should actually resolve to once containers
-  can no longer reach Postgres via Docker-internal DNS (step 8).
-- `entitlement`'s `bot_user` grants deferred until the rename lands.
+- `premium` → `entitlement` schema rename not yet migrated on real prod —
+  deliberately deferred past this cutover (see step 4); needs its own
+  migration afterward, including `entitlement`'s `bot_user` grants.
+- **The migration deployment process itself needs a separate review.**
+  Current understanding: the repo is cloned onto the VPS and
+  `npm run db:migrate -- --prod` is run directly there as `awesome_vd_user`
+  — but this is inferred from how things appear to work, not confirmed
+  against an actual documented or automated process. Whether that's still
+  accurate, whether it's manual every time, and whether it should be CI/CD
+  instead, is unclear and worth its own investigation — separate from this
+  cutover, not something to resolve here.
+
+## Resolved during prep for this cutover
+
+- ~~Network restriction (`pg_hba.conf` / `listen_addresses`)~~ — resolved in
+  step 6: `listen_addresses` opened only to `localhost` (unchanged, for
+  `postgres`/`awesome_vd_user`) plus the specific Docker bridge gateway IP
+  (for `bot_user`); `pg_hba.conf` scoped to `bot_user` only, from that
+  subnet, matching the existing firewall's boundary.
+- ~~What `DB_HOST` should resolve to~~ — resolved: `172.22.0.1`, the
+  `project-encourage-reborn_default` bridge network's gateway IP.
