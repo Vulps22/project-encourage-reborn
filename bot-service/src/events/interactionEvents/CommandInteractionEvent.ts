@@ -2,6 +2,7 @@ import { AutocompleteInteraction, ChatInputCommandInteraction, GuildNSFWLevel, T
 import { BotCommandInteraction, errorView } from "@vulps22/bot-interactions";
 import { Logger } from "@vulps22/logger";
 import { InteractionEvent } from "./InteractionEvent";
+import { analyticsService } from "../../services";
 
 export class CommandInteractionEvent implements InteractionEvent<ChatInputCommandInteraction> {
 
@@ -15,6 +16,8 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
 
         const channel = interaction.channel as TextChannel;
         const botInteraction = new BotCommandInteraction(interaction, executionId);
+
+        analyticsService.logEvent('command', command.name, command.interactionInitiator, interaction.user.id, interaction.guildId);
 
         const guildIsNSFW = interaction.guild?.nsfwLevel !== GuildNSFWLevel.Safe
                  && interaction.guild?.nsfwLevel !== GuildNSFWLevel.Default;
