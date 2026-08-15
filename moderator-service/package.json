@@ -8,7 +8,7 @@
     "build": "npm run clean && tsc",
     "start": "node --env-file=.env dist/bot/bot.js",
     "dev": "npm run build && node --env-file=../.env.development --watch dist/bot/bot.js",
-    "stage": "node --env-file=.env.staging dist/bot/bot.js",
+    "stage": "npm run build && node --env-file=../.env.staging dist/bot/bot.js",
     "prod": "node --env-file=.env.production dist/bot/bot.js",
     "test": "jest",
     "test:watch": "jest --watch",
