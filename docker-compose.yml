@@ -1,22 +1,9 @@
 services:
-  db:
-    image: postgres:18
-    container_name: encourage_db
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-    ports:
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
-    volumes:
-      - db_data:/var/lib/postgresql
-    restart: unless-stopped
-
   ds:
     image: vulps23/project-encourage-ds:latest
     container_name: encourage_ds
+    ports:
+      - "127.0.0.1:${DS_SERVICE_PORT:-3010}:3000"
     env_file:
       - .env
     depends_on:
@@ -26,6 +13,8 @@ services:
   ms:
     image: vulps23/project-encourage-ms:latest
     container_name: encourage_ms
+    ports:
+      - "127.0.0.1:${MS_SERVICE_PORT:-3011}:4001"
     env_file:
       - .env
     depends_on:
@@ -38,10 +27,16 @@ services:
     env_file:
       - .env
     ports:
-      - "3006:3006"
+      - "${BS_SERVICE_PORT:-3006}:3006"
     depends_on:
       - ds
     restart: unless-stopped
 
 volumes:
   db_data:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
