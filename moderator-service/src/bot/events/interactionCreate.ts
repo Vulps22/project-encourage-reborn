@@ -31,7 +31,11 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       ? `Autocomplete: /${interaction.commandName}`
       : 'Interaction';
 
-    const executionId = await Logger.logInteractionReceived(interaction, typeLabel);
+    // Fire-and-forget — see the matching comment in bot-service. Awaiting the log
+    // webhook put a Discord round-trip in front of every interaction; the returned
+    // message id existed only for the status edits, which are gone.
+    void Logger.logInteractionReceived(interaction, typeLabel);
+    const executionId = '';
 
     if (interaction.isAutocomplete()) {
       void new CommandInteractionEvent().autocomplete?.(interaction);

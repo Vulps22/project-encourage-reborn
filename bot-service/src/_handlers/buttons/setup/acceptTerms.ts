@@ -7,6 +7,7 @@ import { rulesView } from '../../../views';
 const acceptTermsButton: Handler<BotButtonInteraction> = {
     name: 'acceptTerms',
     params: {},
+    interactionInitiator: false,
     async execute(interaction) {
         // Verify user is admin
         const member = interaction.member;

@@ -18,3 +18,7 @@ packages/
 # service's npm install) — `npm install` still writes a trivial lockfile
 # here that carries no real lock data. Per-service lockfiles stay tracked.
 /package-lock.json
+
+# Root level backup files should never touch the repo
+/*.sql
+database-service/database/scripts/bootstrap-native-db.sql

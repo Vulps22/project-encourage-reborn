@@ -32,6 +32,7 @@ describe('unbanUserButton', () => {
 
     it('should have correct name and params', () => {
         expect(unbanUserButton.name).toBe('unbanUser');
+        expect(unbanUserButton.interactionInitiator).toBe(false);
         expect(unbanUserButton.params).toEqual({ 'ID': 'id' });
     });
 

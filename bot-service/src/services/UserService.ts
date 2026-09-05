@@ -39,9 +39,13 @@ export class UserService {
     Logger.debug(`User ${userId} unbanned successfully`);
   }
 
-  async isUserBanned(userId: Snowflake): Promise<string | false> {
-    const user = await this.getUser(userId);
-    return user && user.is_banned ? user.ban_reason || 'No reason provided' : false;
+  /**
+   * @param user Optional preloaded record, to avoid a redundant fetch when the
+   *             caller already holds one.
+   */
+  async isUserBanned(userId: Snowflake, user?: User | null): Promise<string | false> {
+    const record = user !== undefined ? user : await this.getUser(userId);
+    return record && record.is_banned ? record.ban_reason || 'No reason provided' : false;
   }
 
 }

@@ -43,6 +43,7 @@ describe('rules command', () => {
 
   it('should not require administrator', () => {
     expect(rules.isAdministrator).toBe(false);
+    expect(rules.interactionInitiator).toBe(true);
   });
 
   it('should defer reply as ephemeral', async () => {

@@ -155,4 +155,20 @@ export class DatabaseClient extends Client {
   async trackInteraction(userId: string, serverId: string, serverOwnerId: string): Promise<void> {
     await this.post('/api/v1/track', undefined, { user_id: userId, server_id: serverId, server_owner_id: serverOwnerId });
   }
+
+  // ===== ANALYTICS =====
+
+  async logAnalyticsEvent(
+    interactionType: 'command' | 'button',
+    interactionName: string,
+    userId: string,
+    guildId: string | null
+  ): Promise<void> {
+    await this.post('/api/v1/analytics/event', undefined, {
+      interaction_type: interactionType,
+      interaction_name: interactionName,
+      user_id: userId,
+      guild_id: guildId,
+    });
+  }
 }

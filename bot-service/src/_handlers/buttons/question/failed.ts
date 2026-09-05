@@ -7,6 +7,7 @@ import { challengeEmbed } from '../../../views';
 
 const failed: Handler<BotButtonInteraction> = {
     name: 'failed',
+    interactionInitiator: true,
     async execute(interaction: BotButtonInteraction): Promise<void> {
         const messageId = interaction.messageId;
         const userId = interaction.user.id;
