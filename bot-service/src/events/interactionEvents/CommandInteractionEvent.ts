@@ -29,18 +29,14 @@ export class CommandInteractionEvent implements InteractionEvent<ChatInputComman
 
         if (command.isAdministrator && !botInteraction.isAdministrator()) {
             await botInteraction.sendReply(errorView('You do not have permission to use this command.'));
-            Logger.updateExecution(executionId, 'Failed: Permission denied');
             return;
         }
 
         try {
-            Logger.updateExecution(executionId, 'Executing');
             await command.execute(botInteraction);
-            Logger.updateExecution(executionId, 'Success');
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             Logger.error(`Command execution error (${interaction.commandName}): ${errorMessage}`);
-            Logger.updateExecution(executionId, `Failed: ${errorMessage}`);
 
             if (!interaction.replied && !interaction.deferred) {
                 await botInteraction.sendReply(errorView('An error occurred while processing your command.')).catch(() => null);
