@@ -1,7 +1,9 @@
-import { moderationService, questionService, reportService } from "../../../services";
 import { BotSelectMenuInteraction, errorView } from "@vulps22/bot-interactions";
-import { Handler, Logger, ModerationLogger } from "../../../bot/utils";
-import { QuestionType } from "@vulps22/project-encourage-types";
+import { Handler, Logger } from "../../../bot/utils";
+import { TargetType } from "@vulps22/project-encourage-types";
+import { applyBan, BanTargetNotFoundError } from "../../shared/applyBan";
+import { customBanReasonModal } from "../../shared/customBanReasonModal";
+import { CUSTOM_REASON_VALUE } from "../../../bot/config";
 
 const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "questionBanReasonSelected",
@@ -21,32 +23,24 @@ const questionBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             return;
         }
 
+        // Must come before deferUpdate — a modal cannot be shown once the
+        // interaction has been deferred.
+        if (selectedReason === CUSTOM_REASON_VALUE) {
+            await interaction.showModal(customBanReasonModal(TargetType.Question, questionId));
+            return;
+        }
+
         await interaction.deferUpdate();
 
         try {
-            await moderationService.banQuestion(questionId, interaction.user.id, selectedReason);
-            const question = await questionService.getQuestionById(Number(questionId));
-            if (!question) {
+            await applyBan(TargetType.Question, questionId, selectedReason, interaction.user.id);
+
+        } catch (error) {
+            if (error instanceof BanTargetNotFoundError) {
                 Logger.error(`Question with ID ${questionId} not found during banning for message ${interaction.message.id}`);
                 await interaction.ephemeralFollowUp(errorView('Question not found'));
                 return;
             }
-
-            const logChannelId = question.type === QuestionType.Truth
-                ? global.config.TRUTHS_LOG_CHANNEL_ID
-                : global.config.DARES_LOG_CHANNEL_ID;
-            await ModerationLogger.updateQuestionLog(question, logChannelId);
-
-            const reports = await moderationService.findActioningReports(questionId);
-            for (const report of reports) {
-                await moderationService.actionedReport(report.id!, interaction.user.id);
-                await reportService.notifyReporter(
-                    report,
-                    `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`
-                );
-            }
-
-        } catch (error) {
             Logger.error(`Error banning question: ${error}`);
             await interaction.ephemeralFollowUp(errorView('Failed to ban question. Please try again.'));
         }

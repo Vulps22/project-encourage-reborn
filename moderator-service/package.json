@@ -19,7 +19,7 @@
   "dependencies": {
     "@types/pg": "^8.11.11",
     "@types/supertest": "^7.2.0",
-    "@vulps22/bot-interactions": "^1.1.0",
+    "@vulps22/bot-interactions": "^1.2.0",
     "@vulps22/pathfinder": "^1.0.1",
     "@vulps22/project-encourage-types": "^1.0.0",
     "discord.js": "^14.16.3",

@@ -64,6 +64,7 @@ describe('questionBanReasonSelected select menu handler', () => {
             ephemeralFollowUp: jest.fn().mockResolvedValue(undefined),
             deferUpdate: jest.fn().mockResolvedValue(undefined),
             sendReply: jest.fn().mockResolvedValue(undefined),
+            showModal: jest.fn().mockResolvedValue(undefined),
         } as any;
 
         mockSelectInteraction.params.get = jest.fn().mockReturnValue('123');
@@ -172,5 +173,32 @@ describe('questionBanReasonSelected select menu handler', () => {
         expect(mockModerationService.actionedReport).toHaveBeenCalledTimes(2);
         expect(mockModerationService.actionedReport).toHaveBeenCalledWith(10, '123456789012345678');
         expect(mockModerationService.actionedReport).toHaveBeenCalledWith(11, '123456789012345678');
+    });
+
+    it('should open the custom reason modal instead of banning when "other" is selected', async () => {
+        const mockInteractionOther = {
+            ...mockSelectInteraction,
+            values: ['other'],
+        } as any;
+
+        await questionBanReasonSelected.execute(mockInteractionOther);
+
+        // The modal must be shown before any defer — Discord rejects a modal on an
+        // interaction that has already been responded to.
+        expect(mockInteractionOther.showModal).toHaveBeenCalledTimes(1);
+        expect(mockInteractionOther.deferUpdate).not.toHaveBeenCalled();
+        expect(mockModerationService.banQuestion).not.toHaveBeenCalled();
+    });
+
+    it('should carry the target type and id in the modal custom id', async () => {
+        const mockInteractionOther = {
+            ...mockSelectInteraction,
+            values: ['other'],
+        } as any;
+
+        await questionBanReasonSelected.execute(mockInteractionOther);
+
+        const modal = mockInteractionOther.showModal.mock.calls[0][0];
+        expect(modal.data.custom_id).toBe('moderation_customBanReason_type:question_id:123');
     });
 });
