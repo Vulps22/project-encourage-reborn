@@ -43,7 +43,7 @@ export class ModerationLogger {
       const server = serverResult.status === 'fulfilled' ? serverResult.value : null;
       const existing = await ch.messages.fetch(question.message_id);
       const view = await newQuestionView(question, reasons as [] | null, user, server);
-      return existing.edit(view as unknown as MessageEditOptions);
+      return await existing.edit(view as unknown as MessageEditOptions);
     } catch (err) {
       Logger.error(`Failed to update question log: ${err}`);
       return null;
@@ -66,7 +66,7 @@ export class ModerationLogger {
     try {
       const existing = await ch.messages.fetch(server.message_id);
       const view = await serverView(server, reasons as [] | null);
-      return existing.edit(view as unknown as MessageEditOptions);
+      return await existing.edit(view as unknown as MessageEditOptions);
     } catch (err) {
       Logger.error(`Failed to update server log: ${err}`);
       return null;
@@ -89,7 +89,7 @@ export class ModerationLogger {
     try {
       const existing = await ch.messages.fetch(report.message_id);
       const view = ReportView(report, reasons as [] | null);
-      return existing.edit(view as unknown as MessageEditOptions);
+      return await existing.edit(view as unknown as MessageEditOptions);
     } catch (err) {
       Logger.error(`Failed to update report log: ${err}`);
       return null;
