@@ -110,5 +110,6 @@ describe('dare command', () => {
     expect(dare.name).toBe('dare');
     expect(dare.isNSFW).toBe(true);
     expect(dare.isAdministrator).toBe(false);
+    expect(dare.interactionInitiator).toBe(true);
   });
 });

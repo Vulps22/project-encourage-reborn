@@ -63,3 +63,6 @@ LEFT JOIN "user"."users" ou
         WHEN r."type" = 'user'     THEN r."offender_id"
         ELSE NULL
     END;
+
+-- bot_user privileges
+GRANT SELECT ON "moderation"."report_view" TO bot_user;

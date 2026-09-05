@@ -8,6 +8,7 @@ import { newQuestionView } from "../../../views/moderation/newQuestionView";
 
 const approveQuestionButton: Handler<BotButtonInteraction> = {
     name: "approveQuestion",
+    interactionInitiator: true,
     async execute(interaction) {
         const questionId = interaction.params.get("id");
 
@@ -39,7 +40,7 @@ const approveQuestionButton: Handler<BotButtonInteraction> = {
 
             const updatedView = await newQuestionView(question, undefined, user, server);
             await LoggerService.update(logChannelId, question.message_id, updatedView);
-            await interaction.sendReply(successView('Question approved successfully!'));
+            await interaction.ephemeralReply(successView('Question approved successfully!'));
 
         } catch (error) {
             console.error('Error approving question:', error);

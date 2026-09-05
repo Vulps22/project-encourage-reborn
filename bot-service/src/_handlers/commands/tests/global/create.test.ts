@@ -69,6 +69,7 @@ describe('create command', () => {
 
     it('should not require administrator', () => {
       expect(create.isAdministrator).toBe(false);
+      expect(create.interactionInitiator).toBe(true);
     });
 
     it('should have valid JSON structure', () => {

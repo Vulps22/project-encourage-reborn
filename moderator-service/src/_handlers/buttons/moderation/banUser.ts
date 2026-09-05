@@ -10,6 +10,7 @@ import { MessageEditOptions } from "discord.js";
 const banUserButton: Handler<BotButtonInteraction> = {
     name: "banUser",
     params: { 'ID': 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const userId = interaction.params.get(banUserButton.params!.ID);
         if (!userId) {

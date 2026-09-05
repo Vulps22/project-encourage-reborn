@@ -10,8 +10,13 @@ jest.mock('../../../utils', () => ({
     }
 }));
 
+jest.mock('../../../../services', () => ({
+    analyticsService: { logEvent: jest.fn() },
+}));
+
 const { ButtonInteractionEvent } = require('../../interactionEvents/ButtonInteractionEvent')
 const { Logger } = require('../../../utils');
+const { analyticsService } = require('../../../../services');
 
 describe('ButtonInteractionEvent', () => {
     let buttonInteractionEvent: InstanceType<typeof ButtonInteractionEvent>;
@@ -50,6 +55,7 @@ describe('ButtonInteractionEvent', () => {
                 id: '987654321',
                 username: 'testuser'
             },
+            guildId: '111111111',
             guild: {
                 id: '111111111',
                 name: 'Test Guild'
@@ -64,6 +70,7 @@ describe('ButtonInteractionEvent', () => {
         // Create mock handler
         mockHandler = {
             name: 'approveQuestion',
+            interactionInitiator: true,
             execute: jest.fn().mockResolvedValue(undefined)
         };
 
@@ -85,6 +92,22 @@ describe('ButtonInteractionEvent', () => {
             expect(botInteractionArg.baseId).toBe('moderation_approveQuestion');
             expect(botInteractionArg.action).toBe('approveQuestion');
             expect(botInteractionArg.params.get('id')).toBe('123');
+        });
+
+        describe('analytics logging', () => {
+            it('should log an analytics event when the button is an initiator', async () => {
+                await buttonInteractionEvent.execute(mockButtonInteraction, 'test-execution-id');
+
+                expect(analyticsService.logEvent).toHaveBeenCalledWith('button', 'moderation_approveQuestion', true, '987654321', '111111111');
+            });
+
+            it('should pass interactionInitiator through as false when the button is not an initiator', async () => {
+                mockHandler.interactionInitiator = false;
+
+                await buttonInteractionEvent.execute(mockButtonInteraction, 'test-execution-id');
+
+                expect(analyticsService.logEvent).toHaveBeenCalledWith('button', 'moderation_approveQuestion', false, '987654321', '111111111');
+            });
         });
 
         it('should handle missing handler gracefully', async () => {

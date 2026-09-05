@@ -29,3 +29,7 @@ COMMENT ON COLUMN "adverts"."serverId" IS 'Discord server ID of the advertising 
 COMMENT ON COLUMN "adverts"."messageId" IS 'Discord message ID of the posted advertisement in the support server';
 COMMENT ON COLUMN "adverts"."updated" IS 'When the advert was last updated (auto-maintained by trigger)';
 COMMENT ON COLUMN "adverts"."advert" IS 'Brief description of the server provided by user';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "entitlement" TO bot_user;
+GRANT SELECT, INSERT, UPDATE ON "entitlement"."adverts" TO bot_user;

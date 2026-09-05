@@ -12,3 +12,7 @@ COMMENT ON TABLE "server"."server_level_roles" IS 'Defines role rewards for reac
 COMMENT ON COLUMN "server"."server_level_roles"."server_id" IS 'Discord server ID this role reward belongs to';
 COMMENT ON COLUMN "server"."server_level_roles"."role_id" IS 'Discord role ID to assign when the level is reached';
 COMMENT ON COLUMN "server"."server_level_roles"."level" IS 'Server level required to earn this role';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "server" TO bot_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON "server"."server_level_roles" TO bot_user;

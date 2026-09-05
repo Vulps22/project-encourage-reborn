@@ -96,6 +96,7 @@ describe('acceptRules button', () => {
 
   it('should have correct handler properties', () => {
     expect(acceptRulesButton.name).toBe('acceptRules');
+    expect(acceptRulesButton.interactionInitiator).toBe(false);
     expect(acceptRulesButton.params).toEqual({});
   });
 });

@@ -141,6 +141,20 @@ async function freshInstall() {
       console.log(`✓ Schemas dropped`);
     }
 
+    // The schema files carry their own `GRANT ... TO bot_user` statements, so the
+    // role has to exist before any of them run. On a real host it is created by
+    // bootstrap-native-db.sql with a password and login rights; here we only need
+    // it to exist as a grant target, so a NOLOGIN role is enough and an existing
+    // one is left untouched.
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'bot_user') THEN
+          CREATE ROLE bot_user NOLOGIN;
+        END IF;
+      END $$;
+    `);
+
     // Create custom schemas
     if (schemasToCreate.size > 0) {
       console.log(`\nCreating ${schemasToCreate.size} custom schema(s)...`);

@@ -40,6 +40,7 @@ describe('vote command', () => {
         expect(vote.name).toBe('vote');
         expect(vote.isNSFW).toBe(false);
         expect(vote.isAdministrator).toBe(false);
+        expect(vote.interactionInitiator).toBe(true);
     });
 
     function replyText(): string {

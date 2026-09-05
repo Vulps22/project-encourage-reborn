@@ -7,7 +7,7 @@ import { Command } from '../../../utils';
 import { Logger } from '@vulps22/logger';
 import { confirmNewQuestionEmbed } from '../../../views';
 
-const create = new Command('create', 'Submit a custom truth or dare question')
+const create = new Command('create', 'Submit a custom truth or dare question', true)
   .addStringOption('type', 'Question type', true)
     .addChoice('Truth', 'truth')
     .addChoice('Dare', 'dare')

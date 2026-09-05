@@ -5,6 +5,7 @@ import { reportConfirmationView } from '../../../views';
 const reportButton: Handler<BotButtonInteraction> = {
     name: 'report',
     params: { id: 'id' },
+    interactionInitiator: true,
     async execute(interaction: BotButtonInteraction): Promise<void> {
         const questionId = interaction.params.get(reportButton.params!.id);
         if (!questionId) {

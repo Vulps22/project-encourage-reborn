@@ -157,6 +157,7 @@ describe('banQuestion button handler', () => {
 
     it('should have correct button handler structure', () => {
         expect(banQuestionButton.name).toBe('banQuestion');
+        expect(banQuestionButton.interactionInitiator).toBe(true);
         expect(typeof banQuestionButton.execute).toBe('function');
     });
 
