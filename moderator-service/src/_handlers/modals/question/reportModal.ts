@@ -6,6 +6,7 @@ import { TargetType } from '@vulps22/project-encourage-types';
 const reportModal: Handler<BotModalInteraction> = {
     name: 'reportModal',
     params: { id: 'id' },
+    interactionInitiator: false,
     async execute(interaction: BotModalInteraction): Promise<void> {
         const questionId = interaction.params.get(reportModal.params!.id);
         if (!questionId) {

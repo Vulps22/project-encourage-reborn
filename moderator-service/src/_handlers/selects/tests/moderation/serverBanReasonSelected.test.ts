@@ -73,6 +73,7 @@ describe('serverBanReasonSelected select menu handler', () => {
 
     it('should have correct handler structure', () => {
         expect(serverBanReasonSelected.name).toBe('serverBanReasonSelected');
+        expect(serverBanReasonSelected.interactionInitiator).toBe(false);
         expect(typeof serverBanReasonSelected.execute).toBe('function');
     });
 

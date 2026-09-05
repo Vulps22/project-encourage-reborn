@@ -7,6 +7,7 @@ import { userProfileView } from "../../../views";
 const unbanUserButton: Handler<BotButtonInteraction> = {
     name: "unbanUser",
     params: { 'ID': 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const userId = interaction.params.get(unbanUserButton.params!.ID);
         if (!userId) {

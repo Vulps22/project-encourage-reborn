@@ -110,5 +110,6 @@ describe('truth command', () => {
     expect(truth.name).toBe('truth');
     expect(truth.isNSFW).toBe(true);
     expect(truth.isAdministrator).toBe(false);
+    expect(truth.interactionInitiator).toBe(true);
   });
 });

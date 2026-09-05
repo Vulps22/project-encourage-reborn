@@ -88,6 +88,9 @@ jest.mock('../../src/services', () => ({
   trackService: {
     track: jest.fn().mockResolvedValue(undefined),
   },
+  analyticsService: {
+    logEvent: jest.fn().mockResolvedValue(undefined),
+  },
   inventoryService: {
     get:     jest.fn().mockResolvedValue({ qty: 5 }),
     add:     jest.fn().mockResolvedValue({ qty: 6 }),
@@ -229,5 +232,30 @@ describe('POST /api/v1/track', () => {
       .set('Authorization', PE)
       .send({});
     expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/v1/analytics/event', () => {
+  const { route } = require('../../src/routes/api/v1/analytics/event');
+  const app = buildRouteApp(route, '/api/v1/analytics/event');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).post('/api/v1/analytics/event')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing fields', async () => {
+    const res = await request(app)
+      .post('/api/v1/analytics/event')
+      .set('Authorization', PE)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 201 with valid token and fields', async () => {
+    const res = await request(app)
+      .post('/api/v1/analytics/event')
+      .set('Authorization', PE)
+      .send({ interaction_type: 'command', interaction_name: 'dare', user_id: '123', guild_id: '456' });
+    expect(res.status).toBe(201);
   });
 });

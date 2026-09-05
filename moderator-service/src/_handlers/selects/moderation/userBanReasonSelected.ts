@@ -1,12 +1,16 @@
 import { UserProfileBuilder } from "../../../bot/builders/UserProfileBuilder";
 import { BotSelectMenuInteraction, errorView } from "@vulps22/bot-interactions";
 import { Handler, Logger } from "../../../bot/utils";
-import { moderationService, questionService, reportService, serverService, userService } from "../../../services";
+import { TargetType } from "@vulps22/project-encourage-types";
 import { userProfileView } from "../../../views";
+import { applyBan } from "../../shared/applyBan";
+import { customBanReasonModal } from "../../shared/customBanReasonModal";
+import { CUSTOM_REASON_VALUE } from "../../../bot/config";
 
 const userBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "userBanReasonSelected",
     params: { 'ID': 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const userId = interaction.params.get(userBanReasonSelected.params!.ID);
         const selectedReason = interaction.values[0];
@@ -22,25 +26,24 @@ const userBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             return;
         }
 
+        // Must come before any defer or reply — a modal cannot be shown once the
+        // interaction has been responded to.
+        if (selectedReason === CUSTOM_REASON_VALUE) {
+            await interaction.showModal(customBanReasonModal(TargetType.User, userId));
+            return;
+        }
+
         await banUser(userId, selectedReason, interaction);
     }
 };
 
 async function banUser(userId: string, reason: string, interaction: BotSelectMenuInteraction): Promise<void> {
     try {
-        // Ban the user
-        await userService.banUser(userId, reason);
-        Logger.debug(`User ${userId} banned with reason: ${reason}`);
+        await applyBan(TargetType.User, userId, reason, interaction.user.id);
 
-        // Ban all user's questions with "User Banned" reason
-        const bannedQuestionsCount = await questionService.banAllUserQuestions(userId, interaction.user.id);
-        Logger.debug(`Banned ${bannedQuestionsCount} questions from user ${userId}`);
-
-        // Ban all servers owned by the user
-        const bannedServersCount = await serverService.banUserServers(userId, reason);
-        Logger.debug(`Banned ${bannedServersCount} servers owned by user ${userId}`);
-
-        // Refresh the profile view
+        // Refresh the profile view on the message the select menu lives on. This
+        // is the one part of the flow the modal path cannot do — a modal submit
+        // has no component message to update.
         const profile = await new UserProfileBuilder().getUserProfile(userId);
         if (!profile) {
             await interaction.ephemeralReply(errorView('User not found after banning'));
@@ -50,15 +53,6 @@ async function banUser(userId: string, reason: string, interaction: BotSelectMen
 
         const view = await userProfileView(profile);
         await interaction.updateComponentMessage(view);
-
-        const reports = await moderationService.findActioningReports(userId);
-        for (const report of reports) {
-            await moderationService.actionedReport(report.id!, interaction.user.id);
-            await reportService.notifyReporter(
-                report,
-                `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`
-            );
-        }
 
     } catch (error) {
         Logger.error(`Error banning user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -52,6 +52,7 @@ describe('report command', () => {
 
         it('should not require administrator', () => {
             expect(report.isAdministrator).toBe(false);
+            expect(report.interactionInitiator).toBe(true);
         });
 
         it('should have question and server subcommands', () => {

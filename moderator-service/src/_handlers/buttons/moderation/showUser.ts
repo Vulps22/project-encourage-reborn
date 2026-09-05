@@ -6,6 +6,7 @@ import { userProfileView } from "../../../views";
 const showUserButton: Handler<BotButtonInteraction> = {
     name: "showUser",
     params: { 'ID': 'id' },
+    interactionInitiator: true,
     async execute(interaction) {
         const userId = interaction.params.get(showUserButton.params!.ID);
         if(!userId) {

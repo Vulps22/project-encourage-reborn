@@ -6,6 +6,7 @@ import { serverService } from "../../../services";
 const unbanServerButton: Handler<BotButtonInteraction> = {
     name: "unbanServer",
     params: { id: 'id' },
+    interactionInitiator: true,
     async execute(interaction) {
         const serverId = interaction.params.get(unbanServerButton.params!.id);
         if (!serverId) {

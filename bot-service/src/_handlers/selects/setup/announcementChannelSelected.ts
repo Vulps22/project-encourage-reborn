@@ -9,6 +9,7 @@ import { setupCompleteView, setupFailedView } from '../../../views';
 const announcementChannelSelected: Handler<BotSelectMenuInteraction> = {
     name: 'announcementChannelSelected',
     params: {},
+    interactionInitiator: false,
     async execute(interaction) {
         await interaction.deferUpdate();
         // Verify user is admin

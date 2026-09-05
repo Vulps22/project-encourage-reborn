@@ -4,7 +4,7 @@ import { BotCommandInteraction, errorView, successView } from "@vulps22/bot-inte
 import { Command } from "../../../utils";
 import { TargetType, Question, Server } from "@vulps22/project-encourage-types";
 
-const report = new Command('report', 'Report Inappropriate Content')
+const report = new Command('report', 'Report Inappropriate Content', true)
     .setNSFW(false)
     .setAdministrator(false)
     .addSubcommand('question', 'Report a truth or dare question')

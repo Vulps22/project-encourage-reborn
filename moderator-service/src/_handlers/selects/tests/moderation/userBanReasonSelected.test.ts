@@ -41,6 +41,7 @@ describe('userBanReasonSelected', () => {
 
     it('should have correct name and params', () => {
         expect(userBanReasonSelected.name).toBe('userBanReasonSelected');
+        expect(userBanReasonSelected.interactionInitiator).toBe(false);
         expect(userBanReasonSelected.params).toEqual({ 'ID': 'id' });
     });
 

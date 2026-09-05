@@ -61,6 +61,7 @@ describe('actionReportButton', () => {
 
     it('should have correct name and params', () => {
         expect(actionReportButton.name).toBe('takeAction');
+        expect(actionReportButton.interactionInitiator).toBe(true);
         expect(actionReportButton.params).toEqual({ id: 'string' });
     });
 
