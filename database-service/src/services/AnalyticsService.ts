@@ -14,12 +14,14 @@ export class AnalyticsService {
     userId: Snowflake,
     guildId: Snowflake | null
   ): Promise<void> {
+    // No RETURNING: bot_user is granted INSERT but not SELECT on analytics.events,
+    // and the written row is discarded anyway.
     await this.db.insert('analytics', 'events', {
       service,
       interaction_type: interactionType,
       interaction_name: interactionName,
       user_id: userId,
       guild_id: guildId,
-    });
+    }, { returning: false });
   }
 }
