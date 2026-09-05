@@ -1,4 +1,5 @@
 import { DatabaseClient } from '../bot/services/DatabaseClient';
+import { AnalyticsService } from './AnalyticsService';
 import { ChallengeService } from './ChallengeService';
 import { ConfigurationService } from './ConfigurationService';
 import { ModerationService } from './ModerationService';
@@ -11,6 +12,7 @@ import { VotingService } from './VotingService';
 import { StorableService } from './StorableService';
 import { InventoryService } from './InventoryService';
 
+export { AnalyticsService } from './AnalyticsService';
 export { ChallengeService } from './ChallengeService';
 export { ConfigurationService } from './ConfigurationService';
 export { ModerationService } from './ModerationService';
@@ -26,6 +28,7 @@ export { LoggerService } from './LoggerService';
 
 export const db = new DatabaseClient(process.env.DS_URL!, process.env.DS_MS_API_SECRET ?? '');
 
+export const analyticsService = new AnalyticsService(db);
 export const challengeService = new ChallengeService(db);
 export const configurationService = new ConfigurationService(db);
 export const moderationService = new ModerationService(db);

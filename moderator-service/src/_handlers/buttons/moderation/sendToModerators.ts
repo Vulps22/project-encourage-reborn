@@ -8,6 +8,7 @@ import { UserProfileBuilder } from "../../../bot/builders/UserProfileBuilder";
 const sendToModeratorsButton: Handler<BotButtonInteraction> = {
     name: "sendToModerators",
     params: { 'ID': 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const userId = interaction.params.get(sendToModeratorsButton.params!.ID);
         if(!userId) {

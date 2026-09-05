@@ -8,7 +8,7 @@
     "build": "npm run clean && tsc",
     "start": "node --env-file=.env dist/bot/bot.js",
     "dev": "npm run build && node --env-file=../.env.development --watch dist/bot/bot.js",
-    "stage": "node --env-file=.env.staging dist/bot/bot.js",
+    "stage": "npm run build && node --env-file=../.env.staging dist/bot/bot.js",
     "prod": "node --env-file=.env.production dist/bot/bot.js",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -19,7 +19,7 @@
   "dependencies": {
     "@types/pg": "^8.11.11",
     "@types/supertest": "^7.2.0",
-    "@vulps22/bot-interactions": "^1.1.0",
+    "@vulps22/bot-interactions": "^1.2.0",
     "@vulps22/pathfinder": "^1.0.1",
     "@vulps22/project-encourage-types": "^1.0.0",
     "discord.js": "^14.16.3",

@@ -89,8 +89,10 @@ describe('approveQuestion button handler', () => {
         expect(mockModerationService.approveQuestion).toHaveBeenCalledWith('123', '123456789012345678');
         expect(mockQuestionService.getQuestionById).toHaveBeenCalledWith(123);
         expect(mockLoggerService.update).toHaveBeenCalledWith('truths-channel-id', 'msg-789', expect.anything());
-        expect(mockButtonInteraction.sendReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
-        expect(mockButtonInteraction.ephemeralReply).not.toHaveBeenCalled();
+        // Approval confirmations are ephemeral — the mod log channel already records
+        // the action, and a public reply per approval just spams the channel.
+        expect(mockButtonInteraction.ephemeralReply).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+        expect(mockButtonInteraction.sendReply).not.toHaveBeenCalled();
     });
 
     it('should handle missing question ID parameter', async () => {
@@ -163,6 +165,7 @@ describe('approveQuestion button handler', () => {
 
     it('should have correct button handler structure', () => {
         expect(approveQuestionButton.name).toBe('approveQuestion');
+        expect(approveQuestionButton.interactionInitiator).toBe(true);
         expect(typeof approveQuestionButton.execute).toBe('function');
     });
 });

@@ -16,7 +16,8 @@ if (!envFlag) {
 
 const envFile = envMap[envFlag];
 
-const envPath = path.resolve(process.cwd(), envFile);
+const repoRoot = path.resolve(__dirname, '../../..');
+const envPath = path.resolve(repoRoot, envFile);
 
 if (!fs.existsSync(envPath)) {
   console.error(`Env file not found: ${envPath}`);

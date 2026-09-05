@@ -75,6 +75,7 @@ describe('declineTerms button', () => {
 
   it('should have correct handler properties', () => {
     expect(declineTermsButton.name).toBe('declineTerms');
+    expect(declineTermsButton.interactionInitiator).toBe(false);
     expect(declineTermsButton.params).toEqual({});
   });
 });

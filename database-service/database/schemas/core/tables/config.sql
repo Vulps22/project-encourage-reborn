@@ -15,3 +15,7 @@ COMMENT ON COLUMN "core"."config"."vote_threshold" IS 'Number of votes required 
 
 INSERT INTO "core"."config" ("id", "vote_threshold") VALUES ('config', 3)
 ON CONFLICT ("id") DO NOTHING;
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "core" TO bot_user;
+GRANT SELECT ON "core"."config" TO bot_user;
