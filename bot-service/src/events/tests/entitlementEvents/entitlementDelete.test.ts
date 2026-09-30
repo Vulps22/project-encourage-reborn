@@ -9,7 +9,7 @@ jest.mock('@vulps22/logger', () => ({
 
 jest.mock('../../../services', () => ({
     entitlementService: {
-        capture: jest.fn(),
+        handle: jest.fn(),
     },
 }));
 
@@ -35,23 +35,23 @@ describe('entitlementDelete', () => {
         expect(entitlementDelete.once).toBe(false);
     });
 
-    it('captures the entitlement as a delete event', async () => {
+    it('handles the entitlement as a delete event', async () => {
         const entitlement = makeEntitlement();
-        (entitlementService.capture as jest.Mock).mockResolvedValue(undefined);
+        (entitlementService.handle as jest.Mock).mockResolvedValue(undefined);
 
         await entitlementDelete.execute(entitlement);
 
-        expect(entitlementService.capture).toHaveBeenCalledWith(entitlement, 'delete');
+        expect(entitlementService.handle).toHaveBeenCalledWith(entitlement, 'delete');
     });
 
     it('logs and swallows errors instead of throwing', async () => {
         const entitlement = makeEntitlement();
-        (entitlementService.capture as jest.Mock).mockRejectedValue(new Error('ds down'));
+        (entitlementService.handle as jest.Mock).mockRejectedValue(new Error('ds down'));
 
         await expect(entitlementDelete.execute(entitlement)).resolves.not.toThrow();
 
         expect(Logger.error).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to capture entitlementDelete for entitlement ent-1')
+            expect.stringContaining('Failed to handle entitlementDelete for entitlement ent-1')
         );
     });
 });

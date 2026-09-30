@@ -1,4 +1,5 @@
 import { Client, ClientError } from './Client';
+import { Purchasable, PurchasableQuery } from '../types';
 import { User, Server, Question, Challenge, ChallengeVote, CoreConfig, Storable, InventoryItem, QuestionType } from '@vulps22/project-encourage-types';
 
 export class DSError extends ClientError {
@@ -174,6 +175,13 @@ export class DatabaseClient extends Client {
 
   async reconcileEntitlements(entitlements: unknown[]): Promise<void> {
     await this.post('/api/v1/entitlement/reconcile', undefined, { entitlements });
+  }
+
+  async getPurchasable(query: PurchasableQuery): Promise<Purchasable | null> {
+    const params = Object.fromEntries(
+      Object.entries(query).filter(([, value]) => value !== undefined)
+    ) as Record<string, string>;
+    return this.get<Purchasable>('/api/v1/entitlement/purchasable', undefined, params);
   }
 
   // ===== ANALYTICS =====

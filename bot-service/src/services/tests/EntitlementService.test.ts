@@ -2,12 +2,21 @@ import { EntitlementService } from '../EntitlementService';
 import { dsClient } from '../../client';
 import { Entitlement } from 'discord.js';
 
-jest.mock('../../client', () => ({
-    dsClient: {
-        recordEntitlementEvent: jest.fn(),
-        reconcileEntitlements: jest.fn(),
-    },
-}));
+jest.mock('../../client', () => {
+    class DSError extends Error {
+        constructor(public status: number, message: string) {
+            super(message);
+        }
+    }
+    return {
+        DSError,
+        dsClient: {
+            recordEntitlementEvent: jest.fn(),
+            reconcileEntitlements: jest.fn(),
+            getPurchasable: jest.fn(),
+        },
+    };
+});
 
 jest.mock('@vulps22/logger', () => ({
     Logger: {
@@ -106,6 +115,85 @@ describe('EntitlementService', () => {
             expect(Logger.error).toHaveBeenCalledWith(
                 expect.stringContaining('Failed to record entitlement create event for entitlement ent-1')
             );
+        });
+    });
+
+    describe('getSlug', () => {
+        it('returns the purchasable name for a known SKU', async () => {
+            (dsClient.getPurchasable as jest.Mock).mockResolvedValue({ name: 'skip-pack', sku_id: 'sku-1' });
+
+            expect(await service.getSlug('sku-1')).toBe('skip-pack');
+            expect(dsClient.getPurchasable).toHaveBeenCalledWith({ sku: 'sku-1' });
+        });
+
+        it('returns null when DS has no purchasable for the SKU', async () => {
+            const { DSError } = jest.requireMock('../../client');
+            (dsClient.getPurchasable as jest.Mock).mockRejectedValue(new DSError(404, 'not found'));
+
+            expect(await service.getSlug('unknown')).toBeNull();
+        });
+
+        it('rethrows non-404 errors', async () => {
+            (dsClient.getPurchasable as jest.Mock).mockRejectedValue(new Error('ds down'));
+
+            await expect(service.getSlug('sku-1')).rejects.toThrow('ds down');
+        });
+    });
+
+    describe('handle', () => {
+        const handler = { name: 'skip-pack', create: jest.fn(), delete: jest.fn() };
+
+        beforeEach(() => {
+            global.entitlements = new Map([['skip-pack', handler]]) as any;
+            (dsClient.recordEntitlementEvent as jest.Mock).mockResolvedValue(undefined);
+        });
+
+        it('captures the event, then dispatches it to the handler for the purchasable slug', async () => {
+            const entitlement = makeEntitlement();
+            (dsClient.getPurchasable as jest.Mock).mockResolvedValue({ name: 'skip-pack' });
+
+            await service.handle(entitlement, 'create');
+
+            expect(dsClient.recordEntitlementEvent).toHaveBeenCalledWith('create', 'ent-1', expect.any(Object));
+            expect(handler.create).toHaveBeenCalledWith(entitlement);
+            expect(handler.delete).not.toHaveBeenCalled();
+        });
+
+        it('does nothing beyond capture when the handler has no method for the event type', async () => {
+            (dsClient.getPurchasable as jest.Mock).mockResolvedValue({ name: 'skip-pack' });
+
+            await expect(service.handle(makeEntitlement(), 'update')).resolves.not.toThrow();
+
+            expect(handler.create).not.toHaveBeenCalled();
+            expect(handler.delete).not.toHaveBeenCalled();
+        });
+
+        it('logs and does not dispatch for an SKU with no purchasable', async () => {
+            const { DSError } = jest.requireMock('../../client');
+            (dsClient.getPurchasable as jest.Mock).mockRejectedValue(new DSError(404, 'not found'));
+
+            await service.handle(makeEntitlement(), 'create');
+
+            expect(handler.create).not.toHaveBeenCalled();
+            expect(Logger.error).toHaveBeenCalledWith(expect.stringContaining('No purchasable registered for SKU sku-1'));
+        });
+
+        it('logs and does not dispatch when no handler is registered for the slug', async () => {
+            (dsClient.getPurchasable as jest.Mock).mockResolvedValue({ name: 'mystery-box' });
+
+            await service.handle(makeEntitlement(), 'create');
+
+            expect(handler.create).not.toHaveBeenCalled();
+            expect(Logger.error).toHaveBeenCalledWith(expect.stringContaining('No entitlement handler registered for purchasable "mystery-box"'));
+        });
+
+        it('logs and swallows errors thrown by the handler', async () => {
+            (dsClient.getPurchasable as jest.Mock).mockResolvedValue({ name: 'skip-pack' });
+            handler.create.mockRejectedValueOnce(new Error('inventory down'));
+
+            await expect(service.handle(makeEntitlement(), 'create')).resolves.not.toThrow();
+
+            expect(Logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to handle entitlement create event for entitlement ent-1'));
         });
     });
 

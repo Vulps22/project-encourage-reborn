@@ -10,9 +10,9 @@ const entitlementDelete: EventHandler<'entitlementDelete'> = {
         Logger.log(`Entitlement ${entitlement.skuId} Deleted for ${entitlement.guildId ? entitlement.guildId : entitlement.userId}`)
 
     try {
-      await entitlementService.capture(entitlement, 'delete');
+      await entitlementService.handle(entitlement, 'delete');
     } catch (error) {
-      Logger.error(`Failed to capture entitlementDelete for entitlement ${entitlement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      Logger.error(`Failed to handle entitlementDelete for entitlement ${entitlement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 };

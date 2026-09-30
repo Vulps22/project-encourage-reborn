@@ -2,3 +2,4 @@
 export { CommandHandler } from './CommandHandler';
 export { EventHandler } from './EventHandler';
 export { VoteResult } from './VoteResult';
+export { Purchasable, PurchasableEnvironment, PurchasableQuery } from './Purchasable';

@@ -1,13 +1,14 @@
 import { Entitlement, REST, Routes } from 'discord.js';
-import { dsClient } from '../client';
+import { dsClient, DSError } from '../client';
+import { Purchasable, PurchasableQuery } from '../types';
 import { Logger } from '@vulps22/logger';
 
 /**
  * EntitlementService - Captures and reconciles Discord entitlement lifecycle events
  *
- * This is a capture-only skeleton: it records every entitlement event Discord sends
- * (and backfills any missed while the bot was offline) into DS's audit log.
- * It does not interpret subscription/consumable semantics or grant perks.
+ * Records every entitlement event Discord sends (and backfills any missed while the
+ * bot was offline) into DS's audit log, then routes live events to the
+ * EntitlementHandler registered for the purchasable's name slug.
  */
 export class EntitlementService {
   /**
@@ -33,6 +34,52 @@ export class EntitlementService {
       await dsClient.recordEntitlementEvent(type, entitlement.id, data);
     } catch (error) {
       Logger.error(`Failed to record entitlement ${type} event for entitlement ${entitlement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Capture an entitlement lifecycle event, then dispatch it to the handler for its
+   * purchasable. Never throws - a failure here must not take down the gateway listener.
+   */
+  async handle(entitlement: Entitlement, type: 'create' | 'update' | 'delete'): Promise<void> {
+    await this.capture(entitlement, type);
+
+    try {
+      const slug = await this.getSlug(entitlement.skuId);
+      if (!slug) {
+        Logger.error(`No purchasable registered for SKU ${entitlement.skuId} (entitlement ${entitlement.id}) - ${type} not handled`);
+        return;
+      }
+
+      const handler = global.entitlements.get(slug);
+      if (!handler) {
+        Logger.error(`No entitlement handler registered for purchasable "${slug}" (entitlement ${entitlement.id}) - ${type} not handled`);
+        return;
+      }
+
+      await handler[type]?.(entitlement);
+    } catch (error) {
+      Logger.error(`Failed to handle entitlement ${type} event for entitlement ${entitlement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Resolve a SKU to its purchasable's name slug, or null if the SKU isn't in the catalogue.
+   */
+  async getSlug(skuId: string): Promise<string | null> {
+    const purchasable = await this.getPurchasable({ sku: skuId });
+    return purchasable?.name ?? null;
+  }
+
+  /**
+   * Look up a purchasable in DS's catalogue, or null if none matches.
+   */
+  async getPurchasable(query: PurchasableQuery): Promise<Purchasable | null> {
+    try {
+      return await dsClient.getPurchasable(query);
+    } catch (error) {
+      if (error instanceof DSError && error.status === 404) return null;
+      throw error;
     }
   }
 

@@ -10,9 +10,9 @@ const entitlementUpdate: EventHandler<'entitlementUpdate'> = {
       Logger.log(`Entitlement ${newEntitlement.skuId} Updated for ${newEntitlement.guildId ? newEntitlement.guildId : newEntitlement.userId}`)
 
     try {
-      await entitlementService.capture(newEntitlement, 'update');
+      await entitlementService.handle(newEntitlement, 'update');
     } catch (error) {
-      Logger.error(`Failed to capture entitlementUpdate for entitlement ${newEntitlement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      Logger.error(`Failed to handle entitlementUpdate for entitlement ${newEntitlement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
 };
