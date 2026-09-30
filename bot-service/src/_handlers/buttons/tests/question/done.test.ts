@@ -25,6 +25,7 @@ describe.skip('done button handler', () => {
   describe('handler properties', () => {
     it('should have correct name', () => {
       expect(done.name).toBe('done');
+      expect(done.interactionInitiator).toBe(true);
     });
 
     it('should have execute function', () => {

@@ -159,11 +159,18 @@ export class Command {
   public readonly name: string;
   public readonly isNSFW: boolean = false;
   public readonly isAdministrator: boolean = false;
+  /**
+   * Whether this command can originate a new interaction chain. Slash
+   * commands are always a fresh entry point, so this should be true for
+   * every command — kept explicit (not defaulted) so it can't be forgotten.
+   */
+  public readonly interactionInitiator: boolean;
   private _execute?: (interaction: BotCommandInteraction) => Promise<void>;
   private _autoComplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 
-  constructor(name: string, description: string) {
+  constructor(name: string, description: string, interactionInitiator: boolean) {
     this.name = name;
+    this.interactionInitiator = interactionInitiator;
     this.builder = new SlashCommandBuilder()
       .setName(name)
       .setDescription(description);

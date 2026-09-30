@@ -33,3 +33,7 @@ COMMENT ON COLUMN "audit"."type" IS 'Which lifecycle event this row records: cre
 COMMENT ON COLUMN "audit"."source" IS 'Whether this row was captured live from the gateway or backfilled by reconciliation';
 COMMENT ON COLUMN "audit"."data" IS 'Snapshot of the entitlement payload at the time of the event';
 COMMENT ON COLUMN "audit"."created_at" IS 'When this audit row was recorded';
+
+-- bot_user privileges
+GRANT SELECT, INSERT, UPDATE ON "entitlement"."audit" TO bot_user;
+GRANT USAGE, SELECT ON SEQUENCE "entitlement"."audit_id_seq" TO bot_user;

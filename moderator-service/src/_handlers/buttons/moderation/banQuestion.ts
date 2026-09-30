@@ -6,6 +6,7 @@ import { BotButtonInteraction, errorView } from "@vulps22/bot-interactions";
 
 const approveQuestionButton: Handler<BotButtonInteraction> = {
     name: "banQuestion",
+    interactionInitiator: true,
     async execute(interaction) {
         const questionId = interaction.params.get("id");
         const reason = interaction.params.get("reason") || null;

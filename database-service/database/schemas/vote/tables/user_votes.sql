@@ -9,3 +9,6 @@ COMMENT ON TABLE "vote"."user_votes" IS 'Records individual user votes on challe
 COMMENT ON COLUMN "vote"."user_votes"."challenge_id" IS 'FK to challenge.challenges id';
 COMMENT ON COLUMN "vote"."user_votes"."user_id" IS 'Discord ID of the user who cast the vote';
 COMMENT ON COLUMN "vote"."user_votes"."vote_type" IS 'done or failed';
+
+-- bot_user privileges
+GRANT SELECT, INSERT, UPDATE ON "vote"."user_votes" TO bot_user;

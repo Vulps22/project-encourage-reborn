@@ -64,10 +64,14 @@ export class ServerService {
     await this.updateServerSettings(serverId, { playtest_notified: false });
   }
 
-  async isServerBanned(serverId: Snowflake): Promise<string | false> {
+  /**
+   * @param server Optional preloaded record, to avoid a redundant fetch when the
+   *               caller already holds one.
+   */
+  async isServerBanned(serverId: Snowflake, server?: Server | null): Promise<string | false> {
     if (serverId == Config.OFFICIAL_GUILD_ID as Snowflake) return false;
-    const server = await this.getServerSettings(serverId);
-    return server && server.is_banned ? server.ban_reason || 'No reason provided' : false;
+    const record = server !== undefined ? server : await this.getServerSettings(serverId);
+    return record && record.is_banned ? record.ban_reason || 'No reason provided' : false;
   }
 
   async canCreate(serverId: Snowflake): Promise<boolean> {

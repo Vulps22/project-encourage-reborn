@@ -35,3 +35,7 @@ COMMENT ON COLUMN "question"."questions"."ban_reason" IS 'Reason for banning the
 COMMENT ON COLUMN "question"."questions"."datetime_banned" IS 'When the question was banned (set by trigger)';
 COMMENT ON COLUMN "question"."questions"."is_deleted" IS 'Whether question has been soft deleted';
 COMMENT ON COLUMN "question"."questions"."datetime_deleted" IS 'When the question was soft deleted';
+
+-- bot_user privileges
+GRANT SELECT, INSERT, UPDATE ON "question"."questions" TO bot_user;
+GRANT USAGE, SELECT ON SEQUENCE "question"."questions_id_seq" TO bot_user;

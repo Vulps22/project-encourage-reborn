@@ -8,3 +8,6 @@ FROM "question"."questions" "q"
 WHERE "q"."is_banned" = TRUE
 GROUP BY "q"."user_id"
 ORDER BY "total_bans_count" DESC;
+
+-- bot_user privileges
+GRANT SELECT ON "moderation"."ban_report" TO bot_user;

@@ -101,5 +101,6 @@ describe('setup command', () => {
     expect(setup.name).toBe('setup');
     expect(setup.isNSFW).toBe(false);
     expect(setup.isAdministrator).toBe(false); // We check manually
+    expect(setup.interactionInitiator).toBe(true);
   });
 });

@@ -62,6 +62,7 @@ describe('declineRules button', () => {
 
   it('should have correct handler properties', () => {
     expect(declineRulesButton.name).toBe('declineRules');
+    expect(declineRulesButton.interactionInitiator).toBe(false);
     expect(declineRulesButton.params).toEqual({});
   });
 });

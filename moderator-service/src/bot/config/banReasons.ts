@@ -1,6 +1,12 @@
 
 import { TargetType } from '@vulps22/project-encourage-types';
 
+/**
+ * Reason value that opens the custom-reason modal rather than banning straight
+ * away. Must match the "Other (Custom Reason)" option value in every list below.
+ */
+export const CUSTOM_REASON_VALUE = 'other';
+
 const questionBanReasonList = [
         { label: "1 - Dangerous or Illegal Content", value: "dangerous_illegal" },
         { label: "2 - Breaches Discord T&C or Community Guidelines", value: "violates_guidelines" },

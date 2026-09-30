@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType, MessageFlags } = require('discord.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -15,7 +15,7 @@ client.on('interactionCreate', async (interaction) => {
   try {
     await interaction.reply({
       content: '🔧 **Truth or Dare Online 18+ is currently undergoing maintenance.**\nCheck for updates at https://status.vulps.co.uk',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   } catch (err) {
     console.error('Failed to reply:', err.message);

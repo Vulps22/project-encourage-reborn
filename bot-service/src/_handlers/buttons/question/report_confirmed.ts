@@ -5,6 +5,7 @@ import { Handler } from '../../../utils';
 const reportButton: Handler<BotButtonInteraction> = {
     name: 'reportConfirmed',
     params: { id: 'id' },
+    interactionInitiator: false,
     async execute(interaction: BotButtonInteraction): Promise<void> {
         const questionId = interaction.params.get(reportButton.params!.id);
         if (!questionId) {

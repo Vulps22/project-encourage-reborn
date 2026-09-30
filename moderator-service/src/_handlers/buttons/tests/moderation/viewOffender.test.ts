@@ -30,6 +30,7 @@ describe('viewOffenderButton', () => {
 
     it('should have correct name and params', () => {
         expect(viewOffenderButton.name).toBe('viewOffender');
+        expect(viewOffenderButton.interactionInitiator).toBe(true);
         expect(viewOffenderButton.params).toEqual({ id: 'id' });
     });
 

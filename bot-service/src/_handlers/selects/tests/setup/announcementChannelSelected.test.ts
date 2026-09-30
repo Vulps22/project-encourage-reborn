@@ -105,6 +105,7 @@ describe('announcementChannelSelected select menu', () => {
 
   it('should have correct handler properties', () => {
     expect(announcementChannelSelected.name).toBe('announcementChannelSelected');
+    expect(announcementChannelSelected.interactionInitiator).toBe(false);
     expect(announcementChannelSelected.params).toEqual({});
   });
 });

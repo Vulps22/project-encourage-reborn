@@ -60,3 +60,6 @@ COMMENT ON COLUMN "server"."servers"."entitlement_end_date" IS 'When premium ent
 COMMENT ON COLUMN "server"."servers"."is_deleted" IS 'Whether server has been soft deleted';
 COMMENT ON COLUMN "server"."servers"."datetime_deleted" IS 'When server was soft deleted';
 COMMENT ON COLUMN "server"."servers"."playtest_notified" IS 'Whether the server has been shown the playtest notice on first interaction';
+
+-- bot_user privileges
+GRANT SELECT, INSERT, UPDATE, DELETE ON "server"."servers" TO bot_user;

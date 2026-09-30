@@ -375,4 +375,17 @@ describe('DatabaseClient', () => {
     await client.trackInteraction('123', '456', '789');
     expectCall('POST', '/api/v1/track', { user_id: '123', server_id: '456', server_owner_id: '789' });
   });
+
+  // ===== ANALYTICS =====
+
+  it('logAnalyticsEvent → POST /api/v1/analytics/event', async () => {
+    succeed({ success: true });
+    await client.logAnalyticsEvent('button', 'approveQuestion', '123', '456');
+    expectCall('POST', '/api/v1/analytics/event', {
+      interaction_type: 'button',
+      interaction_name: 'approveQuestion',
+      user_id: '123',
+      guild_id: '456',
+    });
+  });
 });

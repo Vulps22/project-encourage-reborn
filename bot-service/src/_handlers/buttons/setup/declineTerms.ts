@@ -5,6 +5,7 @@ import { Handler } from '../../../utils';
 const declineTermsButton: Handler<BotButtonInteraction> = {
     name: 'declineTerms',
     params: {},
+    interactionInitiator: false,
     async execute(interaction) {
         // Verify user is admin
         const member = interaction.member;

@@ -180,5 +180,6 @@ describe('random command', () => {
     expect(random.name).toBe('random');
     expect(random.isNSFW).toBe(true);
     expect(random.isAdministrator).toBe(false);
+    expect(random.interactionInitiator).toBe(true);
   });
 });

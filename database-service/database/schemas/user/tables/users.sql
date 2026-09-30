@@ -34,3 +34,6 @@ COMMENT ON COLUMN "user"."users"."id" IS 'Discord user ID';
 COMMENT ON COLUMN "user"."users"."ban_message_id" IS 'Discord message ID of the ban notification message';
 COMMENT ON COLUMN "user"."users"."created_datetime" IS 'When the user was first seen by the bot';
 COMMENT ON COLUMN "user"."users"."delete_date" IS 'Scheduled date for user data deletion';
+
+-- bot_user privileges
+GRANT SELECT, INSERT, UPDATE, DELETE ON "user"."users" TO bot_user;

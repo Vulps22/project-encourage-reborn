@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { AnalyticsService } from './AnalyticsService';
 import { ChallengeService } from './ChallengeService';
 import { ConfigService } from './ConfigService';
 import { EntitlementService } from './EntitlementService';
@@ -11,6 +12,7 @@ import { TrackService } from './TrackService';
 import { UserService } from './UserService';
 import { VoteService } from './VoteService';
 
+export const analyticsService = new AnalyticsService(db);
 export const challengeService = new ChallengeService(db);
 export const configService = new ConfigService(db);
 export const entitlementService = new EntitlementService(db);
