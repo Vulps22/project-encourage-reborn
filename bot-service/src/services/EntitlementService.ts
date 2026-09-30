@@ -18,23 +18,38 @@ export class EntitlementService {
    * @param type Which lifecycle event fired: 'create' | 'update' | 'delete'
    */
   async capture(entitlement: Entitlement, type: 'create' | 'update' | 'delete'): Promise<void> {
-    const data = {
-      id: entitlement.id,
-      skuId: entitlement.skuId,
-      userId: entitlement.userId,
-      guildId: entitlement.guildId,
-      type: entitlement.type,
-      deleted: entitlement.deleted,
-      startsTimestamp: entitlement.startsTimestamp,
-      endsTimestamp: entitlement.endsTimestamp,
-      consumed: entitlement.consumed,
-    };
-
     try {
-      await dsClient.recordEntitlementEvent(type, entitlement.id, data);
+      await dsClient.recordEntitlementEvent(type, entitlement.id, this.toPayload(entitlement));
     } catch (error) {
       Logger.error(`Failed to record entitlement ${type} event for entitlement ${entitlement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Claim an entitlement for fulfilment. Only the first claim for an entitlement ID
+   * succeeds, so handlers use this to make sure a purchase is only ever granted once.
+   * Returns false if it has already been claimed.
+   */
+  async claim(entitlement: Entitlement): Promise<boolean> {
+    return dsClient.claimEntitlement(this.toPayload(entitlement));
+  }
+
+  /** Release a claim whose fulfilment failed, so a redelivery can claim it again. */
+  async release(entitlementId: string): Promise<void> {
+    await dsClient.releaseEntitlement(entitlementId);
+  }
+
+  /** Record that a claimed entitlement has been consumed with Discord. */
+  async markConsumed(entitlementId: string): Promise<void> {
+    await dsClient.markEntitlementConsumed(entitlementId);
+  }
+
+  /**
+   * Revoke a claimed entitlement (refund). Only the first revoke succeeds, so a
+   * purchase is only ever reversed once. Returns false if there is nothing to reverse.
+   */
+  async revoke(entitlementId: string): Promise<boolean> {
+    return dsClient.revokeEntitlement(entitlementId);
   }
 
   /**
@@ -101,5 +116,20 @@ export class EntitlementService {
     } catch (error) {
       Logger.error(`Failed to reconcile entitlements: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /** The plain entitlement shape sent to DS, from discord.js's parsed Entitlement. */
+  private toPayload(entitlement: Entitlement): Record<string, unknown> {
+    return {
+      id: entitlement.id,
+      skuId: entitlement.skuId,
+      userId: entitlement.userId,
+      guildId: entitlement.guildId,
+      type: entitlement.type,
+      deleted: entitlement.deleted,
+      startsTimestamp: entitlement.startsTimestamp,
+      endsTimestamp: entitlement.endsTimestamp,
+      consumed: entitlement.consumed,
+    };
   }
 }

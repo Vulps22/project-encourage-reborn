@@ -14,6 +14,8 @@ jest.mock('../../client', () => {
             recordEntitlementEvent: jest.fn(),
             reconcileEntitlements: jest.fn(),
             getPurchasable: jest.fn(),
+            claimEntitlement: jest.fn(),
+            revokeEntitlement: jest.fn(),
         },
     };
 });
@@ -115,6 +117,23 @@ describe('EntitlementService', () => {
             expect(Logger.error).toHaveBeenCalledWith(
                 expect.stringContaining('Failed to record entitlement create event for entitlement ent-1')
             );
+        });
+    });
+
+    describe('claim / revoke', () => {
+        it('claims with the same entitlement shape it captures', async () => {
+            (dsClient.claimEntitlement as jest.Mock).mockResolvedValue(true);
+
+            expect(await service.claim(makeEntitlement())).toBe(true);
+            expect(dsClient.claimEntitlement).toHaveBeenCalledWith(expect.objectContaining({ id: 'ent-1', skuId: 'sku-1', userId: 'user-1' }));
+        });
+
+        it('passes through DS saying the entitlement is already claimed or revoked', async () => {
+            (dsClient.claimEntitlement as jest.Mock).mockResolvedValue(false);
+            (dsClient.revokeEntitlement as jest.Mock).mockResolvedValue(false);
+
+            expect(await service.claim(makeEntitlement())).toBe(false);
+            expect(await service.revoke('ent-1')).toBe(false);
         });
     });
 

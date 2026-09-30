@@ -177,6 +177,36 @@ export class DatabaseClient extends Client {
     await this.post('/api/v1/entitlement/reconcile', undefined, { entitlements });
   }
 
+  /** Returns false if the entitlement has already been claimed. */
+  async claimEntitlement(entitlement: unknown): Promise<boolean> {
+    try {
+      await this.post('/api/v1/entitlement/claim', undefined, { entitlement });
+      return true;
+    } catch (e) {
+      if (e instanceof DSError && e.status === 409) return false;
+      throw e;
+    }
+  }
+
+  async releaseEntitlement(id: string): Promise<void> {
+    await this.delete('/api/v1/entitlement/claim', undefined, { id });
+  }
+
+  async markEntitlementConsumed(id: string): Promise<void> {
+    await this.patch('/api/v1/entitlement/claim', undefined, { id, consumed: true });
+  }
+
+  /** Returns false if the entitlement was never claimed or is already revoked. */
+  async revokeEntitlement(id: string): Promise<boolean> {
+    try {
+      await this.post('/api/v1/entitlement/revoke', undefined, { id });
+      return true;
+    } catch (e) {
+      if (e instanceof DSError && e.status === 409) return false;
+      throw e;
+    }
+  }
+
   async getPurchasable(query: PurchasableQuery): Promise<Purchasable | null> {
     const params = Object.fromEntries(
       Object.entries(query).filter(([, value]) => value !== undefined)
