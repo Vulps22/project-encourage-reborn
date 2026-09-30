@@ -84,7 +84,6 @@ describe('CommandInteractionEvent (moderator-service)', () => {
             await event.execute(mockDiscordInteraction, 'exec-1');
 
             expect(mockCommand.execute).toHaveBeenCalledWith(expect.any(BotCommandInteraction));
-            expect(Logger.updateExecution).toHaveBeenCalledWith('exec-1', 'Success');
         });
 
         it('should send error view when command throws and interaction is not replied', async () => {

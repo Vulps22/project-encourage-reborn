@@ -9,6 +9,7 @@ import { MessageEditOptions } from "discord.js";
 const banServerButton: Handler<BotButtonInteraction> = {
     name: "banServer",
     params: { id: 'id' },
+    interactionInitiator: true,
     async execute(interaction) {
         const serverId = interaction.params.get(banServerButton.params!.id);
         if (!serverId) {

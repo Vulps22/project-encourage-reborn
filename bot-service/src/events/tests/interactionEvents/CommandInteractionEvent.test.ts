@@ -14,9 +14,14 @@ jest.mock('@vulps22/bot-interactions', () => ({
     errorView: jest.fn().mockReturnValue({ flags: 64, components: [] }),
 }));
 
+jest.mock('../../../services', () => ({
+    analyticsService: { logEvent: jest.fn() },
+}));
+
 const { CommandInteractionEvent } = require('../../interactionEvents/CommandInteractionEvent');
 const { Logger } = require('@vulps22/logger');
 const { errorView } = require('@vulps22/bot-interactions');
+const { analyticsService } = require('../../../services');
 
 describe('CommandInteractionEvent', () => {
     let event: InstanceType<typeof CommandInteractionEvent>;
@@ -41,6 +46,7 @@ describe('CommandInteractionEvent', () => {
             commandName: 'truth',
             replied: false,
             deferred: false,
+            guildId: '111',
             guild: { id: '111', nsfwLevel: GuildNSFWLevel.Default },
             channel: { nsfw: false },
             user: { id: 'user-1', username: 'tester' },
@@ -56,6 +62,7 @@ describe('CommandInteractionEvent', () => {
             name: 'truth',
             isNSFW: false,
             isAdministrator: false,
+            interactionInitiator: true,
             execute: jest.fn().mockResolvedValue(undefined),
             autoComplete: jest.fn().mockResolvedValue(undefined),
         };
@@ -78,6 +85,30 @@ describe('CommandInteractionEvent', () => {
 
             expect(Logger.error).toHaveBeenCalledWith('No command found for name: unknown');
             expect(mockCommand.execute).not.toHaveBeenCalled();
+        });
+
+        describe('analytics logging', () => {
+            it('should log an analytics event when the command is an initiator', async () => {
+                await event.execute(mockInteraction, 'exec-1');
+
+                expect(analyticsService.logEvent).toHaveBeenCalledWith('command', 'truth', true, 'user-1', '111');
+            });
+
+            it('should pass interactionInitiator through as false when the command is not an initiator', async () => {
+                mockCommand.interactionInitiator = false;
+
+                await event.execute(mockInteraction, 'exec-1');
+
+                expect(analyticsService.logEvent).toHaveBeenCalledWith('command', 'truth', false, 'user-1', '111');
+            });
+
+            it('should log before executing the command, even if execution fails', async () => {
+                mockCommand.execute.mockRejectedValue(new Error('boom'));
+
+                await event.execute(mockInteraction, 'exec-1');
+
+                expect(analyticsService.logEvent).toHaveBeenCalledWith('command', 'truth', true, 'user-1', '111');
+            });
         });
 
         describe('NSFW enforcement', () => {

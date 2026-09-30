@@ -4,7 +4,7 @@ import { BotCommandInteraction, errorView } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import { termsView } from '../../../views';
 
-const setup = new Command('setup', 'Configure server settings (Admin only)')
+const setup = new Command('setup', 'Configure server settings (Admin only)', true)
   .setNSFW(false)
   .setAdministrator(false) // We'll check permissions manually for better UX
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {

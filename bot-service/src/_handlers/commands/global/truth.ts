@@ -4,7 +4,7 @@ import { QuestionType } from '@vulps22/project-encourage-types';
 import { Command } from '../../../utils';
 import { challengeEmbed } from '../../../views';
 
-const truth = new Command('truth', 'Get a random truth question')
+const truth = new Command('truth', 'Get a random truth question', true)
   .setNSFW(true)
   .setAdministrator(false)
   .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {

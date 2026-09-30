@@ -160,7 +160,19 @@ export class DatabaseService {
     }
   }
 
-  async insert(schema: string, table: string, data: Record<string, unknown>): Promise<MutationResult> {
+  /**
+   * @param options.returning Whether to append `RETURNING *`. Defaults to true.
+   *        `RETURNING` requires SELECT privilege on the returned columns, so a
+   *        table the app may write but not read — analytics.events is granted
+   *        INSERT only — fails with "permission denied" unless this is false.
+   */
+  async insert(
+    schema: string,
+    table: string,
+    data: Record<string, unknown>,
+    options: { returning?: boolean } = {}
+  ): Promise<MutationResult> {
+    const returning = options.returning ?? true;
     try {
       this.validateTableName(schema);
       this.validateTableName(table);
@@ -177,7 +189,7 @@ export class DatabaseService {
       const placeholders = values.map(() => `$${paramIndex++}`).join(', ');
       const columnNames = columns.map((col) => `"${col}"`).join(', ');
 
-      const query = `INSERT INTO "${schema}"."${table}" (${columnNames}) VALUES (${placeholders}) RETURNING *`;
+      const query = `INSERT INTO "${schema}"."${table}" (${columnNames}) VALUES (${placeholders})${returning ? ' RETURNING *' : ''}`;
       const client = this.transactionClient || this.pool;
       const result = await client.query(query, values);
 

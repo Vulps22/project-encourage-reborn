@@ -2,7 +2,7 @@ import { BotCommandInteraction, noticeView } from '@vulps22/bot-interactions';
 import { Command } from '../../../utils';
 import { inventoryService } from '../../../services';
 
-const vote = new Command('vote', 'Check your skips and vote for the bot on Top.gg')
+const vote = new Command('vote', 'Check your skips and vote for the bot on Top.gg', true)
     .setNSFW(false)
     .setAdministrator(false)
     .setExecute(async (interaction: BotCommandInteraction): Promise<void> => {

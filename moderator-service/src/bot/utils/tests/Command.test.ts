@@ -5,9 +5,10 @@ import { AutocompleteInteraction } from 'discord.js';
 describe('Command', () => {
   describe('constructor', () => {
     it('should create command with name and description', () => {
-      const command = new Command('test', 'Test command');
+      const command = new Command('test', 'Test command', true);
 
       expect(command.name).toBe('test');
+      expect(command.interactionInitiator).toBe(true);
       expect(command.toJSON()).toMatchObject({
         name: 'test',
         description: 'Test command',
@@ -17,7 +18,7 @@ describe('Command', () => {
 
   describe('addStringOption', () => {
     it('should add string option and return CommandOption', () => {
-      const command = new Command('test', 'Test');
+      const command = new Command('test', 'Test', true);
       const option = command.addStringOption('input', 'Input field', true);
 
       expect(option).toBeDefined();
@@ -25,7 +26,7 @@ describe('Command', () => {
     });
 
     it('should support chaining with done()', () => {
-      const command = new Command('test', 'Test')
+      const command = new Command('test', 'Test', true)
         .addStringOption('input', 'Input field', true)
         .done();
 
@@ -33,7 +34,7 @@ describe('Command', () => {
     });
 
     it('should add choices to string option', () => {
-      const command = new Command('test', 'Test')
+      const command = new Command('test', 'Test', true)
         .addStringOption('type', 'Type selection', true)
         .addChoice('Option 1', 'opt1')
         .addChoice('Option 2', 'opt2')
@@ -46,7 +47,7 @@ describe('Command', () => {
     });
 
     it('should set min and max length', () => {
-      const command = new Command('test', 'Test')
+      const command = new Command('test', 'Test', true)
         .addStringOption('input', 'Input', true)
         .setMinLength(5)
         .setMaxLength(100)
@@ -61,7 +62,7 @@ describe('Command', () => {
 
   describe('addIntegerOption', () => {
     it('should add integer option', () => {
-      const command = new Command('test', 'Test')
+      const command = new Command('test', 'Test', true)
         .addIntegerOption('count', 'Count', true)
         .done();
 
@@ -70,7 +71,7 @@ describe('Command', () => {
     });
 
     it('should set min and max value', () => {
-      const command = new Command('test', 'Test')
+      const command = new Command('test', 'Test', true)
         .addIntegerOption('count', 'Count', true)
         .setMinValue(1)
         .setMaxValue(10)
@@ -85,7 +86,7 @@ describe('Command', () => {
 
   describe('addBooleanOption', () => {
     it('should add boolean option', () => {
-      const command = new Command('test', 'Test')
+      const command = new Command('test', 'Test', true)
         .addBooleanOption('confirm', 'Confirm action', true);
 
       const json = command.toJSON();
@@ -95,14 +96,14 @@ describe('Command', () => {
 
   describe('setNSFW', () => {
     it('should set NSFW flag to true', () => {
-      const command = new Command('test', 'Test').setNSFW(true);
+      const command = new Command('test', 'Test', true).setNSFW(true);
 
       expect(command.isNSFW).toBe(true);
       expect(command.toJSON().nsfw).toBe(true);
     });
 
     it('should set NSFW flag to false', () => {
-      const command = new Command('test', 'Test').setNSFW(false);
+      const command = new Command('test', 'Test', true).setNSFW(false);
 
       expect(command.isNSFW).toBe(false);
       expect(command.toJSON().nsfw).toBe(false);
@@ -111,13 +112,13 @@ describe('Command', () => {
 
   describe('setAdministrator', () => {
     it('should set administrator flag to true', () => {
-      const command = new Command('test', 'Test').setAdministrator(true);
+      const command = new Command('test', 'Test', true).setAdministrator(true);
 
       expect(command.isAdministrator).toBe(true);
     });
 
     it('should set administrator flag to false', () => {
-      const command = new Command('test', 'Test').setAdministrator(false);
+      const command = new Command('test', 'Test', true).setAdministrator(false);
 
       expect(command.isAdministrator).toBe(false);
     });
@@ -126,14 +127,14 @@ describe('Command', () => {
   describe('setExecute', () => {
     it('should set execute handler', () => {
       const executeHandler = jest.fn().mockResolvedValue(undefined);
-      const command = new Command('test', 'Test').setExecute(executeHandler);
+      const command = new Command('test', 'Test', true).setExecute(executeHandler);
 
       expect(command).toBeDefined();
     });
 
     it('should execute handler when called', async () => {
       const executeHandler = jest.fn().mockResolvedValue(undefined);
-      const command = new Command('test', 'Test').setExecute(executeHandler);
+      const command = new Command('test', 'Test', true).setExecute(executeHandler);
 
       const mockInteraction = {} as BotCommandInteraction;
       await command.execute(mockInteraction);
@@ -142,7 +143,7 @@ describe('Command', () => {
     });
 
     it('should throw error if execute not set', async () => {
-      const command = new Command('test', 'Test');
+      const command = new Command('test', 'Test', true);
       const mockInteraction = {} as BotCommandInteraction;
 
       await expect(command.execute(mockInteraction)).rejects.toThrow(
@@ -154,14 +155,14 @@ describe('Command', () => {
   describe('setAutoComplete', () => {
     it('should set autocomplete handler', () => {
       const autoCompleteHandler = jest.fn().mockResolvedValue(undefined);
-      const command = new Command('test', 'Test').setAutoComplete(autoCompleteHandler);
+      const command = new Command('test', 'Test', true).setAutoComplete(autoCompleteHandler);
 
       expect(command).toBeDefined();
     });
 
     it('should execute autocomplete handler when called', async () => {
       const autoCompleteHandler = jest.fn().mockResolvedValue(undefined);
-      const command = new Command('test', 'Test').setAutoComplete(autoCompleteHandler);
+      const command = new Command('test', 'Test', true).setAutoComplete(autoCompleteHandler);
 
       const mockInteraction = {} as AutocompleteInteraction;
       await command.autoComplete(mockInteraction);
@@ -170,7 +171,7 @@ describe('Command', () => {
     });
 
     it('should throw error if autocomplete not set', async () => {
-      const command = new Command('test', 'Test');
+      const command = new Command('test', 'Test', true);
       const mockInteraction = {} as AutocompleteInteraction;
 
       await expect(command.autoComplete(mockInteraction)).rejects.toThrow(
@@ -183,7 +184,7 @@ describe('Command', () => {
     it('should support full command building chain', () => {
       const executeHandler = jest.fn();
 
-      const command = new Command('create', 'Create something')
+      const command = new Command('create', 'Create something', true)
         .addStringOption('type', 'Type of thing', true)
         .addChoice('Type A', 'a')
         .addChoice('Type B', 'b')
@@ -208,7 +209,7 @@ describe('Command', () => {
 
   describe('toJSON', () => {
     it('should return valid Discord command JSON', () => {
-      const command = new Command('test', 'Test command')
+      const command = new Command('test', 'Test command', true)
         .addStringOption('input', 'Input field', true)
         .done();
 

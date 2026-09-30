@@ -6,6 +6,7 @@ import { userProfileView } from "../../../views";
 const viewOffenderButton: Handler<BotButtonInteraction> = {
     name: "viewOffender",
     params: { id: 'id' },
+    interactionInitiator: true,
     async execute(interaction) {
         const userId = interaction.params.get(viewOffenderButton.params!.id);
         if (!userId) {

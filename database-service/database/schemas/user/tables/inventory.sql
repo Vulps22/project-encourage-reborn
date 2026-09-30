@@ -16,3 +16,8 @@ COMMENT ON TABLE "user"."inventory" IS 'Tracks quantities of storables held by e
 COMMENT ON COLUMN "user"."inventory"."user_id" IS 'Reference to the owning user';
 COMMENT ON COLUMN "user"."inventory"."storable_id" IS 'Reference to the storable type';
 COMMENT ON COLUMN "user"."inventory"."qty" IS 'Current quantity held; cannot go below 0';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "user" TO bot_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON "user"."inventory" TO bot_user;
+GRANT USAGE, SELECT ON SEQUENCE "user"."inventory_id_seq" TO bot_user;

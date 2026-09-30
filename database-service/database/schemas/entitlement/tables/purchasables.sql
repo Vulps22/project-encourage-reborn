@@ -29,3 +29,7 @@ COMMENT ON COLUMN "purchasables"."name" IS 'Human-readable product name';
 COMMENT ON COLUMN "purchasables"."sku_id" IS 'Discord SKU ID for this product';
 COMMENT ON COLUMN "purchasables"."created_at" IS 'When this purchasable was registered';
 COMMENT ON COLUMN "purchasables"."type" IS 'Type of purchase: consumable (one-time) or subscription (recurring)';
+
+-- bot_user privileges
+GRANT SELECT ON "entitlement"."purchasables" TO bot_user;
+GRANT USAGE, SELECT ON SEQUENCE "entitlement"."purchasables_id_seq" TO bot_user;

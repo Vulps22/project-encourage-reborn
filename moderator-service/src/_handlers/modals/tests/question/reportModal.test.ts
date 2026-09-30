@@ -36,6 +36,7 @@ describe('reportModal', () => {
 
     it('should have correct name and params', () => {
         expect(reportModal.name).toBe('reportModal');
+        expect(reportModal.interactionInitiator).toBe(false);
         expect(reportModal.params).toEqual({ id: 'id' });
     });
 

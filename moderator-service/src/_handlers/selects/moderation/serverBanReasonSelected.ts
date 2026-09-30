@@ -1,11 +1,14 @@
-import { moderationService, reportService } from "../../../services";
 import { BotSelectMenuInteraction, errorView, successView } from "@vulps22/bot-interactions";
-import { Handler, Logger, ModerationLogger } from "../../../bot/utils";
-import { ServerProfileBuilder } from "../../../bot/builders/ServerProfileBuilder";
+import { Handler, Logger } from "../../../bot/utils";
+import { TargetType } from "@vulps22/project-encourage-types";
+import { applyBan, BanTargetNotFoundError } from "../../shared/applyBan";
+import { customBanReasonModal } from "../../shared/customBanReasonModal";
+import { CUSTOM_REASON_VALUE } from "../../../bot/config";
 
 const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
     name: "serverBanReasonSelected",
     params: { id: 'id' },
+    interactionInitiator: false,
     async execute(interaction) {
         const serverId = interaction.params.get(serverBanReasonSelected.params!.id);
         const selectedReason = interaction.values[0];
@@ -20,30 +23,24 @@ const serverBanReasonSelected: Handler<BotSelectMenuInteraction> = {
             return;
         }
 
+        // Must come before any defer or reply — a modal cannot be shown once the
+        // interaction has been responded to.
+        if (selectedReason === CUSTOM_REASON_VALUE) {
+            await interaction.showModal(customBanReasonModal(TargetType.Server, serverId));
+            return;
+        }
+
         try {
-            await moderationService.banServer(serverId, interaction.user.id, selectedReason);
-
-            const profile = await new ServerProfileBuilder().getServerProfile(serverId);
-            if (!profile) {
-                await interaction.ephemeralReply(errorView('Server not found'));
-                Logger.error(`Server with ID ${serverId} not found during banning for message ${interaction.message.id}`);
-                return;
-            }
-
-            await ModerationLogger.updateServerLog(profile);
-
-            const reports = await moderationService.findActioningReports(serverId);
-            for (const report of reports) {
-                await moderationService.actionedReport(report.id!, interaction.user.id);
-                await reportService.notifyReporter(
-                    report,
-                    `Your report (#${report.id}) has been reviewed. Action has been taken against the reported content.`
-                );
-            }
+            await applyBan(TargetType.Server, serverId, selectedReason, interaction.user.id);
 
             await interaction.ephemeralReply(successView('Server banned successfully!'));
 
         } catch (error) {
+            if (error instanceof BanTargetNotFoundError) {
+                Logger.error(`Server with ID ${serverId} not found during banning for message ${interaction.message.id}`);
+                await interaction.ephemeralReply(errorView('Server not found'));
+                return;
+            }
             console.error('Error banning server:', error);
             await interaction.ephemeralReply(errorView('Failed to ban server. Please try again.'));
         }

@@ -7,6 +7,7 @@ import { channelSelectView } from '../../../views';
 const acceptRulesButton: Handler<BotButtonInteraction> = {
     name: 'acceptRules',
     params: {},
+    interactionInitiator: false,
     async execute(interaction) {
         // Verify user is admin
         const member = interaction.member;

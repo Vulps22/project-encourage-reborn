@@ -15,3 +15,7 @@ COMMENT ON COLUMN "vote"."challenge_votes"."done_count" IS 'Number of done votes
 COMMENT ON COLUMN "vote"."challenge_votes"."failed_count" IS 'Number of failed votes cast';
 COMMENT ON COLUMN "vote"."challenge_votes"."final_result" IS 'done, failed, or skipped once threshold is reached';
 COMMENT ON COLUMN "vote"."challenge_votes"."finalised_datetime" IS 'When the final result was determined';
+
+-- bot_user privileges
+GRANT USAGE ON SCHEMA "vote" TO bot_user;
+GRANT SELECT, INSERT, UPDATE ON "vote"."challenge_votes" TO bot_user;

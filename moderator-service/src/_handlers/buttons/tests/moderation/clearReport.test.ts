@@ -49,6 +49,7 @@ describe('clearReportButton', () => {
 
     it('should have correct name and params', () => {
         expect(clearReportButton.name).toBe('clearReport');
+        expect(clearReportButton.interactionInitiator).toBe(true);
         expect(clearReportButton.params).toEqual({ id: 'string' });
     });
 

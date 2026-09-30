@@ -58,6 +58,7 @@ describe('sendToModerators button handler', () => {
 
     it('should have correct handler properties', () => {
         expect(sendToModeratorsButton.name).toBe('sendToModerators');
+        expect(sendToModeratorsButton.interactionInitiator).toBe(false);
         expect(sendToModeratorsButton.params).toEqual({ ID: 'id' });
     });
 

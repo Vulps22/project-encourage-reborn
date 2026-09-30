@@ -8,6 +8,7 @@ import { Handler, ModerationLogger } from '../../../bot/utils';
 const actionReportButton: Handler<BotButtonInteraction> = {
     name: 'takeAction',
     params: { id: 'string' },
+    interactionInitiator: true,
     async execute(interaction) {
         await interaction.deferUpdate();
 

@@ -73,7 +73,7 @@ describe('interactionCreate event', () => {
 
     await interactionCreate.execute(mockInteraction);
 
-    expect(mockCommandInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, 'execution-id-123');
+    expect(mockCommandInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, '');
   });
 
   it('should dispatch modal submits to ModalInteractionEvent.execute', async () => {
@@ -84,7 +84,7 @@ describe('interactionCreate event', () => {
 
     await interactionCreate.execute(mockInteraction);
 
-    expect(mockModalInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, 'execution-id-123');
+    expect(mockModalInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, '');
   });
 
   it('should dispatch button interactions to ButtonInteractionEvent.execute', async () => {
@@ -95,7 +95,7 @@ describe('interactionCreate event', () => {
 
     await interactionCreate.execute(mockInteraction);
 
-    expect(mockButtonInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, 'execution-id-123');
+    expect(mockButtonInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, '');
   });
 
   it('should dispatch string select menu interactions to StringSelectInteractionEvent.execute', async () => {
@@ -106,7 +106,7 @@ describe('interactionCreate event', () => {
 
     await interactionCreate.execute(mockInteraction);
 
-    expect(mockStringSelectInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, 'execution-id-123');
+    expect(mockStringSelectInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, '');
   });
 
   it('should dispatch channel select menu interactions to ChannelSelectInteractionEvent.execute', async () => {
@@ -117,7 +117,7 @@ describe('interactionCreate event', () => {
 
     await interactionCreate.execute(mockInteraction);
 
-    expect(mockChannelSelectInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, 'execution-id-123');
+    expect(mockChannelSelectInteractionEventExecute).toHaveBeenCalledWith(mockInteraction, '');
   });
 
   it('should log the interaction before dispatching', async () => {

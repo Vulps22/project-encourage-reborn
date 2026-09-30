@@ -1,4 +1,4 @@
-import { GuildTextBasedChannel, Interaction, MessageCreateOptions, MessageFlags } from 'discord.js';
+import { Interaction, MessageFlags } from 'discord.js';
 import { DMInteractionError } from '../errors';
 import { serverService, userService, userTrackingService } from '../services';
 import { banReasons } from '../config';
@@ -7,7 +7,6 @@ import { TargetType } from '@vulps22/project-encourage-types';
 import { Logger } from '@vulps22/logger';
 import { CommandInteractionEvent, ButtonInteractionEvent, ModalInteractionEvent, StringSelectInteractionEvent } from './interactionEvents';
 import { ChannelSelectInteractionEvent } from './interactionEvents/ChannelSelectInteractionEvent';
-import { playtestNoticeView } from '../views/playtestNoticeView';
 
 /**
  * InteractionCreate event handler
@@ -24,7 +23,13 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       : interaction.isAutocomplete() ? `Autocomplete: /${interaction.commandName}`
       : 'Interaction';
 
-    const executionId = await Logger.logInteractionReceived(interaction, typeLabel);
+    // Fire-and-forget. Awaiting this put a Discord webhook round-trip in the path of
+    // every interaction, on a rate-limited webhook shared by every shard, which was
+    // consuming most of the 3s initial-response window. The returned message id was
+    // only ever used to edit the message with a status afterwards; those updates are
+    // gone, so nothing needs the id.
+    void Logger.logInteractionReceived(interaction, typeLabel);
+    const executionId = '';
 
     // Track user interaction before processing
     try {
@@ -38,13 +43,11 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
             flags: MessageFlags.Ephemeral
           });
         }
-        await Logger.updateExecution(executionId, 'Failed: DM interaction not supported');
         return;
       }
       // Other errors are critical - block the interaction
       Logger.error(`User tracking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      await Logger.updateExecution(executionId, `Failed: Tracking error - ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
+
       if (interaction.isRepliable()) {
         await interaction.reply({
           content: 'An error occurred while processing your request. Please try again later.',
@@ -64,7 +67,14 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       return;
     }
 
-    const banReason = await serverService.isServerBanned(interaction.guildId || '');
+    // The server and user records are independent lookups, so fetch them together
+    // rather than in series, and hand them to the ban checks so neither refetches.
+    const [server, user] = await Promise.all([
+      serverService.getServerSettings(interaction.guildId || ''),
+      userService.getUser(interaction.user.id),
+    ]);
+
+    const banReason = await serverService.isServerBanned(interaction.guildId || '', server);
 
     if (banReason) {
       await interaction.reply({
@@ -73,22 +83,13 @@ const interactionCreate: EventHandler<'interactionCreate'> = {
       return;
     }
 
-    const userBanReason = await userService.isUserBanned(interaction.user.id);
+    const userBanReason = await userService.isUserBanned(interaction.user.id, user);
     if (userBanReason) {
       await interaction.reply({
         content: `You are banned from using this bot. Reason: ${getBanReasonLabel(TargetType.User, userBanReason)}`,
         flags: MessageFlags.Ephemeral
       });
       return;
-    }
-
-    // Send live launch notice on a beta server's first interaction after go-live
-    if (interaction.guildId && interaction.channel) {
-      const server = await serverService.getServerSettings(interaction.guildId);
-      if (server && server.playtest_notified) {
-        await (interaction.channel as GuildTextBasedChannel).send(playtestNoticeView() as MessageCreateOptions);
-        await serverService.clearPlaytestNotified(interaction.guildId);
-      }
     }
 
     if (interaction.isChatInputCommand()) {
