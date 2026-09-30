@@ -8,7 +8,7 @@ describe('noSkipsView', () => {
         expect(view.flags).toBe(MessageFlags.IsComponentsV2);
         expect(view.components).toHaveLength(2);
 
-        const row = (view.components![1] as ActionRowBuilder).toJSON() as any;
+        const row = (view.components![1] as unknown as ActionRowBuilder).toJSON() as any;
         expect(row.components[0]).toEqual(expect.objectContaining({ style: ButtonStyle.Premium, sku_id: 'sku-123' }));
     });
 
