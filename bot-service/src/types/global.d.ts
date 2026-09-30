@@ -1,5 +1,5 @@
 import { Client, Collection } from 'discord.js';
-import { Handler, Command } from '../utils';
+import { Handler, Command, EntitlementHandler } from '../utils';
 import { Config } from '../config';
 import { BotModalInteraction, BotSelectMenuInteraction } from '../structures';
 declare global {
@@ -8,6 +8,7 @@ declare global {
     var buttons: Collection<string, Handler<BotButtonInteraction>>;
     var selects: Collection<string, Handler<BotSelectMenuInteraction>>;
     var modals: Collection<string, Handler<BotModalInteraction>>;
+    var entitlements: Collection<string, EntitlementHandler>;
     var config: typeof Config;
 }
 

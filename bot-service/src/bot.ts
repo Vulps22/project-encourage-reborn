@@ -1,7 +1,7 @@
 import { Client, Collection, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { Handler, Command } from './utils';
+import { Handler, Command, EntitlementHandler } from './utils';
 import { Logger } from '@vulps22/logger';
 import { EventHandler } from './types';
 import { Config } from './config';
@@ -17,6 +17,7 @@ function initializeGlobals(client: Client): void {
     global.buttons = new Collection<string, Handler<BotButtonInteraction>>();
     global.selects = new Collection<string, Handler<BotSelectMenuInteraction>>();
     global.modals = new Collection<string, Handler<BotModalInteraction>>();
+    global.entitlements = new Collection<string, EntitlementHandler>();
 }
 
 /**
@@ -105,6 +106,26 @@ async function loadModals(): Promise<void> {
 
     if (existsSync(modalsPath)) {
         await loadHandlersFromDirectory(modalsPath, global.modals);
+    }
+}
+
+/**
+ * Load all entitlement handlers, keyed by the purchasable name slug they fulfil
+ */
+async function loadEntitlementHandlers(): Promise<void> {
+    const entitlementsPath = join(__dirname, '_handlers', 'entitlements');
+
+    if (!existsSync(entitlementsPath)) {
+        return;
+    }
+
+    const handlerFiles = readdirSync(entitlementsPath).filter(file => file.endsWith('.js'));
+
+    for (const file of handlerFiles) {
+        const handlerModule = await import(join(entitlementsPath, file)) as { default: EntitlementHandler };
+        const handler: EntitlementHandler = handlerModule.default;
+        global.entitlements.set(handler.name, handler);
+        Logger.debug(`Loaded entitlement handler: ${handler.name}`);
     }
 }
 
@@ -253,6 +274,7 @@ async function startBot(): Promise<void> {
     await loadButtons();
     await loadSelectMenus();
     await loadModals();
+    await loadEntitlementHandlers();
     await loadEvents(client);
 
     client.once(Events.ClientReady, () => {
