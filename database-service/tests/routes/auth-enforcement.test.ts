@@ -18,6 +18,7 @@ const mockVote     = { challenge_id: 1, done_count: 0, failed_count: 0 };
 const mockReport   = { id: 1, status: 'PENDING' };
 const mockConfig   = { id: 'config', lockdown: false };
 const mockStorable = { id: 1, name: 'item' };
+const mockEntitlementRow = { id: 'ent-1', skuId: 'sku-1', userId: 'user-1', deleted: false, consumed: false };
 const mockAuditRow = { id: 1, entitlement_id: 'ent-1', type: 'create', source: 'gateway', data: {}, created_at: '2026-01-01' };
 
 jest.mock('../../src/services', () => ({
@@ -103,6 +104,10 @@ jest.mock('../../src/services', () => ({
     distinctOpenEntitlementIds: jest.fn().mockResolvedValue([]),
     findPurchasable: jest.fn().mockResolvedValue({ sku_id: 'sku-1' }),
     hasDrifted: jest.fn().mockReturnValue(false),
+    claim: jest.fn().mockResolvedValue(mockEntitlementRow),
+    release: jest.fn().mockResolvedValue(true),
+    markConsumed: jest.fn().mockResolvedValue({ ...mockEntitlementRow, consumed: true }),
+    revoke: jest.fn().mockResolvedValue({ ...mockEntitlementRow, deleted: true }),
   },
 }));
 
@@ -346,6 +351,110 @@ describe('GET /api/v1/entitlement/purchasable', () => {
     (entitlementService.findPurchasable as jest.Mock).mockResolvedValueOnce(null);
     const res = await request(app).get('/api/v1/entitlement/purchasable?sku=unknown').set('Authorization', PE);
     expect(res.status).toBe(404);
+  });
+});
+
+describe('POST /api/v1/entitlement/claim', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/claim');
+  const app = buildRouteApp(route, '/api/v1/entitlement/claim');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).post('/api/v1/entitlement/claim')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing fields', async () => {
+    const res = await request(app).post('/api/v1/entitlement/claim').set('Authorization', PE).send({ entitlement: { id: 'ent-1' } });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 201 when the entitlement is claimed', async () => {
+    const res = await request(app).post('/api/v1/entitlement/claim').set('Authorization', PE).send({ entitlement: { id: 'ent-1', skuId: 'sku-1', userId: 'user-1', type: 8 } });
+    expect(res.status).toBe(201);
+  });
+
+  it('returns 409 when the entitlement is already claimed', async () => {
+    const { entitlementService } = require('../../src/services');
+    (entitlementService.claim as jest.Mock).mockResolvedValueOnce(null);
+    const res = await request(app).post('/api/v1/entitlement/claim').set('Authorization', PE).send({ entitlement: { id: 'ent-1', skuId: 'sku-1', userId: 'user-1', type: 8 } });
+    expect(res.status).toBe(409);
+  });
+});
+
+describe('DELETE /api/v1/entitlement/claim', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/claim');
+  const app = buildRouteApp(route, '/api/v1/entitlement/claim');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).delete('/api/v1/entitlement/claim')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing id', async () => {
+    const res = await request(app).delete('/api/v1/entitlement/claim').set('Authorization', PE).send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 200 when the claim is released', async () => {
+    const res = await request(app).delete('/api/v1/entitlement/claim').set('Authorization', PE).send({ id: 'ent-1' });
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 404 when there is no releasable claim', async () => {
+    const { entitlementService } = require('../../src/services');
+    (entitlementService.release as jest.Mock).mockResolvedValueOnce(false);
+    const res = await request(app).delete('/api/v1/entitlement/claim').set('Authorization', PE).send({ id: 'ent-1' });
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('PATCH /api/v1/entitlement/claim', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/claim');
+  const app = buildRouteApp(route, '/api/v1/entitlement/claim');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).patch('/api/v1/entitlement/claim')).status).toBe(401);
+  });
+
+  it('returns 400 unless consumed is true', async () => {
+    const res = await request(app).patch('/api/v1/entitlement/claim').set('Authorization', PE).send({ id: 'ent-1' });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 200 when marked consumed', async () => {
+    const res = await request(app).patch('/api/v1/entitlement/claim').set('Authorization', PE).send({ id: 'ent-1', consumed: true });
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 404 when the entitlement was never claimed', async () => {
+    const { entitlementService } = require('../../src/services');
+    (entitlementService.markConsumed as jest.Mock).mockResolvedValueOnce(null);
+    const res = await request(app).patch('/api/v1/entitlement/claim').set('Authorization', PE).send({ id: 'ent-1', consumed: true });
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('POST /api/v1/entitlement/revoke', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/revoke');
+  const app = buildRouteApp(route, '/api/v1/entitlement/revoke');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).post('/api/v1/entitlement/revoke')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but missing id', async () => {
+    const res = await request(app).post('/api/v1/entitlement/revoke').set('Authorization', PE).send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 200 when the entitlement is revoked', async () => {
+    const res = await request(app).post('/api/v1/entitlement/revoke').set('Authorization', PE).send({ id: 'ent-1' });
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 409 when there is nothing to revoke', async () => {
+    const { entitlementService } = require('../../src/services');
+    (entitlementService.revoke as jest.Mock).mockResolvedValueOnce(null);
+    const res = await request(app).post('/api/v1/entitlement/revoke').set('Authorization', PE).send({ id: 'ent-1' });
+    expect(res.status).toBe(409);
   });
 });
 

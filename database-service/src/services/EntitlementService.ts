@@ -30,6 +30,32 @@ export interface PurchasableFilter {
   environment?: PurchasableEnvironment;
 }
 
+/** The entitlement fields BS sends when claiming one for fulfilment (discord.js Entitlement shape). */
+export interface ClaimableEntitlement {
+  id: string;
+  skuId: string;
+  userId: string;
+  guildId?: string | null;
+  type: number;
+  startsTimestamp?: number | null;
+  endsTimestamp?: number | null;
+}
+
+/** A row of entitlement.entitlements - the current-state mirror of Discord's entitlements. */
+export interface EntitlementRow {
+  id: string;
+  skuId: string;
+  userId: string;
+  guildId: string | null;
+  type: number;
+  start_timestamp: string;
+  end_timestamp: string | null;
+  deleted: boolean;
+  consumed: boolean;
+  isConsumable: boolean;
+  entitlement: string;
+}
+
 export class EntitlementService {
   constructor(private db: DatabaseService) {}
 
@@ -98,6 +124,78 @@ export class EntitlementService {
     if (filter.environment !== undefined) conditions.environment = filter.environment;
 
     return this.db.get<Purchasable>('entitlement', 'purchasables', conditions);
+  }
+
+  /**
+   * Atomically claim an entitlement for fulfilment by inserting it into the
+   * entitlements mirror. Only the first claim for a given entitlement ID succeeds,
+   * so a redelivered gateway event can never grant a purchase twice.
+   * Returns the claimed row, or null if it was already claimed.
+   */
+  async claim(entitlement: ClaimableEntitlement): Promise<EntitlementRow | null> {
+    const purchasable = await this.findPurchasable({ sku_id: entitlement.skuId });
+    const toDate = (ms?: number | null): Date | null => (ms === null || ms === undefined ? null : new Date(ms));
+
+    const result = await this.db.execute(
+      `INSERT INTO "entitlement"."entitlements"
+         ("id", "skuId", "userId", "guildId", "type", "start_timestamp", "end_timestamp", "isConsumable", "entitlement")
+       VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_TIMESTAMP), $7, $8, $9)
+       ON CONFLICT ("id") DO NOTHING
+       RETURNING *`,
+      [
+        entitlement.id,
+        entitlement.skuId,
+        entitlement.userId,
+        entitlement.guildId ?? null,
+        entitlement.type,
+        toDate(entitlement.startsTimestamp),
+        toDate(entitlement.endsTimestamp),
+        purchasable?.type === 'consumable',
+        JSON.stringify(entitlement),
+      ]
+    );
+
+    return (result.rows?.[0] as EntitlementRow | undefined) ?? null;
+  }
+
+  /**
+   * Undo a claim whose fulfilment failed, so a redelivery or retry can claim it
+   * again. Refuses to release an entitlement that has already been consumed.
+   * Returns true if a claim was released.
+   */
+  async release(id: string): Promise<boolean> {
+    const result = await this.db.execute(
+      `DELETE FROM "entitlement"."entitlements" WHERE "id" = $1 AND "consumed" = FALSE`,
+      [id]
+    );
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * Record that a claimed entitlement has been consumed with Discord.
+   * Returns the updated row, or null if the entitlement was never claimed.
+   */
+  async markConsumed(id: string): Promise<EntitlementRow | null> {
+    const result = await this.db.execute(
+      `UPDATE "entitlement"."entitlements" SET "consumed" = TRUE WHERE "id" = $1 RETURNING *`,
+      [id]
+    );
+    return (result.rows?.[0] as EntitlementRow | undefined) ?? null;
+  }
+
+  /**
+   * Mark a claimed entitlement as deleted (refund / revocation). Only the first
+   * revoke succeeds, so a redelivered delete event can never reverse a purchase twice.
+   * Returns the revoked row, or null if it was never claimed or is already revoked.
+   */
+  async revoke(id: string): Promise<EntitlementRow | null> {
+    const result = await this.db.execute(
+      `UPDATE "entitlement"."entitlements" SET "deleted" = TRUE
+       WHERE "id" = $1 AND "deleted" = FALSE
+       RETURNING *`,
+      [id]
+    );
+    return (result.rows?.[0] as EntitlementRow | undefined) ?? null;
   }
 
   /**

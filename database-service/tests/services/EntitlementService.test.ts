@@ -2,7 +2,7 @@ import { EntitlementService } from '../../src/services/EntitlementService';
 import { DatabaseService } from '../../src/db/DatabaseService';
 
 describe('EntitlementService', () => {
-    let db: jest.Mocked<Pick<DatabaseService, 'insert' | 'query' | 'get'>>;
+    let db: jest.Mocked<Pick<DatabaseService, 'insert' | 'query' | 'get' | 'execute'>>;
     let service: EntitlementService;
 
     beforeEach(() => {
@@ -10,6 +10,7 @@ describe('EntitlementService', () => {
             insert: jest.fn(),
             query: jest.fn(),
             get: jest.fn(),
+            execute: jest.fn(),
         };
         service = new EntitlementService(db as unknown as DatabaseService);
     });
@@ -112,6 +113,85 @@ describe('EntitlementService', () => {
             await service.findPurchasable({ name: 'skip-pack', environment: 'prod' });
 
             expect(db.get).toHaveBeenCalledWith('entitlement', 'purchasables', { name: 'skip-pack', environment: 'prod' });
+        });
+    });
+
+    describe('claim', () => {
+        const entitlement = { id: 'ent-1', skuId: 'sku-1', userId: 'user-1', guildId: null, type: 8, startsTimestamp: 1767225600000, endsTimestamp: null };
+
+        it('inserts into entitlement.entitlements with ON CONFLICT DO NOTHING and returns the claimed row', async () => {
+            const row = { id: 'ent-1', consumed: false };
+            db.get.mockResolvedValue({ type: 'consumable' } as any);
+            db.execute.mockResolvedValue({ affectedRows: 1, rows: [row] });
+
+            const result = await service.claim(entitlement);
+
+            const [sql, params] = db.execute.mock.calls[0];
+            expect(sql).toContain('INSERT INTO "entitlement"."entitlements"');
+            expect(sql).toContain('ON CONFLICT ("id") DO NOTHING');
+            expect(params).toEqual([
+                'ent-1', 'sku-1', 'user-1', null, 8,
+                new Date(1767225600000), null, true, JSON.stringify(entitlement),
+            ]);
+            expect(result).toEqual(row);
+        });
+
+        it('marks the claim as not consumable when the SKU is a subscription or unknown', async () => {
+            db.get.mockResolvedValue(null);
+            db.execute.mockResolvedValue({ affectedRows: 1, rows: [{ id: 'ent-1' }] });
+
+            await service.claim(entitlement);
+
+            expect(db.execute.mock.calls[0][1]?.[7]).toBe(false);
+        });
+
+        it('returns null when the entitlement has already been claimed', async () => {
+            db.get.mockResolvedValue(null);
+            db.execute.mockResolvedValue({ affectedRows: 0, rows: [] });
+
+            expect(await service.claim(entitlement)).toBeNull();
+        });
+    });
+
+    describe('release', () => {
+        it('deletes only an unconsumed claim and reports whether one was released', async () => {
+            db.execute.mockResolvedValue({ affectedRows: 1 });
+
+            expect(await service.release('ent-1')).toBe(true);
+            expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('"consumed" = FALSE'), ['ent-1']);
+        });
+
+        it('returns false when there was nothing to release', async () => {
+            db.execute.mockResolvedValue({ affectedRows: 0 });
+
+            expect(await service.release('ent-1')).toBe(false);
+        });
+    });
+
+    describe('markConsumed', () => {
+        it('returns the updated row, or null when never claimed', async () => {
+            db.execute.mockResolvedValueOnce({ affectedRows: 1, rows: [{ id: 'ent-1', consumed: true }] });
+            expect(await service.markConsumed('ent-1')).toEqual({ id: 'ent-1', consumed: true });
+
+            db.execute.mockResolvedValueOnce({ affectedRows: 0, rows: [] });
+            expect(await service.markConsumed('ent-1')).toBeNull();
+        });
+    });
+
+    describe('revoke', () => {
+        it('only revokes a claim that is not already deleted', async () => {
+            db.execute.mockResolvedValue({ affectedRows: 1, rows: [{ id: 'ent-1', deleted: true }] });
+
+            const result = await service.revoke('ent-1');
+
+            expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('"deleted" = FALSE'), ['ent-1']);
+            expect(result).toEqual({ id: 'ent-1', deleted: true });
+        });
+
+        it('returns null on a repeat revoke', async () => {
+            db.execute.mockResolvedValue({ affectedRows: 0, rows: [] });
+
+            expect(await service.revoke('ent-1')).toBeNull();
         });
     });
 
