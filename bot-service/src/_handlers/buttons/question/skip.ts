@@ -1,8 +1,8 @@
 import { BotButtonInteraction, errorView } from '@vulps22/bot-interactions';
 import { Handler } from '../../../utils';
 import { Logger } from '@vulps22/logger';
-import { challengeService, inventoryService, questionService, votingService } from '../../../services';
-import { challengeEmbed } from '../../../views';
+import { challengeService, entitlementService, inventoryService, questionService, votingService } from '../../../services';
+import { challengeEmbed, noSkipsView } from '../../../views';
 
 
 const skip: Handler<BotButtonInteraction> = {
@@ -35,7 +35,11 @@ const skip: Handler<BotButtonInteraction> = {
             }
             const skips = await inventoryService.consume(userId, 'skip', 1);
             if(!skips) {
-                await interaction.ephemeralFollowUp(errorView(`You have no skips left! You can earn more by voting at [Top.gg](<${process.env.TOPGG_URL}>).`));
+                const skipPack = await entitlementService.getPurchasableByName('skip-pack').catch((error: unknown) => {
+                    Logger.error(`Failed to look up skip pack purchasable: ${error instanceof Error ? error.message : String(error)}`);
+                    return null;
+                });
+                await interaction.ephemeralFollowUp(noSkipsView(skipPack?.sku_id ?? null));
                 return;
             }
 

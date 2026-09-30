@@ -8,3 +8,4 @@ export {channelSelectView} from './setup/channelSelectView';
 export {setupCompleteView} from './setup/setupCompleteView';
 export {setupFailedView} from './setup/setupFailedView';
 export {reportConfirmationView} from './question_views/reportConfirmation';
+export {noSkipsView} from './question_views/noSkipsView';

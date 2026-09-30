@@ -87,6 +87,14 @@ export class EntitlementService {
   }
 
   /**
+   * Look up a purchasable by its name slug in this environment's catalogue.
+   * purchasables only has dev and prod rows - stage shares dev's.
+   */
+  async getPurchasableByName(name: string): Promise<Purchasable | null> {
+    return this.getPurchasable({ name, env: process.env.ENVIRONMENT === 'prod' ? 'prod' : 'dev' });
+  }
+
+  /**
    * Look up a purchasable in DS's catalogue, or null if none matches.
    */
   async getPurchasable(query: PurchasableQuery): Promise<Purchasable | null> {

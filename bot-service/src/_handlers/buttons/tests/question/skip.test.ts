@@ -1,9 +1,11 @@
 import { BotButtonInteraction } from '@vulps22/bot-interactions';
 import skip from '../../question/skip';
-import { challengeService, inventoryService, questionService, votingService } from '../../../../services';
+import { challengeService, entitlementService, inventoryService, questionService, votingService } from '../../../../services';
+import { noSkipsView } from '../../../../views';
 
 jest.mock('../../../../services', () => ({
     challengeService: { getChallengeByMessageId: jest.fn(), skip: jest.fn() },
+    entitlementService: { getPurchasableByName: jest.fn() },
     inventoryService: { consume: jest.fn() },
     questionService: { getQuestionById: jest.fn() },
     votingService: { getVoteCount: jest.fn(), finalizeChallenge: jest.fn() },
@@ -11,6 +13,7 @@ jest.mock('../../../../services', () => ({
 
 jest.mock('../../../../views', () => ({
     challengeEmbed: jest.fn().mockReturnValue({}),
+    noSkipsView: jest.fn().mockReturnValue({ flags: 32768, components: [] }),
 }));
 
 jest.mock('@vulps22/logger', () => ({
@@ -40,6 +43,7 @@ describe('skip button handler', () => {
         (challengeService.getChallengeByMessageId as jest.Mock).mockResolvedValue(mockChallenge);
         (votingService.getVoteCount as jest.Mock).mockResolvedValue(mockChallengeVote);
         (inventoryService.consume as jest.Mock).mockResolvedValue({ qty: 0 });
+        (entitlementService.getPurchasableByName as jest.Mock).mockResolvedValue(null);
         (challengeService.skip as jest.Mock).mockResolvedValue(undefined);
         (votingService.finalizeChallenge as jest.Mock).mockResolvedValue(mockUpdated);
         (questionService.getQuestionById as jest.Mock).mockResolvedValue(mockQuestion);
@@ -80,6 +84,27 @@ describe('skip button handler', () => {
         await skip.execute(mockInteraction);
 
         expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalledWith(expect.objectContaining({ flags: expect.any(Number) }));
+    });
+
+    it('should offer the skip pack SKU in the no skips message', async () => {
+        (inventoryService.consume as jest.Mock).mockResolvedValue(false);
+        (entitlementService.getPurchasableByName as jest.Mock).mockResolvedValue({ name: 'skip-pack', sku_id: 'sku-123' });
+
+        await skip.execute(mockInteraction);
+
+        expect(entitlementService.getPurchasableByName).toHaveBeenCalledWith('skip-pack');
+        expect(noSkipsView).toHaveBeenCalledWith('sku-123');
+        expect(challengeService.skip).not.toHaveBeenCalled();
+    });
+
+    it('should still show the no skips message when the skip pack lookup fails', async () => {
+        (inventoryService.consume as jest.Mock).mockResolvedValue(false);
+        (entitlementService.getPurchasableByName as jest.Mock).mockRejectedValue(new Error('ds down'));
+
+        await skip.execute(mockInteraction);
+
+        expect(noSkipsView).toHaveBeenCalledWith(null);
+        expect(mockInteraction.ephemeralFollowUp).toHaveBeenCalled();
     });
 
     it('should finalize and update embed on happy path', async () => {
