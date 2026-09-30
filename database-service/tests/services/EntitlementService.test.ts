@@ -87,12 +87,12 @@ describe('EntitlementService', () => {
         });
     });
 
-    describe('findPurchasableBySkuId', () => {
+    describe('findPurchasable', () => {
         it('looks up a purchasable by sku_id', async () => {
             const purchasable = { sku_id: 'sku-1', name: 'Premium' };
             db.get.mockResolvedValue(purchasable as any);
 
-            const result = await service.findPurchasableBySkuId('sku-1');
+            const result = await service.findPurchasable({ sku_id: 'sku-1' });
 
             expect(db.get).toHaveBeenCalledWith('entitlement', 'purchasables', { sku_id: 'sku-1' });
             expect(result).toEqual(purchasable);
@@ -101,9 +101,17 @@ describe('EntitlementService', () => {
         it('returns null when no purchasable matches the sku_id', async () => {
             db.get.mockResolvedValue(null);
 
-            const result = await service.findPurchasableBySkuId('unknown-sku');
+            const result = await service.findPurchasable({ sku_id: 'unknown-sku' });
 
             expect(result).toBeNull();
+        });
+
+        it('looks up a purchasable by name slug and environment', async () => {
+            db.get.mockResolvedValue({ sku_id: 'sku-1', name: 'skip-pack' } as any);
+
+            await service.findPurchasable({ name: 'skip-pack', environment: 'prod' });
+
+            expect(db.get).toHaveBeenCalledWith('entitlement', 'purchasables', { name: 'skip-pack', environment: 'prod' });
         });
     });
 

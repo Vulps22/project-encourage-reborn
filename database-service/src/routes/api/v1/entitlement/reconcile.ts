@@ -56,7 +56,7 @@ const route: ApiRoute = {
       // entitlement lifecycle only.
       const skuIds = new Set(entitlements.map((e) => e.sku_id));
       for (const skuId of skuIds) {
-        const purchasable = await entitlementService.findPurchasableBySkuId(skuId);
+        const purchasable = await entitlementService.findPurchasable({ sku_id: skuId });
         if (!purchasable) {
           console.error(`[POST /entitlement/reconcile] Catalogue drift: no purchasable found for sku_id ${skuId}`);
         }

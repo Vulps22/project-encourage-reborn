@@ -101,7 +101,7 @@ jest.mock('../../src/services', () => ({
     record: jest.fn().mockResolvedValue(mockAuditRow),
     latestByEntitlementId: jest.fn().mockResolvedValue(null),
     distinctOpenEntitlementIds: jest.fn().mockResolvedValue([]),
-    findPurchasableBySkuId: jest.fn().mockResolvedValue({ sku_id: 'sku-1' }),
+    findPurchasable: jest.fn().mockResolvedValue({ sku_id: 'sku-1' }),
     hasDrifted: jest.fn().mockReturnValue(false),
   },
 }));
@@ -315,6 +315,37 @@ describe('DELETE /api/v1/entitlement/audit', () => {
       .set('Authorization', PE)
       .send({ id: 'ent-1', data: { foo: 'bar' } });
     expect(res.status).toBe(200);
+  });
+});
+
+describe('GET /api/v1/entitlement/purchasable', () => {
+  const { route } = require('../../src/routes/api/v1/entitlement/purchasable');
+  const app = buildRouteApp(route, '/api/v1/entitlement/purchasable');
+
+  it('returns 401 without auth', async () => {
+    expect((await request(app).get('/api/v1/entitlement/purchasable?sku=sku-1')).status).toBe(401);
+  });
+
+  it('returns 400 with auth but no sku or name', async () => {
+    const res = await request(app).get('/api/v1/entitlement/purchasable').set('Authorization', PE);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 with an invalid env', async () => {
+    const res = await request(app).get('/api/v1/entitlement/purchasable?name=skip-pack&env=stage').set('Authorization', PE);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 200 with auth and a known sku', async () => {
+    const res = await request(app).get('/api/v1/entitlement/purchasable?sku=sku-1').set('Authorization', PE);
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 404 when no purchasable matches', async () => {
+    const { entitlementService } = require('../../src/services');
+    (entitlementService.findPurchasable as jest.Mock).mockResolvedValueOnce(null);
+    const res = await request(app).get('/api/v1/entitlement/purchasable?sku=unknown').set('Authorization', PE);
+    expect(res.status).toBe(404);
   });
 });
 

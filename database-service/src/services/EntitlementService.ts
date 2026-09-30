@@ -12,6 +12,24 @@ export interface AuditRow {
   created_at: string;
 }
 
+export type PurchasableEnvironment = 'dev' | 'prod';
+
+export interface Purchasable {
+  id: number;
+  application_id: string;
+  environment: PurchasableEnvironment;
+  name: string;
+  sku_id: string;
+  type: 'consumable' | 'subscription';
+  created_at: string;
+}
+
+export interface PurchasableFilter {
+  sku_id?: string;
+  name?: string;
+  environment?: PurchasableEnvironment;
+}
+
 export class EntitlementService {
   constructor(private db: DatabaseService) {}
 
@@ -69,11 +87,17 @@ export class EntitlementService {
   }
 
   /**
-   * Look up a purchasable by its Discord SKU ID, used by reconciliation to detect
-   * catalogue drift (a SKU Discord is selling that isn't registered as a purchasable).
+   * Look up a single purchasable by any combination of SKU ID, name slug and
+   * environment. Used by reconciliation to detect catalogue drift, and by BS to
+   * resolve an entitlement's SKU to its handler slug (or a slug to its SKU).
    */
-  async findPurchasableBySkuId(skuId: string): Promise<unknown | null> {
-    return this.db.get('entitlement', 'purchasables', { sku_id: skuId });
+  async findPurchasable(filter: PurchasableFilter): Promise<Purchasable | null> {
+    const conditions: Record<string, unknown> = {};
+    if (filter.sku_id !== undefined) conditions.sku_id = filter.sku_id;
+    if (filter.name !== undefined) conditions.name = filter.name;
+    if (filter.environment !== undefined) conditions.environment = filter.environment;
+
+    return this.db.get<Purchasable>('entitlement', 'purchasables', conditions);
   }
 
   /**
